@@ -44,6 +44,17 @@ router.post('/register', async (req, res) => {
 
         await user.save();
 
+        // Log registration details for admin notification
+        console.log('\n=== NEW BUSINESS REGISTRATION ===');
+        console.log(`Business: ${businessName}`);
+        console.log(`Email: ${email}`);
+        console.log(`Phone: ${phone}`);
+        console.log(`Admin: ${username}`);
+        console.log(`Registered: ${new Date().toLocaleString()}`);
+        console.log(`Trial Ends: ${trialEndsAt.toLocaleString()}`);
+        console.log('Send to: info@itqansolutions.org');
+        console.log('==================================\n');
+
         // Return Token
         const payload = {
             user: {

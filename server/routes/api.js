@@ -9,6 +9,29 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
+// TENANT / TRIAL
+router.get('/tenant/trial-status', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId);
+        if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+
+        const now = new Date();
+        const trialEnds = new Date(tenant.trialEndsAt);
+        const diffTime = trialEnds - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const isExpired = diffTime < 0;
+
+        res.json({
+            trialEndsAt: tenant.trialEndsAt,
+            daysRemaining: diffDays,
+            isExpired
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // PRODUCTS
 
 // @route   GET /api/products
