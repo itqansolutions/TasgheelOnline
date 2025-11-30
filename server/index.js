@@ -14,18 +14,13 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api', require('./routes/api'));
-
-// Serve static files from the parent directory
+// Serve static files from the parent directory FIRST
 const path = require('path');
 app.use(express.static(path.join(__dirname, '../')));
 
-// Handle SPA or default route (optional, but good for root access)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
-});
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api', require('./routes/api'));
 
 const PORT = process.env.PORT || 5000;
 
