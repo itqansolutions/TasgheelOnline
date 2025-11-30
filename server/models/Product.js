@@ -1,0 +1,19 @@
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema({
+    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
+    name: { type: String, required: true },
+    nameEn: String,
+    barcode: { type: String },
+    price: { type: Number, required: true },
+    cost: { type: Number, default: 0 },
+    stock: { type: Number, default: 0 },
+    minStock: { type: Number, default: 0 },
+    category: String,
+    categoryEn: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
+productSchema.index({ tenantId: 1, barcode: 1 });
+
+module.exports = mongoose.model('Product', productSchema);

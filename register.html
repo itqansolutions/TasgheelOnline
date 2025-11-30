@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Tashgheel POS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .register-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .register-container h2 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: right;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .btn-register {
+            width: 100%;
+            padding: 0.8rem;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-register:hover {
+            background: #5a387e;
+        }
+        .login-link {
+            margin-top: 1rem;
+            display: block;
+            color: #764ba2;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>تسجيل حساب جديد</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label>اسم النشاط التجاري</label>
+                <input type="text" id="businessName" required>
+            </div>
+            <div class="form-group">
+                <label>البريد الإلكتروني للنشاط</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف</label>
+                <input type="tel" id="phone" required>
+            </div>
+            <div class="form-group">
+                <label>اسم المستخدم (للمدير)</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn-register">بدء الفترة التجريبية (3 أيام)</button>
+        </form>
+        <a href="index.html" class="login-link">لديك حساب بالفعل؟ تسجيل الدخول</a>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                businessName: document.getElementById('businessName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', result.token);
+                    alert('تم التسجيل بنجاح! جاري التوجيه...');
+                    window.location.href = 'pos.html';
+                } else {
+                    alert(result.msg || 'حدث خطأ أثناء التسجيل');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('فشل الاتصال بالخادم');
+            }
+        });
+    </script>
+</body>
+</html>

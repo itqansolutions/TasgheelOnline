@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tashgeel POS System - Login</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+
+    .login-container {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-container h1 {
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+      text-align: right;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #666;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 1rem;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 0.8rem;
+      background: #764ba2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 1rem;
+    }
+
+    .btn-login:hover {
+      background: #5a387e;
+    }
+
+    .register-link {
+      margin-top: 1.5rem;
+      display: block;
+      color: #764ba2;
+      text-decoration: none;
+    }
+
+    .error {
+      color: red;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
+    <h1>Tashgheel POS</h1>
+    <p class="subtitle">تسجيل الدخول</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label>البريد الإلكتروني للنشاط</label>
+        <input type="email" id="businessEmail" required placeholder="example@business.com">
+      </div>
+      <div class="form-group">
+        <label>اسم المستخدم</label>
+        <input type="text" id="username" required placeholder="admin">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="password" required>
+      </div>
+      <button type="submit" class="btn-login">دخول</button>
+      <div id="loginError" class="error"></div>
+    </form>
+
+    <a href="register.html" class="register-link">ليس لديك حساب؟ سجل الآن (تجربة مجانية)</a>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const businessEmail = document.getElementById('businessEmail').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorDiv = document.getElementById('loginError');
+
+      errorDiv.textContent = 'جاري الاتصال...';
+
+      const success = await login(username, password, businessEmail);
+      if (success) {
+        window.location.href = 'pos.html';
+      } else {
+        errorDiv.textContent = '❌ بيانات الدخول غير صحيحة أو الاشتراك منتهي';
+      }
+    });
+
+    // Clear previous session
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+  </script>
+</body>
+
+</html>
