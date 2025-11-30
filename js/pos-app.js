@@ -33,7 +33,60 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("closeDayBtn")?.addEventListener("click", printDailySummary);
   updateCartSummary();
+  checkTrialStatus();
 });
+
+async function checkTrialStatus() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const response = await fetch(`${API_URL}/tenant/trial-status`, {
+      headers: { 'x-auth-token': token }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data.isExpired) {
+        document.getElementById('licenseCheckOverlay').style.display = 'flex';
+        document.getElementById('licenseCheckOverlay').innerHTML = `
+          <div style="background:white;padding:40px;border-radius:10px;color:black;max-width:500px;">
+            <h2 style="color:#e74c3c;margin-bottom:20px;">🔒 Trial Expired</h2>
+            <p style="font-size:1.2rem;margin-bottom:20px;">Your 7-day trial period has ended.</p>
+            <p>Please contact ITQAN Solutions to activate your license.</p>
+            <div style="margin-top:30px;padding:20px;background:#f8f9fa;border-radius:5px;">
+              <p><strong>Contact Us:</strong></p>
+              <p>📞 +201126522373</p>
+              <p>📧 info@itqansolutions.org</p>
+            </div>
+            <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
+          </div>
+        `;
+      } else {
+        // Show warning banner
+        const banner = document.createElement('div');
+        banner.style.cssText = `
+          background: ${data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12'};
+          color: white;
+          text-align: center;
+          padding: 10px;
+          font-weight: bold;
+          position: sticky;
+          top: 0;
+          z-index: 999;
+        `;
+        banner.innerHTML = `
+          ⚠️ Trial Version: ${data.daysRemaining} days remaining. 
+          <a href="tel:+201126522373" style="color:white;text-decoration:underline;margin-left:10px;">Contact to Activate</a>
+        `;
+        document.body.prepend(banner);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check trial status:', error);
+  }
+}
 
 // يربط السيرش مرة واحدة فقط
 function bindSearchOnce() {
