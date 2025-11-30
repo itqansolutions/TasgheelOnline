@@ -1,27 +1,8 @@
 {
-    "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "server/index.js",
-            "use": "@vercel/node"
-        },
-        {
-            "src": "**",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "server/index.js"
-        },
-        {
-            "src": "/(.*\\.(css|js|html|png|jpg|jpeg|gif|ico|svg))",
-            "dest": "/$1"
-        },
-        {
-            "src": "/",
-            "dest": "/index.html"
+            "source": "/api/:path*",
+            "destination": "/server/index.js"
         }
     ]
 }
