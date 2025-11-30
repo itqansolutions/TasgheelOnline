@@ -33,60 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("closeDayBtn")?.addEventListener("click", printDailySummary);
   updateCartSummary();
-  checkTrialStatus();
 });
-
-async function checkTrialStatus() {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    const response = await fetch(`${API_URL}/tenant/trial-status`, {
-      headers: { 'x-auth-token': token }
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data.isExpired) {
-        document.getElementById('licenseCheckOverlay').style.display = 'flex';
-        document.getElementById('licenseCheckOverlay').innerHTML = `
-          <div style="background:white;padding:40px;border-radius:10px;color:black;max-width:500px;">
-            <h2 style="color:#e74c3c;margin-bottom:20px;">🔒 Trial Expired</h2>
-            <p style="font-size:1.2rem;margin-bottom:20px;">Your 3-day trial period has ended.</p>
-            <p>Please contact ITQAN Solutions to activate your license.</p>
-            <div style="margin-top:30px;padding:20px;background:#f8f9fa;border-radius:5px;">
-              <p><strong>Contact Us:</strong></p>
-              <p>📞 +201126522373</p>
-              <p>📧 info@itqansolutions.org</p>
-            </div>
-            <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
-          </div>
-        `;
-      } else {
-        // Show warning banner
-        const banner = document.createElement('div');
-        banner.style.cssText = `
-          background: ${data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12'};
-          color: white;
-          text-align: center;
-          padding: 10px;
-          font-weight: bold;
-          position: sticky;
-          top: 0;
-          z-index: 999;
-        `;
-        banner.innerHTML = `
-          ⚠️ Trial Version: ${data.daysRemaining} days remaining. 
-          <a href="tel:+201126522373" style="color:white;text-decoration:underline;margin-left:10px;">Contact to Activate</a>
-        `;
-        document.body.prepend(banner);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to check trial status:', error);
-  }
-}
 
 // يربط السيرش مرة واحدة فقط
 function bindSearchOnce() {
@@ -204,7 +151,209 @@ async function loadSalesmen() {
   }
 }
 
-// ... (rest of the file)
+// ===================== CART LOGIC =====================
+function addToCart(product) {
+  const existingItem = cart.find(item => item._id === product._id);
+  if (existingItem) {
+    existingItem.qty++;
+  } else {
+    cart.push({ ...product, qty: 1 });
+  }
+  updateCartSummary();
+}
+
+function updateCartSummary() {
+  const cartItemsContainer = document.getElementById("cartItems");
+  const cartCounter = document.getElementById("cartCounter");
+  const cartSubtotal = document.getElementById("cartSubtotal");
+  const cartTotal = document.getElementById("cartTotal");
+  const cartEmptyText = document.getElementById("cartEmptyText");
+
+  if (!cartItemsContainer) return;
+
+  cartItemsContainer.innerHTML = "";
+  let subtotal = 0;
+
+  if (cart.length === 0) {
+    cartEmptyText.style.display = "block";
+    if (cartCounter) cartCounter.textContent = "0";
+    if (cartSubtotal) cartSubtotal.textContent = "0.00 ج.م";
+    if (cartTotal) cartTotal.textContent = "Total: 0.00 ج.م";
+    disableActionButtons(true);
+    return;
+  }
+
+  cartEmptyText.style.display = "none";
+  disableActionButtons(false);
+
+  cart.forEach((item, index) => {
+    subtotal += item.price * item.qty;
+    const div = document.createElement("div");
+    div.className = "cart-item";
+    div.innerHTML = `
+      <div>
+        <strong>${item.name}</strong><br>
+        <small>${item.price.toFixed(2)} x ${item.qty}</small>
+      </div>
+      <div>
+        <span>${(item.price * item.qty).toFixed(2)}</span>
+        <button onclick="removeFromCart(${index})" class="btn-danger" style="padding:2px 6px;margin-left:5px;">x</button>
+      </div>
+    `;
+    cartItemsContainer.appendChild(div);
+  });
+
+  if (cartCounter) cartCounter.textContent = cart.length;
+  if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)} ج.م`;
+  if (cartTotal) cartTotal.textContent = `Total: ${subtotal.toFixed(2)} ج.م`;
+}
+
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  updateCartSummary();
+}
+
+function clearCart() {
+  cart = [];
+  updateCartSummary();
+}
+
+function disableActionButtons(disabled) {
+  ["cashBtn", "cardBtn", "mobileBtn", "holdBtn", "clearCartBtn"].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = disabled;
+  });
+}
+
+// ===================== SALE PROCESSING =====================
+async function processSale(method) {
+  if (cart.length === 0) return;
+
+  const salesmanSelect = document.getElementById("salesmanSelect");
+  const salesmanName = salesmanSelect ? salesmanSelect.value : "";
+
+  const saleData = {
+    items: cart.map(item => ({
+      productId: item._id,
+      name: item.name,
+      price: item.price,
+      qty: item.qty,
+      total: item.price * item.qty
+    })),
+    total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+    paymentMethod: method,
+    salesman: salesmanName,
+    date: new Date()
+  };
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/sales`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify(saleData)
+    });
+
+    if (response.ok) {
+      const sale = await response.json();
+      printReceipt(sale);
+      clearCart();
+      loadProducts(); // Refresh stock
+      alert('Sale completed successfully!');
+    } else {
+      alert('Failed to process sale');
+    }
+  } catch (error) {
+    console.error('Error processing sale:', error);
+    alert('Error processing sale');
+  }
+}
+
+function printReceipt(sale) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const t = (en, ar) => (lang === 'ar' ? ar : en);
+  const shopName = localStorage.getItem('shopName') || 'My Shop';
+
+  const html = `
+    <html>
+    <head>
+      <title>Receipt</title>
+      <style>
+        body { font-family: 'Courier New', monospace; text-align: center; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; }
+        .watermark {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-45deg);
+          font-size: 40px;
+          color: rgba(0, 0, 0, 0.1);
+          z-index: -1;
+          white-space: nowrap;
+          border: 5px solid rgba(0, 0, 0, 0.1);
+          padding: 20px;
+        }
+        .trial-notice {
+          border: 2px dashed #000;
+          padding: 10px;
+          margin: 10px 0;
+          font-weight: bold;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border-bottom: 1px dashed #000; padding: 5px; text-align: inherit; }
+      </style>
+    </head>
+    <body>
+      <div class="watermark">
+        TASHGHEEL POS<br>
+        FREE TRIAL VERSION<br>
+        NOT A REAL RECEIPT
+      </div>
+      
+      <h2>${shopName}</h2>
+      <p>${new Date(sale.date).toLocaleString()}</p>
+      <p>Order #${sale._id.slice(-6)}</p>
+      
+      <div class="trial-notice">
+        ${t("FREE TRIAL VERSION", "نسخة تجريبية مجانية")}<br>
+        ${t("NOT A VALID RECEIPT", "إيصال غير صالح")}
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>${t("Item", "الصنف")}</th>
+            <th>${t("Qty", "الكمية")}</th>
+            <th>${t("Price", "السعر")}</th>
+            <th>${t("Total", "الإجمالي")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sale.items.map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.qty}</td>
+              <td>${item.price.toFixed(2)}</td>
+              <td>${(item.price * item.qty).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      
+      <h3>${t("Total", "الإجمالي")}: ${sale.total.toFixed(2)}</h3>
+      <p>${t("Salesman", "البائع")}: ${sale.salesman || '-'}</p>
+      
+      <script>window.onload = () => window.print();</script>
+    </body>
+    </html>
+  `;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
 
 async function printDailySummary() {
   try {

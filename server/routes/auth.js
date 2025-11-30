@@ -17,9 +17,9 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ msg: 'Email already registered' });
         }
 
-        // Create Tenant (3 days trial)
+        // Create Tenant (7 days trial)
         const trialEndsAt = new Date();
-        trialEndsAt.setDate(trialEndsAt.getDate() + 3);
+        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
         tenant = new Tenant({
             businessName,
