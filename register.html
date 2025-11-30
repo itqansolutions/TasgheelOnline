@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,28 +16,33 @@
             align-items: center;
             margin: 0;
         }
+
         .register-container {
             background: white;
             padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             width: 100%;
             max-width: 400px;
             text-align: center;
         }
+
         .register-container h2 {
             margin-bottom: 1.5rem;
             color: #333;
         }
+
         .form-group {
             margin-bottom: 1rem;
             text-align: right;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             color: #666;
         }
+
         .form-group input {
             width: 100%;
             padding: 0.8rem;
@@ -45,6 +51,7 @@
             box-sizing: border-box;
             font-size: 1rem;
         }
+
         .btn-register {
             width: 100%;
             padding: 0.8rem;
@@ -56,9 +63,11 @@
             cursor: pointer;
             transition: background 0.3s;
         }
+
         .btn-register:hover {
             background: #5a387e;
         }
+
         .login-link {
             margin-top: 1rem;
             display: block;
@@ -67,6 +76,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="register-container">
         <h2>تسجيل حساب جديد</h2>
@@ -99,7 +109,7 @@
     <script>
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const data = {
                 businessName: document.getElementById('businessName').value,
                 email: document.getElementById('email').value,
@@ -109,7 +119,7 @@
             };
 
             try {
-                const response = await fetch('http://localhost:5000/api/auth/register', {
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -131,4 +141,5 @@
         });
     </script>
 </body>
+
 </html>
