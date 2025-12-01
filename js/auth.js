@@ -38,6 +38,13 @@ function logout() {
     window.location.href = 'index.html';
 }
 
+// Confirm logout with user
+function confirmLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        logout();
+    }
+}
+
 // Get current logged in user
 function getCurrentUser() {
     const user = localStorage.getItem('currentUser');
@@ -83,6 +90,7 @@ function hasPermission(requiredRole) {
 // Export functions
 window.login = login;
 window.logout = logout;
+window.confirmLogout = confirmLogout;
 window.getCurrentUser = getCurrentUser;
 window.hasPermission = hasPermission;
 window.isSessionValid = isSessionValid;
