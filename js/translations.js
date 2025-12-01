@@ -26,10 +26,14 @@ function applyNavTranslations() {
     const lang = localStorage.getItem('pos_language') || 'en';
     const t = translations[lang];
 
+    console.log('Applying translations for lang:', lang);
+
     document.querySelectorAll('[data-i18n^="nav_"]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (t[key]) {
             el.textContent = t[key];
+        } else {
+            console.warn('Missing translation for key:', key);
         }
     });
 }
