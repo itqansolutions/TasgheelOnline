@@ -22,8 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const selectedLang = btn.dataset.lang;
       localStorage.setItem('pos_language', selectedLang);
-      lang = selectedLang;
-      applyTranslations();
+      location.reload();
     });
   });
 
