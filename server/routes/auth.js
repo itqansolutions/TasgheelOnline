@@ -44,16 +44,39 @@ router.post('/register', async (req, res) => {
 
         await user.save();
 
-        // Log registration details for admin notification
-        console.log('\n=== NEW BUSINESS REGISTRATION ===');
-        console.log(`Business: ${businessName}`);
-        console.log(`Email: ${email}`);
-        console.log(`Phone: ${phone}`);
-        console.log(`Admin: ${username}`);
-        console.log(`Registered: ${new Date().toLocaleString()}`);
-        console.log(`Trial Ends: ${trialEndsAt.toLocaleString()}`);
-        console.log('Send to: info@itqansolutions.org');
-        console.log('==================================\n');
+        // Send Email Notification
+        try {
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: 'info@itqansolutions.org',
+                subject: `New Business Registration: ${businessName}`,
+                text: `
+=== NEW BUSINESS REGISTRATION ===
+Business: ${businessName}
+Email: ${email}
+Phone: ${phone}
+Admin: ${username}
+Registered: ${new Date().toLocaleString()}
+Trial Ends: ${trialEndsAt.toLocaleString()}
+==================================
+                `
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log('Registration email sent to info@itqansolutions.org');
+        } catch (emailError) {
+            console.error('Failed to send email:', emailError);
+            // Don't block registration if email fails
+        }
 
         // Return Token
         const payload = {
