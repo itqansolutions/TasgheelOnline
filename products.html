@@ -130,39 +130,26 @@
         <tbody id="auditTableBody"></tbody>
       </table>
       <div style="margin-top: 10px; text-align: right;">
-        <button onclick="saveStockAudit()" class="btn btn-success" data-i18n="save">✅ Save</button>
-        <button onclick="closeStockAudit()" class="btn btn-danger" data-i18n="cancel">❌ Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/translations.js"></script>
-  <script src="js/products-app.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (currentUser?.role === 'cashier') {
-        alert('Access denied');
         window.location.href = 'pos.html';
         return;
-      }
+        }
 
-      // Language handling
-      const lang = localStorage.getItem('pos_language') || 'en';
-      setLanguage(lang);
+        // Language handling
+        const lang = localStorage.getItem('pos_language') || 'en';
+        setLanguage(lang);
 
-      document.querySelectorAll('.lang-btn').forEach(btn => {
+        document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const selectedLang = btn.dataset.lang;
-          localStorage.setItem('pos_language', selectedLang);
-          setLanguage(selectedLang);
+        const selectedLang = btn.dataset.lang;
+        localStorage.setItem('pos_language', selectedLang);
+        setLanguage(selectedLang);
         });
-      });
-    });
+        });
+        });
 
-    function setLanguage(lang) {
-      document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-      const t = {
+        function setLanguage(lang) {
+        document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        const t = {
         products: { en: 'Products', ar: 'المنتجات' },
         add_product: { en: 'Add Product', ar: 'إضافة منتج' },
         product_code: { en: 'Product Code:', ar: 'كود المنتج:' },
@@ -173,9 +160,9 @@
         cost: { en: 'Cost:', ar: 'التكلفة:' },
         stock: { en: 'Stock:', ar: 'الكمية:' },
         actions: { en: 'Actions', ar: 'الإجراءات' },
-      });
-    }
-  </script>
+        });
+        }
+        </script>
 </body>
 
 </html>
