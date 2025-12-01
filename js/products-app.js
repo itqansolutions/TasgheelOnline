@@ -1,6 +1,6 @@
 // Updated products-app.js
 
-const API_URL = '/api';
+var API_URL = API_URL || '/api';
 
 document.addEventListener("DOMContentLoaded", () => {
   loadProducts();
