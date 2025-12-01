@@ -20,16 +20,14 @@ async function login(username, password, businessEmail) {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('currentUser', JSON.stringify(data.user));
-            return true;
+            return { success: true };
         } else {
             console.error('Login failed:', data.msg);
-            alert(data.msg || 'Login failed');
-            return false;
+            return { success: false, msg: data.msg };
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Server error');
-        return false;
+        return { success: false, msg: 'Server connection error' };
     }
 }
 

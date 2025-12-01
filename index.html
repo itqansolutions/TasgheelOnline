@@ -125,11 +125,11 @@
 
       errorDiv.textContent = 'جاري الاتصال...';
 
-      const success = await login(username, password, businessEmail);
-      if (success) {
+      const result = await login(username, password, businessEmail);
+      if (result.success) {
         window.location.href = 'pos.html';
       } else {
-        errorDiv.textContent = '❌ بيانات الدخول غير صحيحة أو الاشتراك منتهي';
+        errorDiv.textContent = `❌ ${result.msg || 'بيانات الدخول غير صحيحة'}`;
       }
     });
 

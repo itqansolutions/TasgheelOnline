@@ -129,6 +129,7 @@
 
                 if (response.ok) {
                     localStorage.setItem('token', result.token);
+                    localStorage.setItem('currentUser', JSON.stringify(result.user));
                     alert('تم التسجيل بنجاح! جاري التوجيه...');
                     window.location.href = 'pos.html';
                 } else {
