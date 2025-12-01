@@ -1,6 +1,6 @@
 // Updated products-app.js
+// API_URL is defined in auth.js
 
-var API_URL = API_URL || '/api';
 
 document.addEventListener("DOMContentLoaded", () => {
   loadProducts();
