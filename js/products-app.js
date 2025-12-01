@@ -140,3 +140,99 @@ function handleAddCategory(e) {
   input.value = "";
 }
 
+// Stock Audit Functions
+let auditProducts = [];
+
+async function openStockAudit() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/products`, {
+      headers: { 'x-auth-token': token }
+    });
+    auditProducts = await response.json();
+
+    const tbody = document.getElementById("auditTableBody");
+    tbody.innerHTML = "";
+
+    auditProducts.forEach((p, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${p.code || p.barcode || '-'}</td>
+        <td>${p.name}</td>
+        <td>${p.stock || 0}</td>
+        <td><input type="number" id="actual-${index}" value="${p.stock || 0}" min="0" style="width:80px;"></td>
+        <td id="diff-${index}">0</td>
+      `;
+      tbody.appendChild(row);
+
+      // Update difference on input change
+      document.getElementById(`actual-${index}`).addEventListener('input', (e) => {
+        const actual = parseInt(e.target.value) || 0;
+        const recorded = p.stock || 0;
+        const diff = actual - recorded;
+        document.getElementById(`diff-${index}`).textContent = diff;
+        document.getElementById(`diff-${index}`).style.color = diff < 0 ? 'red' : (diff > 0 ? 'green' : 'black');
+      });
+    });
+
+    document.getElementById("auditModal").style.display = "flex";
+  } catch (error) {
+    console.error('Error opening stock audit:', error);
+    alert('Failed to load products for audit');
+  }
+}
+
+function closeStockAudit() {
+  document.getElementById("auditModal").style.display = "none";
+}
+
+async function saveStockAudit() {
+  if (!confirm('Save stock audit changes?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const updates = [];
+
+    auditProducts.forEach((p, index) => {
+      const actualInput = document.getElementById(`actual-${index}`);
+      const actualStock = parseInt(actualInput.value) || 0;
+
+      if (actualStock !== (p.stock || 0)) {
+        updates.push({
+          id: p._id,
+          stock: actualStock
+        });
+      }
+    });
+
+    if (updates.length === 0) {
+      alert('No changes to save');
+      closeStockAudit();
+      return;
+    }
+
+    // Update each product
+    for (const update of updates) {
+      await fetch(`${API_URL}/products/${update.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ stock: update.stock })
+      });
+    }
+
+    alert(`✅ Stock audit saved! Updated ${updates.length} products.`);
+    closeStockAudit();
+    loadProducts();
+  } catch (error) {
+    console.error('Error saving stock audit:', error);
+    alert('Failed to save stock audit');
+  }
+}
+
+// Make functions global
+window.openStockAudit = openStockAudit;
+window.closeStockAudit = closeStockAudit;
+window.saveStockAudit = saveStockAudit;
