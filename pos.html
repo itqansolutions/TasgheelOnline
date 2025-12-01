@@ -189,47 +189,6 @@
   </div>
 
   <!-- Footer -->
-  <footer class="footer">
-    Tashgheel POS© 2025</strong> |
-    <a href="tel:+201126522373">+201126522373 / +201155253886</a>
-    <span id="footerText">Designed and developed by itqan</span>
-  </footer>
-
-  <!-- Scripts -->
-
-  // 2. ترجمة العناصر اللي عندها data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-  const key = el.getAttribute('data-i18n');
-  if (t[key]) el.textContent = t[key];
-  });
-
-  // 3. ضبط اتجاه الصفحة
-  const isRTL = lang === 'ar';
-  document.documentElement.setAttribute("dir", isRTL ? 'rtl' : 'ltr');
-  document.documentElement.setAttribute("lang", lang);
-
-  // 4. ضبط اتجاه بعض العناصر يدويًا
-  document.querySelectorAll('.card-header, .top-bar, .modal-content, .cart-summary, .sidebar, .pos-layout, label, input,
-  select, textarea').forEach(el => {
-  el.style.textAlign = isRTL ? 'right' : 'left';
-  });
-
-  // 5. عكس اتجاه Flex layout لو موجود
-  document.querySelectorAll('[style*="display:flex"]').forEach(el => {
-  el.style.flexDirection = isRTL ? 'row-reverse' : 'row';
-  });
-
-
-  }
-
-
-  document.addEventListener('DOMContentLoaded', applyTranslations);
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      loadProducts();
-    });
-  </script>
 </body>
 
 </html>
