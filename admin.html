@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Panel - POS</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
   <div class="app">
     <aside class="sidebar">
@@ -15,9 +17,9 @@
         <a href="products.html" class="nav-item" data-i18n="nav_products">📦 Products</a>
         <a href="receipts.html" class="nav-item" data-i18n="nav_receipts">🧾 Receipts</a>
         <a href="reports.html" class="nav-item" data-i18n="nav_reports">📈 Reports</a>
-	<a href="salesmen.html" class="nav-item" data-i18n-key="nav_salesmen" data-i18n-ar="البائعون">🧑‍💼 Salesmen</a>
-        <a href="admin.html" class="nav-item"  data-i18n="nav_admin">⚙️ Admin Panel</a>
-	<a href="backup.html" class="nav-item" data-i18n="nav_reports">💾 BackUP</a>
+        <a href="salesmen.html" class="nav-item" data-i18n-key="nav_salesmen" data-i18n-ar="البائعون">🧑‍💼 Salesmen</a>
+        <a href="admin.html" class="nav-item" data-i18n="nav_admin">⚙️ Admin Panel</a>
+        <a href="backup.html" class="nav-item" data-i18n="nav_reports">💾 BackUP</a>
       </nav>
 
       <div class="sidebar-footer">Ali Karam POS</div>
@@ -103,6 +105,47 @@
             </table>
           </div>
         </div>
+
+        <div class="card">
+          <div class="card-header" data-i18n="customer_management">Customer Management</div>
+          <div class="card-body">
+            <form id="customer-form" class="form-grid">
+              <div class="form-group">
+                <label for="customer-name" data-i18n="customer_name">Name:</label>
+                <input type="text" id="customer-name" required>
+              </div>
+              <div class="form-group">
+                <label for="customer-phone" data-i18n="customer_phone">Phone:</label>
+                <input type="text" id="customer-phone" required>
+              </div>
+              <div class="form-group">
+                <label for="customer-email" data-i18n="customer_email">Email:</label>
+                <input type="email" id="customer-email">
+              </div>
+              <div class="form-group">
+                <label for="customer-address" data-i18n="customer_address">Address:</label>
+                <input type="text" id="customer-address">
+              </div>
+              <div class="form-group">
+                <button class="btn btn-primary" type="submit" data-i18n="save_customer">Save Customer</button>
+              </div>
+            </form>
+
+            <table class="data-table mt-20">
+              <thead>
+                <tr>
+                  <th data-i18n="customer_name">Name</th>
+                  <th data-i18n="customer_phone">Phone</th>
+                  <th data-i18n="customer_email">Email</th>
+                  <th data-i18n="actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customer-table-body">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -113,15 +156,16 @@
   </footer>
 
   <script src="js/auth.js"></script>
- <script src="js/admin-app.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-  if (currentUser?.role === 'cashier') {
-    alert('Access denied');
-    window.location.href = 'pos.html';
-  }
-});
-</script>
+  <script src="js/admin-app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (currentUser?.role === 'cashier') {
+        alert('Access denied');
+        window.location.href = 'pos.html';
+      }
+    });
+  </script>
 </body>
+
 </html>

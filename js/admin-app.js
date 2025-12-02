@@ -160,8 +160,95 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // === Customer Management ===
+  const customerForm = document.getElementById('customer-form');
+  const customerNameInput = document.getElementById('customer-name');
+  const customerPhoneInput = document.getElementById('customer-phone');
+  const customerEmailInput = document.getElementById('customer-email');
+  const customerAddressInput = document.getElementById('customer-address');
+  const customerTableBody = document.getElementById('customer-table-body');
+
+  async function loadCustomers() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers`, {
+        headers: { 'x-auth-token': token }
+      });
+      if (response.ok) {
+        const customers = await response.json();
+        customerTableBody.innerHTML = '';
+        customers.forEach((customer) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+                <td>${customer.name}</td>
+                <td>${customer.phone}</td>
+                <td>${customer.email || '-'}</td>
+                <td>
+                  <button onclick="handleDeleteCustomer('${customer._id}')" class="btn btn-danger">🗑️</button>
+                </td>
+              `;
+          customerTableBody.appendChild(row);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    }
+  }
+
+  window.handleDeleteCustomer = async function (id) {
+    if (!confirm("Are you sure you want to delete this customer?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-auth-token': token }
+      });
+      if (response.ok) {
+        loadCustomers();
+      } else {
+        alert('Failed to delete customer');
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  customerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = customerNameInput.value.trim();
+    const phone = customerPhoneInput.value.trim();
+    const email = customerEmailInput.value.trim();
+    const address = customerAddressInput.value.trim();
+
+    if (!name || !phone) return alert('Name and Phone are required');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ name, phone, email, address })
+      });
+
+      if (response.ok) {
+        alert('Customer saved successfully');
+        customerForm.reset();
+        loadCustomers();
+      } else {
+        const data = await response.json();
+        alert(data.msg || 'Failed to save customer');
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  });
+
   loadSettings();
   loadUsers();
+  loadCustomers();
   applyTranslations();
 });
 
@@ -194,7 +281,13 @@ function applyTranslations() {
       cashier: 'Cashier',
       admin: 'Admin',
       create_user: 'Create User',
-      actions: 'Actions'
+      actions: 'Actions',
+      customer_management: 'Customer Management',
+      customer_name: 'Name:',
+      customer_phone: 'Phone:',
+      customer_email: 'Email:',
+      customer_address: 'Address:',
+      save_customer: 'Save Customer'
     },
     ar: {
       admin_panel: 'لوحة التحكم',
@@ -210,7 +303,13 @@ function applyTranslations() {
       cashier: 'الكاشير',
       admin: 'مشرف',
       create_user: 'إنشاء مستخدم',
-      actions: 'الإجراءات'
+      actions: 'الإجراءات',
+      customer_management: 'إدارة العملاء',
+      customer_name: 'الاسم:',
+      customer_phone: 'الهاتف:',
+      customer_email: 'البريد:',
+      customer_address: 'العنوان:',
+      save_customer: 'حفظ العميل'
     }
   };
 

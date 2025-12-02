@@ -7,7 +7,79 @@ const Salesman = require('../models/Salesman');
 const Expense = require('../models/Expense');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
+const Customer = require('../models/Customer');
 const bcrypt = require('bcryptjs');
+
+// CUSTOMERS
+
+// @route   GET /api/customers
+// @desc    Get all customers
+// @access  Private
+router.get('/customers', auth, async (req, res) => {
+    try {
+        const customers = await Customer.find({ tenantId: req.tenantId });
+        res.json(customers);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/customers
+// @desc    Add new customer
+// @access  Private
+router.post('/customers', auth, async (req, res) => {
+    try {
+        const newCustomer = new Customer({
+            tenantId: req.tenantId,
+            ...req.body
+        });
+        const customer = await newCustomer.save();
+        res.json(customer);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/customers/:id
+// @desc    Update customer
+// @access  Private
+router.put('/customers/:id', auth, async (req, res) => {
+    try {
+        let customer = await Customer.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!customer) return res.status(404).json({ msg: 'Customer not found' });
+
+        const { name, phone, email, address, loyaltyPoints } = req.body;
+        if (name) customer.name = name;
+        if (phone) customer.phone = phone;
+        if (email) customer.email = email;
+        if (address) customer.address = address;
+        if (loyaltyPoints !== undefined) customer.loyaltyPoints = loyaltyPoints;
+
+        await customer.save();
+        res.json(customer);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/customers/:id
+// @desc    Delete customer
+// @access  Private
+router.delete('/customers/:id', auth, async (req, res) => {
+    try {
+        const customer = await Customer.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!customer) return res.status(404).json({ msg: 'Customer not found' });
+
+        await Customer.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Customer removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 // TENANT / TRIAL
 router.get('/tenant/trial-status', auth, async (req, res) => {
