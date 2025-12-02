@@ -248,6 +248,21 @@ function applyTranslations() {
         const key = el.getAttribute('data-i18n');
         if (t[key]) el.textContent = t[key];
     });
+
+    // Backward compatibility: Handle old data-i18n-key system
+    document.querySelectorAll('[data-i18n-key]').forEach(el => {
+        const key = el.getAttribute('data-i18n-key');
+        if (t[key]) {
+            // Handle inputs with placeholders
+            if (el.tagName === 'INPUT' && el.getAttribute('placeholder')) {
+                el.placeholder = t[key];
+            } else {
+                el.textContent = t[key];
+            }
+        } else {
+            console.warn('Missing translation for key (old system):', key);
+        }
+    });
 }
 
 // Make globally available
