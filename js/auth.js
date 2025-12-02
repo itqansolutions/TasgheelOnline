@@ -4,7 +4,13 @@
 
 // Auth System linked to Backend API
 
-const API_URL = window.API_URL || '/api';
+// Determine API URL based on environment
+let defaultApiUrl = '/api';
+if (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '5000')) {
+    defaultApiUrl = 'http://localhost:5000/api';
+}
+
+const API_URL = window.API_URL || defaultApiUrl;
 window.API_URL = API_URL;
 
 // Login function
