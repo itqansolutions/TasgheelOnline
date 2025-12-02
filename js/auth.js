@@ -4,7 +4,8 @@
 
 // Auth System linked to Backend API
 
-const API_URL = '/api';
+const API_URL = window.API_URL || '/api';
+window.API_URL = API_URL;
 
 // Login function
 async function login(username, password, businessEmail) {

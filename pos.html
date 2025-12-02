@@ -68,7 +68,7 @@
         <a href="receipts.html" class="nav-item" data-i18n="nav_receipts">🧾 Receipts</a>
         <a href="reports.html" class="nav-item" data-i18n="nav_reports">📈 Reports</a>
         <a href="salesmen.html" class="nav-item" data-i18n="nav_salesmen">🧑‍💼 Salesmen</a>
-        <a href="expenses.html" class="nav-item" data-i18n="nav_Expenses">📋 Expenses</a>
+        <a href="expenses.html" class="nav-item" data-i18n="nav_expenses">📋 Expenses</a>
 
         <a href="admin.html" class="nav-item" data-i18n="nav_admin">⚙️ Admin Panel</a>
         <a href="backup.html" class="nav-item" data-i18n="nav_backup">💾 BackUP</a>
@@ -183,15 +183,15 @@
   <!-- Discount Modal -->
   <div id="discountModal" class="modal" style="display:none;">
     <div class="modal-content">
-      <h3 id="discountTitle">🧾 خصم</h3>
-      <label>نوع الخصم:</label>
+      <h3 id="discountTitle" data-i18n="discount_modal_title">🧾 Discount</h3>
+      <label data-i18n="discount_type">Discount Type:</label>
       <select id="discountType">
         <option value="none">لا يوجد</option>
         <option value="percent">نسبة مئوية (%)</option>
         <option value="value">قيمة ثابتة (ج.م)</option>
       </select>
       <br><br>
-      <label>القيمة:</label>
+      <label data-i18n="discount_value_label">Value:</label>
       <input type="number" id="discountValue" placeholder="0">
       <br><br>
       <button onclick="saveDiscount()">💾 حفظ</button>

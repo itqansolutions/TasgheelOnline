@@ -4,7 +4,8 @@ let filteredProducts = [];
 let cart = [];
 let currentDiscountIndex = null;
 
-const API_URL = '/api';
+const API_URL = window.API_URL || '/api';
+window.API_URL = API_URL;
 
 // ===================== INIT =====================
 document.addEventListener("DOMContentLoaded", () => {
