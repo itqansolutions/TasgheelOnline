@@ -130,8 +130,13 @@ async function loadProducts() {
     allProducts = products;
     filteredProducts = products;
     renderProducts();
+
+    if (products.length === 0) {
+      console.warn('No products found in database');
+    }
   } catch (error) {
     console.error('Error loading products:', error);
+    alert('Failed to load products. Ensure server is running at ' + API_URL);
     // Fallback to empty or show error
     allProducts = [];
     filteredProducts = [];

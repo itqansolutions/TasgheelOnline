@@ -2,14 +2,14 @@
 const translations = {
     en: {
         // Navigation
-        nav_pos: "Point of Sale",
-        nav_products: "Products",
-        nav_receipts: "Receipts",
-        nav_reports: "Reports",
-        nav_salesmen: "Salesmen",
-        nav_expenses: "Expenses",
-        nav_admin: "Admin Panel",
-        nav_backup: "Backup",
+        nav_pos: "🛒 Point of Sale",
+        nav_products: "📦 Products",
+        nav_receipts: "🧾 Receipts",
+        nav_reports: "📈 Reports",
+        nav_salesmen: "🧑‍💼 Salesmen",
+        nav_expenses: "📋 Expenses",
+        nav_admin: "⚙️ Admin Panel",
+        nav_backup: "💾 Backup",
 
         // Common
         app_title: "Tasgheel POS System",
@@ -109,26 +109,6 @@ const translations = {
 
         // Auth
         login_title: "Login",
-        username: "Username",
-        password: "Password",
-        login_btn: "Login"
-    },
-    ar: {
-        // Navigation
-        nav_pos: "نقطة البيع",
-        nav_products: "المنتجات",
-        nav_receipts: "الفواتير",
-        nav_reports: "التقارير",
-        nav_salesmen: "البائعون",
-        nav_expenses: "المصاريف",
-        nav_admin: "لوحة التحكم",
-        nav_backup: "النسخ الاحتياطي",
-
-        // Common
-        app_title: "نظام تشغيل POS",
-        enhanced_edition: "النسخة المحسنة",
-        logout: "تسجيل خروج",
-        welcome: "مرحباً،",
         licensed: "مرخص",
         access_denied: "تم رفض الوصول",
         license_required: "هذا النظام يتطلب ترخيصاً صالحاً للعمل.",
