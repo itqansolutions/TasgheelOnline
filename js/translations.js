@@ -240,9 +240,13 @@ function applyTranslations() {
             }
         } else {
             console.warn('Missing translation for key:', key);
-            // Optional: Show key if translation missing to debug
-            // el.textContent = key; 
         }
+    });
+
+    // Explicitly handle options in selects if they weren't caught
+    document.querySelectorAll('option[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
     });
 }
 

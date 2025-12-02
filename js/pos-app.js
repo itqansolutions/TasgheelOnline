@@ -4,8 +4,8 @@ let filteredProducts = [];
 let cart = [];
 let currentDiscountIndex = null;
 
-const API_URL = window.API_URL || '/api';
-window.API_URL = API_URL;
+// API_URL is already defined in auth.js
+// const API_URL = window.API_URL || '/api';
 
 // ===================== INIT =====================
 document.addEventListener("DOMContentLoaded", () => {
