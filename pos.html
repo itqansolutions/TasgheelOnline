@@ -42,9 +42,10 @@
   <!-- License Check -->
   <div id="licenseCheckOverlay"
     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000000e6;z-index:10000;color:white;text-align:center;padding-top:150px;">
-    <h2>🔒 Access Denied</h2>
-    <p>This system requires a valid license to operate.</p>
-    <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top: 20px;">Go to
+    <h2 data-i18n="access_denied">🔒 Access Denied</h2>
+    <p data-i18n="license_required">This system requires a valid license to operate.</p>
+    <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top: 20px;"
+      data-i18n="go_activation">Go to
       Activation</button>
   </div>
 
@@ -58,8 +59,8 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h2 id="posSystemTitle">🏪Tasgheel POS System</h2>
-        <p id="licensedVersion">Enhanced Edition</p>
+        <h2 id="posSystemTitle" data-i18n="app_title">🏪Tasgheel POS System</h2>
+        <p id="licensedVersion" data-i18n="enhanced_edition">Enhanced Edition</p>
       </div>
       <nav>
         <a href="pos.html" class="nav-item active" data-i18n="nav_pos">🛒 Point of Sale</a>
@@ -74,19 +75,20 @@
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn btn-danger" onclick="confirmLogout()" id="logoutBtn">Logout</button>
+        <button class="btn btn-danger" onclick="confirmLogout()" id="logoutBtn" data-i18n="logout">Logout</button>
       </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
       <header class="top-bar">
-        <h1 id="pageTitle">Point of Sale</h1>
+        <h1 id="pageTitle" data-i18n="pos_title">Point of Sale</h1>
         <div style="display:flex;align-items:center;gap:10px;">
-          <span id="welcomeText">Welcome,</span>
+          <span id="welcomeText" data-i18n="welcome">Welcome,</span>
           <span id="currentUserName">User</span>
           <span id="userRole" class="user-role">cashier</span>
-          <span style="background:#27ae60;color:white;padding:4px 8px;border-radius:12px;font-size:0.7rem;">🔐
+          <span style="background:#27ae60;color:white;padding:4px 8px;border-radius:12px;font-size:0.7rem;"
+            data-i18n="licensed">🔐
             Licensed</span>
         </div>
       </header>
@@ -97,17 +99,18 @@
           <div>
             <div class="card">
               <div class="card-header">
-                <span id="productsTitle">Products</span>
+                <span id="productsTitle" data-i18n="products_title">Products</span>
                 <div style="display:flex;gap:10px;align-items:center;">
                   <input type="text" id="productSearch" placeholder="Search by name, code, or barcode..."
-                    class="search-box" style="width:200px;">
-                  <button class="btn btn-secondary" onclick="scanBarcode()" id="scanBtn">📷 Scan</button>
+                    data-i18n="search_placeholder" class="search-box" style="width:200px;">
+                  <button class="btn btn-secondary" onclick="scanBarcode()" id="scanBtn" data-i18n="scan_btn">📷
+                    Scan</button>
                 </div>
               </div>
               <div class="card-body">
                 <div class="product-grid" id="productGrid">
                   <div style="text-align:center;padding:40px;color:#666;">
-                    <p id="loadingText">Loading products...</p>
+                    <p id="loadingText" data-i18n="loading_products">Loading products...</p>
                   </div>
                 </div>
               </div>
@@ -117,40 +120,47 @@
           <!-- Cart Section -->
           <div class="cart">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-              <h3 id="cartTitle">🛒 Cart</h3>
+              <h3 id="cartTitle" data-i18n="cart_title">🛒 Cart</h3>
               <span id="cartCounter" class="badge">0</span>
             </div>
 
             <div id="cartItems">
-              <p id="cartEmptyText" style="text-align:center;color:#666;">Cart is empty</p>
+              <p id="cartEmptyText" style="text-align:center;color:#666;" data-i18n="cart_empty">Cart is empty</p>
             </div>
 
             <div class="cart-summary">
-              <div><span id="subtotalLabel">Subtotal:</span> <span id="cartSubtotal">0.00 ج.م</span></div>
-              <div><span id="discountLabel">Discount:</span> <span id="cartDiscount">0.00 ج.م</span></div>
-              <div><span id="taxLabel">Tax (0%):</span> <span id="cartTax">0.00 ج.م</span></div>
+              <div><span id="subtotalLabel" data-i18n="subtotal">Subtotal:</span> <span id="cartSubtotal">0.00
+                  ج.م</span></div>
+              <div><span id="discountLabel" data-i18n="discount">Discount:</span> <span id="cartDiscount">0.00
+                  ج.م</span></div>
+              <div><span id="taxLabel" data-i18n="tax">Tax (0%):</span> <span id="cartTax">0.00 ج.م</span></div>
               <hr>
               <div class="cart-total" id="cartTotal">Total: 0.00 ج.م</div>
             </div>
 
             <div style="margin-bottom:10px;">
-              <label for="salesmanSelect">👤 <span id="salesmanLabel">Salesman:</span></label>
+              <label for="salesmanSelect">👤 <span id="salesmanLabel" data-i18n="salesman">Salesman:</span></label>
               <select id="salesmanSelect" style="width:100%;padding:6px;margin-top:5px;"></select>
             </div>
 
             <div class="payment-methods">
-              <button class="btn btn-success" onclick="processSale('cash')" id="cashBtn" disabled>💵 Cash</button>
-              <button class="btn btn-success" onclick="processSale('card')" id="cardBtn" disabled>💳 Card</button>
-              <button class="btn btn-success" onclick="processSale('mobile')" id="mobileBtn" disabled>📱 Mobile</button>
+              <button class="btn btn-success" onclick="processSale('cash')" id="cashBtn" disabled
+                data-i18n="pay_cash">💵 Cash</button>
+              <button class="btn btn-success" onclick="processSale('card')" id="cardBtn" disabled
+                data-i18n="pay_card">💳 Card</button>
+              <button class="btn btn-success" onclick="processSale('mobile')" id="mobileBtn" disabled
+                data-i18n="pay_mobile">📱 Mobile</button>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-              <button class="btn btn-warning" onclick="holdTransaction()" id="holdBtn" disabled>⏸️ Hold</button>
-              <button class="btn btn-secondary" onclick="clearCart()" id="clearCartBtn" disabled>🗑️ Clear</button>
+              <button class="btn btn-warning" onclick="holdTransaction()" id="holdBtn" disabled data-i18n="hold_btn">⏸️
+                Hold</button>
+              <button class="btn btn-secondary" onclick="clearCart()" id="clearCartBtn" disabled
+                data-i18n="clear_btn">🗑️ Clear</button>
             </div>
 
             <button class="btn btn-info" onclick="closeDay()" style="margin-top:10px;width:100%;">🧾 <span
-                id="closeDayBtn">Close Day</span></button>
+                id="closeDayBtn" data-i18n="close_day_btn">Close Day</span></button>
           </div>
         </div>
       </section>
@@ -160,12 +170,13 @@
   <!-- Close Day Modal -->
   <div id="closeDayModal" class="modal" style="display:none;">
     <div class="modal-content" style="width:400px;">
-      <h3 id="daySummaryTitle">📊 Day Summary</h3>
+      <h3 id="daySummaryTitle" data-i18n="day_summary_title">📊 Day Summary</h3>
       <div id="daySummaryContent" style="text-align:left;margin-top:10px;"></div>
       <br>
-      <button onclick="window.print()" class="btn btn-primary">🖨️ <span id="printBtn">Print</span></button>
+      <button onclick="window.print()" class="btn btn-primary">🖨️ <span id="printBtn"
+          data-i18n="print">Print</span></button>
       <button onclick="document.getElementById('closeDayModal').style.display='none'" class="btn btn-danger">✖️ <span
-          id="cancelBtn">Close</span></button>
+          id="cancelBtn" data-i18n="close">Close</span></button>
     </div>
   </div>
 
@@ -189,6 +200,10 @@
   </div>
 
   <!-- Footer -->
+  <!-- Scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/translations.js"></script>
+  <script src="js/pos-app.js"></script>
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-/* Ali Karam POS System - Complete Styles */
+﻿/* Ali Karam POS System - Complete Styles */
 /* Compatible with Windows 7+ browsers */
 
 /* Reset and Base Styles */
@@ -755,26 +755,6 @@ body.rtl .search-box {
 }
 
 .modal.show {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
-}
-
-body.rtl input,
-body.rtl select,
-body.rtl textarea {
-  direction: rtl;
   text-align: right;
 }
 
@@ -1342,212 +1322,6 @@ body.rtl .cart-item button img {
   #discountModal label,
   #discountModal select,
   #discountModal input,
-  #discountModal button {
-    font-size: 0.9rem;
-  }
-
-  .rtl #discountModal label {
-    text-align: right;
-    display: block;
-  }
-
-  body.rtl .modal-content {
-    direction: rtl;
-    text-align: right;
-  }
-}
-}
-
-/* ===== Receipts Page Enhancements ===== */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.data-table th,
-.data-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.data-table tr:hover {
-  background: #f8f9fa;
-}
-
-#returnModal .modal-body table {
-  width: 100%;
-  margin-top: 10px;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-#returnModal th,
-#returnModal td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #eee;
-  text-align: left;
-}
-
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  width: 350px;
-  max-width: 90%;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-}
-
-body.rtl #returnModal th,
-body.rtl #returnModal td {
-  text-align: right;
-}
-
-#returnModal input[type="number"] {
-  width: 60px;
-  padding: 5px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 0.9rem;
-}
-
-#returnModal textarea {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 0.9rem;
-  resize: vertical;
-}
-
-.btn-action {
-  min-width: 36px;
-  height: 36px;
-  font-size: 18px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tabs .tab {
-  background-color: #f0f0f0;
-  border: none;
-  padding: 8px 12px;
-  margin-right: 5px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  color: #333;
-  transition: all 0.3s ease;
-}
-
-.tabs .tab:hover {
-  background-color: #d9edf7;
-  color: #007bff;
-}
-
-.tabs .tab.active {
-  background-color: #007bff;
-  color: white;
-}
-
-.report-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-.report-table th,
-.report-table td {
-  border: 1px solid #ddd;
-  padding: 8px 10px;
-  text-align: center;
-  font-size: 14px;
-}
-
-.report-table th {
-  background-color: #f7f7f7;
-  color: #333;
-}
-
-.report-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
-}
-
-.report-title {
-  font-weight: bold;
-  font-size: 16px;
-  color: #222;
-  margin-bottom: 10px;
-}
-
-input[type="date"] {
-  padding: 8px 10px;
-  font-size: 14px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 300px;
-}
-
-#salesmen-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-#salesmen-table th,
-#salesmen-table td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: center;
-}
-
-#salesmen-table th {
-  background-color: #f8f8f8;
-  font-weight: bold;
-}
-
-#salesmen-table td:last-child button {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-}
-
-/* === Mobile Cart Enhancements === */
-@media (max-width: 768px) {
-
   #discountModal label,
   #discountModal select,
   #discountModal input,
@@ -2026,3 +1800,13 @@ input[type="date"] {
       z-index: 100;
     }
   }
+
+
+  /* Stock Audit Modal - Maximized */
+  #auditModal .modal-content {
+    width: 90% !important;
+    max-width: 1200px !important;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+}
