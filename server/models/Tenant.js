@@ -5,7 +5,9 @@ const tenantSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
   trialEndsAt: { type: Date, required: true },
+  subscriptionEndsAt: { type: Date },
   isSubscribed: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'on_hold', 'suspended'], default: 'active' },
   subscriptionPlan: { type: String, default: 'free_trial' }, // free_trial, monthly, yearly
   createdAt: { type: Date, default: Date.now },
   settings: {

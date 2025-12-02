@@ -138,6 +138,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ msg: 'Business not found' });
         }
 
+        // Check Tenant Status
+        if (tenant.status === 'on_hold') {
+            return res.status(403).json({ msg: 'Account is Temporarily On Hold. Contact Support.' });
+        }
+        if (tenant.status === 'suspended') {
+            return res.status(403).json({ msg: 'Account Suspended.' });
+        }
+
         const user = await User.findOne({ tenantId: tenant._id, username });
         if (!user) {
             return res.status(400).json({ msg: 'Invalid Credentials' });

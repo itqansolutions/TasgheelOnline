@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Super Admin Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Super Admin Specific Styles */
+        body {
+            background: #f0f2f5;
+        }
+
+        .super-admin-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-hold {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>Super Admin Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Username" required
+                        style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Password" required
+                        style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="super-admin-container" id="dashboard-content" style="display: none;">
+        <div class="header">
+            <h1>Super Admin Dashboard</h1>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+
+        <div class="card">
+            <h2>Clients Management</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Business Name</th>
+                        <th>Email / Phone</th>
+                        <th>Status</th>
+                        <th>Subscription Ends</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tenants-table">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Extend Modal -->
+    <div id="extendModal" class="modal">
+        <div class="modal-content">
+            <h3>Extend Subscription</h3>
+            <select id="extendDuration" style="width: 100%; padding: 10px; margin: 10px 0;">
+                <option value="1">1 Month</option>
+                <option value="3">3 Months</option>
+                <option value="6">6 Months</option>
+                <option value="12">1 Year</option>
+            </select>
+            <div style="text-align: right;">
+                <button onclick="closeModal('extendModal')" class="btn btn-secondary">Cancel</button>
+                <button onclick="confirmExtend()" class="btn btn-success">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/super-admin.js"></script>
+</body>
+
+</html>

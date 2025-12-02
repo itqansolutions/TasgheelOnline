@@ -21,6 +21,7 @@ app.use(express.static(path.join(__dirname, '../')));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/api'));
+app.use('/api/super-admin', require('./routes/super-admin'));
 
 const PORT = process.env.PORT || 5000;
 
