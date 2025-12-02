@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 
 // Hardcoded Super Admin Credentials (for V1)
-const SUPER_ADMIN_USER = 'admin';
-const SUPER_ADMIN_PASS = 'admin123';
+const SUPER_ADMIN_USER = 'tashgheel';
+const SUPER_ADMIN_PASS = 'BuFF@li2025#';
 
 // Middleware to check super admin session (simplified)
 // In a real app, use JWT or session
@@ -113,6 +114,37 @@ router.delete('/tenants/:id', checkSuperAdmin, async (req, res) => {
         await Customer.deleteMany({ tenantId });
 
         res.json({ msg: 'Tenant terminated successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/super-admin/tenants/:id/password
+// @desc    Reset Tenant Admin Password
+router.put('/tenants/:id/password', checkSuperAdmin, async (req, res) => {
+    try {
+        const { newPassword } = req.body;
+        const tenantId = req.params.id;
+
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ msg: 'Password must be at least 6 characters' });
+        }
+
+        // Find the admin user for this tenant
+        // Assuming the first user created or role='admin' is the main admin.
+        // Let's find a user with role 'admin' for this tenant.
+        const user = await User.findOne({ tenantId, role: 'admin' });
+
+        if (!user) {
+            return res.status(404).json({ msg: 'Admin user not found for this tenant' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.passwordHash = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ msg: 'Password reset successfully' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

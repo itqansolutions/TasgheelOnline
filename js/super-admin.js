@@ -90,6 +90,7 @@ function renderTenants(tenants) {
             <td>${endDate.toLocaleDateString()}</td>
             <td>
                 <button onclick="openExtendModal('${t._id}')" class="btn btn-success btn-sm">Activate/Extend</button>
+                <button onclick="resetPassword('${t._id}')" class="btn btn-info btn-sm" style="background-color: #17a2b8; color: white;">Reset Pass</button>
                 ${t.status === 'active'
                 ? `<button onclick="toggleHold('${t._id}', 'on_hold')" class="btn btn-warning btn-sm">Hold</button>`
                 : `<button onclick="toggleHold('${t._id}', 'active')" class="btn btn-primary btn-sm">Unhold</button>`
@@ -162,5 +163,36 @@ async function confirmExtend() {
         alert('Subscription Extended');
     } catch (err) {
         alert('Error extending subscription');
+    }
+}
+
+async function resetPassword(tenantId) {
+    const newPassword = prompt("Enter new password for this client's admin:");
+    if (!newPassword) return;
+
+    if (newPassword.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+    }
+
+    try {
+        const secret = localStorage.getItem('superAdminSecret');
+        const res = await fetch(`${API_URL}/tenants/${tenantId}/password`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-super-admin-secret': secret
+            },
+            body: JSON.stringify({ newPassword })
+        });
+
+        if (res.ok) {
+            alert('Password reset successfully');
+        } else {
+            const data = await res.json();
+            alert(data.msg || 'Failed to reset password');
+        }
+    } catch (err) {
+        alert('Error resetting password');
     }
 }
