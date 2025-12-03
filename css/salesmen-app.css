@@ -1,100 +1,200 @@
 /* === Salesmen Page Styles === */
 
+:root {
+  --primary-color: #4361ee;
+  --primary-hover: #3a56d4;
+  --secondary-color: #e9ecef;
+  --text-color: #2b2d42;
+  --border-color: #dee2e6;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
 .card {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.card h2 {
+  margin-top: 0;
   margin-bottom: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--secondary-color);
+  padding-bottom: 10px;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #495057;
 }
 
 .form-inline-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 15px;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 .form-inline-group .form-group {
   flex: 1;
-  min-width: 150px;
+  min-width: 200px;
 }
 
 input[type="text"],
 input[type="number"],
 select {
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+  transition: var(--transition);
+  background-color: #f8f9fa;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+  background-color: #fff;
 }
 
 button.btn {
-  padding: 8px 16px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 4px;
-  background-color: #007bff;
+  border-radius: 8px;
+  background-color: var(--primary-color);
   color: white;
   cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+button.btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+button.btn:active {
+  transform: translateY(0);
 }
 
 button.btn-secondary {
   background-color: #6c757d;
 }
 
+button.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Table Styles */
 .report-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .report-table th,
 .report-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: center;
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .report-table th {
-  background-color: #f2f2f2;
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
 }
 
-.report-table tbody tr:nth-child(even) {
-  background-color: #fafafa;
+.report-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-/* دعم RTL */
+.report-table tbody tr {
+  transition: background-color 0.2s;
+}
+
+.report-table tbody tr:hover {
+  background-color: #f1f3f5;
+}
+
+/* RTL Support */
 body[dir="rtl"] .form-group,
 body[dir="rtl"] .form-inline-group {
-  flex-direction: row-reverse;
   text-align: right;
 }
 
-/* أداء لوني حسب النسبة */
+body[dir="rtl"] .report-table th,
+body[dir="rtl"] .report-table td {
+  text-align: right;
+}
+
+/* Performance Indicators */
 #salesmen-performance-table td:last-child {
   font-weight: bold;
 }
+
 #salesmen-performance-table tr td:nth-child(6):not(:empty) {
-  color: #28a745;
-}
-#salesmen-performance-table tr td:nth-child(6):not(:empty):before {
-  content: "\2191 ";
-}
-#salesmen-performance-table tr td:nth-child(6):not(:empty):not([data-pass="true"]) {
-  color: #dc3545;
-  content: "\2193 ";
+  color: var(--success-color);
 }
 
-/* حذف زر */
+#salesmen-performance-table tr td:nth-child(6):not(:empty):before {
+  content: "↑ ";
+}
+
+#salesmen-performance-table tr td:nth-child(6):not(:empty):not([data-pass="true"]) {
+  color: var(--danger-color);
+}
+
+/* Delete Button */
 button.delete {
   background: none;
   border: none;
   font-size: 18px;
-  color: red;
+  color: #fa5252;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+button.delete:hover {
+  background-color: #ffe3e3;
+}
+
+.mt-20 {
+  margin-top: 20px;
 }
