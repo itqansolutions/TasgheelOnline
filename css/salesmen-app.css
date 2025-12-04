@@ -198,3 +198,16 @@ button.delete:hover {
 .mt-20 {
   margin-top: 20px;
 }
+
+.sidebar-logo {
+  width: 40px;
+  height: 40px;
+  vertical-align: middle;
+  margin-right: 10px;
+  border-radius: 50%;
+}
+
+body[dir="rtl"] .sidebar-logo {
+  margin-right: 0;
+  margin-left: 10px;
+}

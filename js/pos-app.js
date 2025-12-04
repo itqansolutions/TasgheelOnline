@@ -212,12 +212,14 @@ async function loadSalesmen() {
 
 // ===================== CART LOGIC =====================
 function addToCart(product) {
+  console.log('Adding to cart:', product);
   const existingItem = cart.find(item => item._id === product._id);
   if (existingItem) {
     existingItem.qty++;
   } else {
     cart.push({ ...product, qty: 1 });
   }
+  console.log('Cart updated:', cart);
   updateCartSummary();
 }
 
