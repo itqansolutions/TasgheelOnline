@@ -9,6 +9,10 @@ const Tenant = require('../models/Tenant');
 const User = require('../models/User');
 const Customer = require('../models/Customer');
 const bcrypt = require('bcryptjs');
+const Category = require('../models/Category');
+const StockAdjustment = require('../models/StockAdjustment');
+const Shift = require('../models/Shift');
+const AuditLog = require('../models/AuditLog');
 
 // CUSTOMERS
 
@@ -290,6 +294,85 @@ router.get('/sales/:id', auth, async (req, res) => {
     }
 });
 
+// @route   POST /api/sales/:id/return
+// @desc    Process a return (partial or full)
+// @access  Private
+router.post('/sales/:id/return', auth, async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{ code, qty }]
+        let sale;
+
+        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+            sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        }
+        if (!sale) {
+            sale = await Sale.findOne({ receiptId: req.params.id, tenantId: req.tenantId });
+        }
+        if (!sale) return res.status(404).json({ msg: 'Sale not found' });
+
+        const returnRecord = {
+            items: [],
+            totalRefund: 0,
+            cashier: req.user.username,
+            date: new Date()
+        };
+
+        for (const returnItem of items) {
+            const saleItem = sale.items.find(i => i.code === returnItem.code || i._id.toString() === returnItem.code);
+
+            if (!saleItem) continue;
+
+            const remainingQty = saleItem.qty - (saleItem.returnedQty || 0);
+            if (returnItem.qty > remainingQty) {
+                return res.status(400).json({ msg: `Cannot return more than sold quantity for item ${saleItem.name}` });
+            }
+
+            // Update sale item
+            saleItem.returnedQty = (saleItem.returnedQty || 0) + returnItem.qty;
+
+            // Calculate refund (simplified, assuming proportional discount)
+            const itemPrice = saleItem.price; // This is unit price
+            const refundAmount = itemPrice * returnItem.qty;
+
+            returnRecord.items.push({
+                code: saleItem.code,
+                qty: returnItem.qty,
+                refundAmount
+            });
+            returnRecord.totalRefund += refundAmount;
+
+            // Update Product Stock
+            // Try finding by ID first (if code is ID), then by barcode
+            let product = await Product.findOne({ _id: saleItem.productId, tenantId: req.tenantId });
+            if (!product && saleItem.code) {
+                product = await Product.findOne({ barcode: saleItem.code, tenantId: req.tenantId });
+            }
+
+            if (product) {
+                product.stock += returnItem.qty;
+                await product.save();
+            }
+        }
+
+        if (returnRecord.items.length > 0) {
+            sale.returns.push(returnRecord);
+
+            // Check if fully returned
+            const allReturned = sale.items.every(i => i.qty === (i.returnedQty || 0));
+            sale.status = allReturned ? 'returned' : 'partial_returned';
+
+            await sale.save();
+            res.json(sale);
+        } else {
+            res.status(400).json({ msg: 'No valid items to return' });
+        }
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // SALESMEN
 
 // @route   GET /api/salesmen
@@ -494,6 +577,253 @@ router.delete('/users/:id', auth, async (req, res) => {
 
         await User.deleteOne({ _id: req.params.id });
         res.json({ msg: 'User removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// CATEGORIES
+
+// @route   GET /api/categories
+// @desc    Get all categories
+// @access  Private
+router.get('/categories', auth, async (req, res) => {
+    try {
+        const categories = await Category.find({ tenantId: req.tenantId }).sort({ name: 1 });
+        res.json(categories);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/categories
+// @desc    Add new category
+// @access  Private
+router.post('/categories', auth, async (req, res) => {
+    try {
+        const newCategory = new Category({
+            tenantId: req.tenantId,
+            ...req.body
+        });
+        const category = await newCategory.save();
+        res.json(category);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/categories/:id
+// @desc    Update category
+// @access  Private
+router.put('/categories/:id', auth, async (req, res) => {
+    try {
+        let category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!category) return res.status(404).json({ msg: 'Category not found' });
+
+        const { name, nameEn } = req.body;
+        if (name) category.name = name;
+        if (nameEn) category.nameEn = nameEn;
+
+        await category.save();
+        res.json(category);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/categories/:id
+// @desc    Delete category
+// @access  Private
+router.delete('/categories/:id', auth, async (req, res) => {
+    try {
+        const category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!category) return res.status(404).json({ msg: 'Category not found' });
+
+        await Category.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Category removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// INVENTORY / STOCK ADJUSTMENT
+
+// @route   POST /api/inventory/adjust
+// @desc    Adjust stock (audit)
+// @access  Private
+router.post('/inventory/adjust', auth, async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{ productId, newStock, reason }]
+
+        const adjustmentRecord = {
+            tenantId: req.tenantId,
+            adjustedBy: req.user.username,
+            date: new Date(),
+            items: []
+        };
+
+        for (const item of items) {
+            const product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
+            if (product) {
+                const oldStock = product.stock;
+                const newStock = parseInt(item.newStock);
+                const difference = newStock - oldStock;
+
+                if (difference !== 0) {
+                    product.stock = newStock;
+                    await product.save();
+
+                    adjustmentRecord.items.push({
+                        productId: product._id,
+                        productName: product.name,
+                        oldStock,
+                        newStock,
+                        difference,
+                        reason: item.reason || 'Manual Adjustment'
+                    });
+                }
+            }
+        }
+
+        if (adjustmentRecord.items.length > 0) {
+            const adjustment = new StockAdjustment(adjustmentRecord);
+            await adjustment.save();
+            res.json({ msg: 'Stock adjusted successfully', adjustment });
+        } else {
+            res.json({ msg: 'No changes made' });
+        }
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SHIFT MANAGEMENT
+
+// @route   GET /api/shifts/current
+// @desc    Get current open shift for user
+// @access  Private
+router.get('/shifts/current', auth, async (req, res) => {
+    try {
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
+        });
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/shifts/open
+// @desc    Open a new shift
+// @access  Private
+router.post('/shifts/open', auth, async (req, res) => {
+    try {
+        const existingShift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
+        });
+
+        if (existingShift) {
+            return res.status(400).json({ msg: 'Shift already open' });
+        }
+
+        const { startCash } = req.body;
+        const newShift = new Shift({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            startCash,
+            status: 'open'
+        });
+
+        await newShift.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'OPEN_SHIFT',
+            details: { shiftId: newShift._id, startCash }
+        });
+        await log.save();
+
+        res.json(newShift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/shifts/close
+// @desc    Close current shift
+// @access  Private
+router.post('/shifts/close', auth, async (req, res) => {
+    try {
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
+        });
+
+        if (!shift) {
+            return res.status(400).json({ msg: 'No open shift found' });
+        }
+
+        const { actualCash } = req.body;
+
+        // Calculate expected cash
+        // Start Cash + Sales (Cash) + Cash In - Cash Out - Returns (Cash)
+        // This is a simplified calculation. For production, you'd query Sales for this shift.
+        // For now, we'll rely on the frontend or a separate calculation service.
+        // But let's at least mark it closed.
+
+        shift.status = 'closed';
+        shift.endTime = Date.now();
+        shift.actualCash = actualCash;
+
+        await shift.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'CLOSE_SHIFT',
+            details: { shiftId: shift._id, actualCash }
+        });
+        await log.save();
+
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// AUDIT LOGS
+
+// @route   GET /api/audit-logs
+// @desc    Get audit logs
+// @access  Private (Admin only)
+router.get('/audit-logs', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+            return res.status(403).json({ msg: 'Access denied' });
+        }
+
+        const logs = await AuditLog.find({ tenantId: req.tenantId })
+            .sort({ timestamp: -1 })
+            .limit(100);
+        res.json(logs);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

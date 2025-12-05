@@ -146,6 +146,27 @@
             </table>
           </div>
         </div>
+
+        <div class="card">
+          <div class="card-header" data-i18n="audit_logs">Audit Logs</div>
+          <div class="card-body">
+            <div style="max-height:400px;overflow-y:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="timestamp">Time</th>
+                    <th data-i18n="user">User</th>
+                    <th data-i18n="action">Action</th>
+                    <th data-i18n="details">Details</th>
+                  </tr>
+                </thead>
+                <tbody id="auditLogsBody"></tbody>
+              </table>
+            </div>
+            <button onclick="loadAuditLogs()" class="btn btn-primary mt-10" data-i18n="refresh_logs">🔄 Refresh
+              Logs</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -156,14 +177,43 @@
   </footer>
 
   <script src="js/auth.js"></script>
+  <script src="js/translations.js"></script>
   <script src="js/admin-app.js"></script>
   <script>
+    // Add Audit Log loading logic here for simplicity, or move to admin-app.js
+    async function loadAuditLogs() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/audit-logs`, {
+          headers: { 'x-auth-token': token }
+        });
+        const logs = await response.json();
+
+        const tbody = document.getElementById('auditLogsBody');
+        tbody.innerHTML = '';
+
+        logs.forEach(log => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+                      <td>${new Date(log.timestamp).toLocaleString()}</td>
+                      <td>${log.user}</td>
+                      <td>${log.action}</td>
+                      <td><pre style="font-size:0.8em;">${JSON.stringify(log.details, null, 2)}</pre></td>
+                  `;
+          tbody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error loading logs:', error);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const currentUser = JSON.parse(localStorage.getItem('currentUser'));
       if (currentUser?.role === 'cashier') {
         alert('Access denied');
         window.location.href = 'pos.html';
       }
+      loadAuditLogs();
     });
   </script>
 </body>

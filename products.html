@@ -91,10 +91,16 @@
         </div>
 
         <div class="card">
-          <div class="card-header" data-i18n="product_list">Product List</div>
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="product_list">Product List</span>
+            <div style="display:flex; gap:10px;">
+              <button onclick="openCategoryModal()" class="btn btn-secondary" data-i18n="manage_categories">📂
+                Categories</button>
+              <button onclick="openStockAudit()" class="btn btn-warning" data-i18n="stock_audit_btn">📋 Stock
+                Audit</button>
+            </div>
+          </div>
           <div class="card-body">
-            <button onclick="openStockAudit()" class="btn btn-warning mb-10" data-i18n="stock_audit_btn">📋 Stock
-              Audit</button>
             <table class="data-table">
               <thead>
                 <tr>
@@ -114,22 +120,6 @@
             </table>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-header" data-i18n="manage_categories">Manage Categories</div>
-          <div class="card-body">
-            <form id="category-form" class="form-grid">
-              <div class="form-group">
-                <label for="new-category" data-i18n="new_category">New Category:</label>
-                <input type="text" id="new-category" required>
-              </div>
-              <div class="form-group">
-                <button type="submit" class="btn btn-primary" data-i18n="add_category">Add Category</button>
-              </div>
-            </form>
-            <ul id="category-list" class="mt-20"></ul>
-          </div>
-        </div>
       </section>
     </main>
   </div>
@@ -138,6 +128,29 @@
     Tashgheel POS© 2025 - Designed and developed by <strong>itqan</strong> |
     <a href="tel:+201126522373">+201126522373 / +201155253886</a>
   </footer>
+
+  <!-- Category Management Modal -->
+  <div id="categoryModal" class="modal" style="display:none;">
+    <div class="modal-content" style="width: 500px;">
+      <h3 data-i18n="manage_categories">📂 Manage Categories</h3>
+
+      <form id="category-form-modal" style="display:flex; gap:10px; margin-bottom:15px;">
+        <input type="text" id="new-category-modal" placeholder="New Category Name" required
+          style="flex:1; padding:8px;">
+        <button type="submit" class="btn btn-primary" data-i18n="add">Add</button>
+      </form>
+
+      <div style="max-height: 300px; overflow-y: auto; border: 1px solid #eee;">
+        <table class="data-table" style="margin:0;">
+          <tbody id="category-list-body"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 15px; text-align: right;">
+        <button onclick="closeCategoryModal()" class="btn btn-danger" data-i18n="close">Close</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Stock Audit Modal -->
   <div id="auditModal" class="modal" style="display: none;">

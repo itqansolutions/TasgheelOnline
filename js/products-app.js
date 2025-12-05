@@ -1,14 +1,25 @@
-// Updated products-app.js
+// products-app.js
 // API_URL is defined in auth.js
-
 
 document.addEventListener("DOMContentLoaded", () => {
   loadProducts();
   loadCategories();
 
   document.getElementById("product-form").addEventListener("submit", handleAddProduct);
-  document.getElementById("category-form").addEventListener("submit", handleAddCategory);
+  document.getElementById("category-form-modal").addEventListener("submit", handleAddCategory);
+
+  // Expose functions globally
+  window.openCategoryModal = openCategoryModal;
+  window.closeCategoryModal = closeCategoryModal;
+  window.deleteCategory = deleteCategory;
+  window.openStockAudit = openStockAudit;
+  window.closeStockAudit = closeStockAudit;
+  window.saveStockAudit = saveStockAudit;
+  window.deleteProduct = deleteProduct;
+  window.editProduct = editProduct;
 });
+
+// --- PRODUCTS ---
 
 async function loadProducts() {
   try {
@@ -21,10 +32,19 @@ async function loadProducts() {
     const tbody = document.getElementById("product-table-body");
     tbody.innerHTML = "";
 
-    products.forEach((p, i) => {
+    products.forEach((p) => {
       const row = document.createElement("tr");
+
+      // Low Stock Alert
+      if (p.stock <= (p.minStock || 5)) {
+        row.style.backgroundColor = "#fff3cd"; // Warning color
+      }
+      if (p.stock <= 0) {
+        row.style.backgroundColor = "#f8d7da"; // Danger color
+      }
+
       row.innerHTML = `
-        <td>${p.barcode || "-"}</td>
+        <td>${p.code || "-"}</td>
         <td>${p.name}</td>
         <td>${p.barcode || "-"}</td>
         <td>${p.category || "-"}</td>
@@ -39,29 +59,6 @@ async function loadProducts() {
       tbody.appendChild(row);
     });
 
-    window.deleteProduct = async function (id) {
-      if (!confirm("Are you sure you want to delete this product?")) return;
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/products/${id}`, {
-          method: 'DELETE',
-          headers: { 'x-auth-token': token }
-        });
-        if (response.ok) {
-          loadProducts();
-        } else {
-          alert("Failed to delete product");
-        }
-      } catch (e) {
-        console.error(e);
-        alert("Error deleting product");
-      }
-    };
-
-    window.editProduct = function (id) {
-      // Placeholder for edit
-      alert("Edit feature requires a modal or form population logic. Please delete and re-add for now.");
-    };
   } catch (error) {
     console.error('Error loading products:', error);
   }
@@ -70,6 +67,7 @@ async function loadProducts() {
 async function handleAddProduct(e) {
   e.preventDefault();
 
+  const code = document.getElementById("product-code").value.trim();
   const name = document.getElementById("product-name").value.trim();
   const category = document.getElementById("product-category").value;
   const barcode = document.getElementById("product-barcode").value.trim();
@@ -79,7 +77,7 @@ async function handleAddProduct(e) {
 
   if (!name || isNaN(price)) return alert("Please fill required fields");
 
-  const product = { name, category, barcode, price, cost, stock };
+  const product = { code, name, category, barcode, price, cost, stock };
 
   try {
     const token = localStorage.getItem('token');
@@ -97,7 +95,8 @@ async function handleAddProduct(e) {
       e.target.reset();
       loadProducts();
     } else {
-      alert('Failed to add product');
+      const err = await response.json();
+      alert('Failed to add product: ' + err.msg);
     }
   } catch (error) {
     console.error('Error adding product:', error);
@@ -105,42 +104,120 @@ async function handleAddProduct(e) {
   }
 }
 
-function loadCategories() {
-  const categories = JSON.parse(localStorage.getItem("categories") || "[]");
-  const select = document.getElementById("product-category");
-  const list = document.getElementById("category-list");
-
-  select.innerHTML = '<option value="">--</option>';
-  list.innerHTML = "";
-
-  categories.forEach(cat => {
-    const opt = document.createElement("option");
-    opt.value = cat;
-    opt.textContent = cat;
-    select.appendChild(opt);
-
-    const li = document.createElement("li");
-    li.textContent = cat;
-    list.appendChild(li);
-  });
-}
-
-function handleAddCategory(e) {
-  e.preventDefault();
-  const input = document.getElementById("new-category");
-  const cat = input.value.trim();
-  if (!cat) return;
-
-  const categories = JSON.parse(localStorage.getItem("categories") || "[]");
-  if (!categories.includes(cat)) {
-    categories.push(cat);
-    localStorage.setItem("categories", JSON.stringify(categories));
-    loadCategories();
+async function deleteProduct(id) {
+  if (!confirm("Are you sure you want to delete this product?")) return;
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-auth-token': token }
+    });
+    if (response.ok) {
+      loadProducts();
+    } else {
+      alert("Failed to delete product");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error deleting product");
   }
-  input.value = "";
 }
 
-// Stock Audit Functions
+function editProduct(id) {
+  alert("Edit feature coming soon (Phase 3)");
+}
+
+// --- CATEGORIES ---
+
+async function loadCategories() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/categories`, {
+      headers: { 'x-auth-token': token }
+    });
+    const categories = await response.json();
+
+    const select = document.getElementById("product-category");
+    const listBody = document.getElementById("category-list-body");
+
+    select.innerHTML = '<option value="">-- Select Category --</option>';
+    listBody.innerHTML = "";
+
+    categories.forEach(cat => {
+      // Populate Dropdown
+      const opt = document.createElement("option");
+      opt.value = cat.name;
+      opt.textContent = cat.name;
+      select.appendChild(opt);
+
+      // Populate Modal List
+      const row = document.createElement("tr");
+      row.innerHTML = `
+                <td>${cat.name}</td>
+                <td style="text-align:right;">
+                    <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat._id}')">🗑️</button>
+                </td>
+            `;
+      listBody.appendChild(row);
+    });
+
+  } catch (error) {
+    console.error('Error loading categories:', error);
+  }
+}
+
+function openCategoryModal() {
+  document.getElementById("categoryModal").style.display = "flex";
+}
+
+function closeCategoryModal() {
+  document.getElementById("categoryModal").style.display = "none";
+}
+
+async function handleAddCategory(e) {
+  e.preventDefault();
+  const input = document.getElementById("new-category-modal");
+  const name = input.value.trim();
+  if (!name) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ name })
+    });
+
+    if (response.ok) {
+      input.value = "";
+      loadCategories();
+    } else {
+      alert('Failed to add category');
+    }
+  } catch (error) {
+    console.error('Error adding category:', error);
+  }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Delete this category?')) return;
+  try {
+    const token = localStorage.getItem('token');
+    await fetch(`${API_URL}/categories/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-auth-token': token }
+    });
+    loadCategories();
+  } catch (error) {
+    console.error('Error deleting category:', error);
+  }
+}
+
+// --- STOCK AUDIT ---
+
 let auditProducts = [];
 
 async function openStockAudit() {
@@ -157,12 +234,12 @@ async function openStockAudit() {
     auditProducts.forEach((p, index) => {
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${p.code || p.barcode || '-'}</td>
-        <td>${p.name}</td>
-        <td>${p.stock || 0}</td>
-        <td><input type="number" id="actual-${index}" value="${p.stock || 0}" min="0" style="width:80px;"></td>
-        <td id="diff-${index}">0</td>
-      `;
+                <td>${p.code || p.barcode || '-'}</td>
+                <td>${p.name}</td>
+                <td>${p.stock || 0}</td>
+                <td><input type="number" id="actual-${index}" value="${p.stock || 0}" min="0" style="width:80px;"></td>
+                <td id="diff-${index}">0</td>
+            `;
       tbody.appendChild(row);
 
       // Update difference on input change
@@ -170,8 +247,10 @@ async function openStockAudit() {
         const actual = parseInt(e.target.value) || 0;
         const recorded = p.stock || 0;
         const diff = actual - recorded;
-        document.getElementById(`diff-${index}`).textContent = diff;
-        document.getElementById(`diff-${index}`).style.color = diff < 0 ? 'red' : (diff > 0 ? 'green' : 'black');
+        const diffEl = document.getElementById(`diff-${index}`);
+        diffEl.textContent = diff;
+        diffEl.style.color = diff < 0 ? 'red' : (diff > 0 ? 'green' : 'black');
+        diffEl.style.fontWeight = diff !== 0 ? 'bold' : 'normal';
       });
     });
 
@@ -187,52 +266,52 @@ function closeStockAudit() {
 }
 
 async function saveStockAudit() {
-  if (!confirm('Save stock audit changes?')) return;
+  if (!confirm('Submit stock adjustments? This will update inventory.')) return;
 
   try {
     const token = localStorage.getItem('token');
-    const updates = [];
+    const itemsToAdjust = [];
 
     auditProducts.forEach((p, index) => {
       const actualInput = document.getElementById(`actual-${index}`);
       const actualStock = parseInt(actualInput.value) || 0;
+      const recordedStock = p.stock || 0;
 
-      if (actualStock !== (p.stock || 0)) {
-        updates.push({
-          id: p._id,
-          stock: actualStock
+      if (actualStock !== recordedStock) {
+        itemsToAdjust.push({
+          productId: p._id,
+          newStock: actualStock,
+          reason: 'Stock Audit'
         });
       }
     });
 
-    if (updates.length === 0) {
-      alert('No changes to save');
+    if (itemsToAdjust.length === 0) {
+      alert('No changes detected.');
       closeStockAudit();
       return;
     }
 
-    // Update each product
-    for (const update of updates) {
-      await fetch(`${API_URL}/products/${update.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        },
-        body: JSON.stringify({ stock: update.stock })
-      });
+    const response = await fetch(`${API_URL}/inventory/adjust`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ items: itemsToAdjust })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      alert(`✅ Stock audit saved! ${result.msg}`);
+      closeStockAudit();
+      loadProducts();
+    } else {
+      alert('Failed to save stock audit');
     }
 
-    alert(`✅ Stock audit saved! Updated ${updates.length} products.`);
-    closeStockAudit();
-    loadProducts();
   } catch (error) {
     console.error('Error saving stock audit:', error);
     alert('Failed to save stock audit');
   }
 }
-
-// Make functions global
-window.openStockAudit = openStockAudit;
-window.closeStockAudit = closeStockAudit;
-window.saveStockAudit = saveStockAudit;

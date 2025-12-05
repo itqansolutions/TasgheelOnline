@@ -160,12 +160,43 @@
                 data-i18n="clear_btn">🗑️ Clear</button>
             </div>
 
-            <button class="btn btn-info" onclick="closeDay()" style="margin-top:10px;width:100%;">🧾 <span
-                id="closeDayBtn" data-i18n="close_day_btn">Close Day</span></button>
+            <button class="btn btn-danger" onclick="closeShift()" style="margin-top:10px;width:100%;">🛑 <span
+                id="closeShiftBtn" data-i18n="close_shift">Close Shift</span></button>
           </div>
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Open Shift Modal -->
+  <div id="openShiftModal" class="modal" style="display:none; background:rgba(0,0,0,0.9);">
+    <div class="modal-content" style="text-align:center;">
+      <h2 data-i18n="open_shift">Open Shift</h2>
+      <p data-i18n="enter_start_cash">Please enter the starting cash amount to begin.</p>
+      <input type="number" id="startCashInput" placeholder="0.00"
+        style="font-size:1.5em; padding:10px; width:150px; text-align:center; margin:20px 0;">
+      <br>
+      <button onclick="submitOpenShift()" class="btn btn-success btn-lg" data-i18n="start_shift">Start Shift</button>
+    </div>
+  </div>
+
+  <!-- Close Shift Modal -->
+  <div id="closeShiftModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3 data-i18n="close_shift">Close Shift</h3>
+      <p data-i18n="confirm_close_shift">Are you sure you want to close your shift?</p>
+
+      <div class="form-group">
+        <label data-i18n="actual_cash">Actual Cash in Drawer:</label>
+        <input type="number" id="actualCashInput" required>
+      </div>
+
+      <div class="modal-actions" style="margin-top:15px;">
+        <button onclick="submitCloseShift()" class="btn btn-danger" data-i18n="close_shift">Close Shift</button>
+        <button onclick="document.getElementById('closeShiftModal').style.display='none'" class="btn btn-secondary"
+          data-i18n="cancel">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Close Day Modal -->

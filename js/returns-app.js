@@ -27,13 +27,36 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display items for selection
         itemsBody.innerHTML = '';
         currentReceipt.items.forEach((item, idx) => {
+          const soldQty = item.qty;
+          const returnedQty = item.returnedQty || 0;
+          const remainingQty = soldQty - returnedQty;
+
+          if (remainingQty <= 0) return; // Skip fully returned items
+
           const row = document.createElement('tr');
           row.innerHTML = `
-                <td><input type="checkbox" name="return-item" value="${idx}" /></td>
+                <td><input type="checkbox" name="return-item" value="${idx}" data-max="${remainingQty}" /></td>
                 <td>${item.name}</td>
-                <td>${item.qty}</td>
+                <td>${soldQty}</td>
+                <td>${returnedQty}</td>
+                <td>
+                    <input type="number" class="form-control return-qty-input" 
+                           data-idx="${idx}" 
+                           min="1" max="${remainingQty}" 
+                           value="${remainingQty}" 
+                           style="width: 80px;" disabled />
+                </td>
               `;
           itemsBody.appendChild(row);
+        });
+
+        // Enable/Disable qty input based on checkbox
+        itemsBody.querySelectorAll('input[name="return-item"]').forEach(checkbox => {
+          checkbox.addEventListener('change', (e) => {
+            const idx = e.target.value;
+            const qtyInput = itemsBody.querySelector(`.return-qty-input[data-idx="${idx}"]`);
+            if (qtyInput) qtyInput.disabled = !e.target.checked;
+          });
         });
 
         itemsContainer.style.display = 'block';
@@ -52,50 +75,55 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     if (!currentReceipt) return;
 
-    const selectedIndexes = Array.from(document.querySelectorAll('input[name="return-item"]:checked'))
-      .map(input => parseInt(input.value));
+    const selectedCheckboxes = Array.from(document.querySelectorAll('input[name="return-item"]:checked'));
 
-    if (!selectedIndexes.length) {
+    if (!selectedCheckboxes.length) {
       alert('Please select items to return.');
       return;
+    }
+
+    const itemsToReturn = [];
+
+    for (const checkbox of selectedCheckboxes) {
+      const idx = parseInt(checkbox.value);
+      const qtyInput = itemsBody.querySelector(`.return-qty-input[data-idx="${idx}"]`);
+      const returnQty = parseInt(qtyInput.value);
+      const maxQty = parseInt(checkbox.dataset.max);
+
+      if (returnQty <= 0 || returnQty > maxQty) {
+        alert(`Invalid quantity for item. Max returnable: ${maxQty}`);
+        return;
+      }
+
+      const item = currentReceipt.items[idx];
+      itemsToReturn.push({
+        code: item.code || item._id, // Use code or ID as identifier
+        qty: returnQty
+      });
     }
 
     try {
       const token = localStorage.getItem('token');
 
-      // Fetch products to get their IDs and current stock
-      // Optimization: We could fetch only needed products if we had an endpoint for that, 
-      // but fetching all is okay for small catalogs.
-      const prodResponse = await fetch(`${API_URL}/products`, {
-        headers: { 'x-auth-token': token }
+      const response = await fetch(`${API_URL}/sales/${currentReceipt._id}/return`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token
+        },
+        body: JSON.stringify({ items: itemsToReturn })
       });
-      const products = await prodResponse.json();
 
-      for (const index of selectedIndexes) {
-        const item = currentReceipt.items[index];
-        // Find product by barcode (code) or _id
-        const product = products.find(p => p.barcode === item.code || p._id === item.code);
-
-        if (product) {
-          // Update product stock (increase for return)
-          const newStock = product.stock + item.qty;
-
-          await fetch(`${API_URL}/products/${product._id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-auth-token': token
-            },
-            body: JSON.stringify({ stock: newStock })
-          });
-        }
+      if (response.ok) {
+        alert('Items returned and stock updated successfully.');
+        itemsContainer.style.display = 'none';
+        itemsForm.reset();
+        searchForm.reset();
+        currentReceipt = null;
+      } else {
+        const errData = await response.json();
+        alert(`Failed to process return: ${errData.msg}`);
       }
-
-      alert('Items returned and stock updated successfully.');
-      itemsContainer.style.display = 'none';
-      itemsForm.reset();
-      searchForm.reset();
-      currentReceipt = null;
 
     } catch (error) {
       console.error('Error processing return:', error);

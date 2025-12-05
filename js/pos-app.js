@@ -8,33 +8,114 @@ let currentDiscountIndex = null;
 // const API_URL = window.API_URL || '/api';
 
 // ===================== INIT =====================
-document.addEventListener("DOMContentLoaded", () => {
+// SHIFT MANAGEMENT
+
+async function checkOpenShift() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/shifts/current`, {
+      headers: { 'x-auth-token': token }
+    });
+    const shift = await response.json();
+
+    if (!shift) {
+      // No open shift, show modal
+      document.getElementById('openShiftModal').style.display = 'flex';
+      // Disable POS interactions
+      disablePOS();
+    } else {
+      // Shift open, enable POS
+      enablePOS();
+    }
+  } catch (error) {
+    console.error('Error checking shift:', error);
+  }
+}
+
+function disablePOS() {
+  document.querySelectorAll('.btn').forEach(btn => {
+    if (!btn.closest('#openShiftModal') && !btn.closest('.sidebar-footer')) {
+      btn.disabled = true;
+    }
+  });
+  document.getElementById('productSearch').disabled = true;
+}
+
+function enablePOS() {
+  document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
+  document.getElementById('productSearch').disabled = false;
+  updateCartSummary(); // Re-evaluate cart buttons
+}
+
+async function submitOpenShift() {
+  const startCash = parseFloat(document.getElementById('startCashInput').value);
+  if (isNaN(startCash)) return alert('Please enter valid start cash');
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/shifts/open`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ startCash })
+    });
+
+    if (response.ok) {
+      document.getElementById('openShiftModal').style.display = 'none';
+      enablePOS();
+      alert('Shift opened successfully!');
+    } else {
+      alert('Failed to open shift');
+    }
+  } catch (error) {
+    console.error('Error opening shift:', error);
+    alert('Server error');
+  }
+}
+
+function closeShift() {
+  document.getElementById('closeShiftModal').style.display = 'flex';
+}
+
+async function submitCloseShift() {
+  const actualCash = parseFloat(document.getElementById('actualCashInput').value);
+  if (isNaN(actualCash)) return alert('Please enter actual cash amount');
+
+  if (!confirm('Are you sure you want to close the shift?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/shifts/close`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ actualCash })
+    });
+
+    if (response.ok) {
+      alert('Shift closed successfully!');
+      location.reload(); // Reload to show Open Shift modal again
+    } else {
+      alert('Failed to close shift');
+    }
+  } catch (error) {
+    console.error('Error closing shift:', error);
+    alert('Server error');
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
   loadSalesmen();
-
-  // يضمن ربط السيرش مرة واحدة حتى لو العنصر اتبدّل/اتأخر
   bindSearchOnce();
-  // يضمن أن حقل السيرش قابل للكلك ومفيش طبقة مغطيّاه
   ensureSearchClickable();
-
-  // يضمن الربط والتحديث عند الرجوع Back/Forward من صفحة تانية
-  window.addEventListener("pageshow", () => {
-    bindSearchOnce();
-    ensureSearchClickable();
-    loadProducts();
-    const q = document.getElementById("productSearch")?.value?.trim();
-    if (q) handleSearch();
-  });
-
-  // احتفاظ بالـ delegation كشبكة أمان
-  document.getElementById("productSearch")?.addEventListener("input", handleSearch);
-  document.addEventListener("input", (e) => {
-    if (e.target && e.target.id === "productSearch") handleSearch();
-  });
-
-  document.getElementById("closeDayBtn")?.addEventListener("click", printDailySummary);
-  updateCartSummary();
   checkTrialStatus();
+  checkOpenShift(); // Check shift status
 });
 
 async function checkTrialStatus() {

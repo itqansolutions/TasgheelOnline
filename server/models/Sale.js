@@ -17,9 +17,20 @@ const saleSchema = new mongoose.Schema({
             type: { type: String, enum: ['none', 'percent', 'value'], default: 'none' },
             value: Number
         },
-        cost: Number
+        cost: Number,
+        returnedQty: { type: Number, default: 0 } // Track returned quantity per item
     }],
-    status: { type: String, default: 'finished' }
+    status: { type: String, default: 'finished' }, // finished, returned, partial_returned
+    returns: [{
+        date: { type: Date, default: Date.now },
+        items: [{
+            code: String,
+            qty: Number,
+            refundAmount: Number
+        }],
+        totalRefund: Number,
+        cashier: String
+    }]
 });
 
 saleSchema.index({ tenantId: 1, date: -1 });
