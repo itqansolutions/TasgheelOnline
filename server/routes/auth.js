@@ -83,7 +83,8 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
             user: {
                 id: user._id,
                 tenantId: tenant._id,
-                role: user.role
+                role: user.role,
+                username: user.username // Added username
             }
         };
 
@@ -160,7 +161,8 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user._id,
                 tenantId: tenant._id,
-                role: user.role
+                role: user.role,
+                username: user.username // Added username
             }
         };
 

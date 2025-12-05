@@ -711,9 +711,12 @@ router.post('/inventory/adjust', auth, async (req, res) => {
 // @access  Private
 router.get('/shifts/current', auth, async (req, res) => {
     try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
         const shift = await Shift.findOne({
             tenantId: req.tenantId,
-            cashier: req.user.username,
+            cashier: user.username,
             status: 'open'
         });
         res.json(shift);
@@ -739,9 +742,14 @@ router.post('/shifts/open', auth, async (req, res) => {
         }
 
         const { startCash } = req.body;
+
+        // Fetch user to get username (since it might not be in token)
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
         const newShift = new Shift({
             tenantId: req.tenantId,
-            cashier: req.user.username,
+            cashier: user.username,
             startCash,
             status: 'open'
         });
@@ -769,9 +777,12 @@ router.post('/shifts/open', auth, async (req, res) => {
 // @access  Private
 router.post('/shifts/close', auth, async (req, res) => {
     try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
         const shift = await Shift.findOne({
             tenantId: req.tenantId,
-            cashier: req.user.username,
+            cashier: user.username,
             status: 'open'
         });
 

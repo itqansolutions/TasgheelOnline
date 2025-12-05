@@ -67,7 +67,8 @@ async function submitOpenShift() {
       enablePOS();
       alert('Shift opened successfully!');
     } else {
-      alert('Failed to open shift');
+      const data = await response.json();
+      alert('Failed to open shift: ' + (data.msg || 'Unknown error'));
     }
   } catch (error) {
     console.error('Error opening shift:', error);
