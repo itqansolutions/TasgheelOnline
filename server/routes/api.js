@@ -185,15 +185,33 @@ router.delete('/products/:id', auth, async (req, res) => {
 // @access  Private
 router.post('/sales', auth, async (req, res) => {
     try {
+        const { items, total, paymentMethod, salesman } = req.body;
+
+        // Generate Receipt ID
+        const count = await Sale.countDocuments({ tenantId: req.tenantId });
+        const receiptId = `REC-${Date.now()}-${count + 1}`;
+
         const newSale = new Sale({
             tenantId: req.tenantId,
-            ...req.body
+            receiptId,
+            date: new Date(),
+            method: paymentMethod, // Map paymentMethod to method
+            cashier: req.user.username, // Set cashier from logged-in user
+            salesman,
+            total,
+            items
         });
+
         const sale = await newSale.save();
 
         // Update stock
-        for (const item of req.body.items) {
-            const product = await Product.findOne({ tenantId: req.tenantId, barcode: item.code }); // Assuming code is barcode
+        for (const item of items) {
+            // Find product by ID first, then fallback to barcode if needed
+            let product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
+            if (!product && item.code) {
+                product = await Product.findOne({ barcode: item.code, tenantId: req.tenantId });
+            }
+
             if (product) {
                 product.stock -= item.qty;
                 await product.save();

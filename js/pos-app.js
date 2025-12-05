@@ -264,9 +264,25 @@ function updateCartSummary() {
     cartItemsContainer.appendChild(div);
   });
 
+  let discountAmount = 0;
+  if (window.cartDiscount) {
+    if (window.cartDiscount.type === 'percent') {
+      discountAmount = subtotal * (window.cartDiscount.value / 100);
+    } else if (window.cartDiscount.type === 'value') {
+      discountAmount = window.cartDiscount.value;
+    }
+  }
+
+  let total = subtotal - discountAmount;
+  if (total < 0) total = 0;
+
   if (cartCounter) cartCounter.textContent = cart.length;
   if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)} ج.م`;
-  if (cartTotal) cartTotal.textContent = `Total: ${subtotal.toFixed(2)} ج.م`;
+
+  const discountEl = document.getElementById("cartDiscount");
+  if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} ج.م`;
+
+  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} ج.م`;
 }
 
 function removeFromCart(index) {
@@ -286,6 +302,38 @@ function disableActionButtons(disabled) {
   });
 }
 
+// ===================== DISCOUNT LOGIC =====================
+function openDiscountModal() {
+  const modal = document.getElementById("discountModal");
+  if (modal) {
+    modal.style.display = "flex";
+    // Reset fields
+    document.getElementById("discountType").value = "none";
+    document.getElementById("discountValue").value = "";
+  }
+}
+
+function closeDiscountModal() {
+  const modal = document.getElementById("discountModal");
+  if (modal) modal.style.display = "none";
+}
+
+function saveDiscount() {
+  const type = document.getElementById("discountType").value;
+  const value = parseFloat(document.getElementById("discountValue").value) || 0;
+
+  // Apply discount to the entire cart (simple implementation)
+  // In a more complex system, we might apply per item or to subtotal
+  // Here we will just store it globally or apply to subtotal for display
+
+  // For this implementation, let's apply it as a global discount on the cart total
+  // We need to store this discount state
+  window.cartDiscount = { type, value };
+
+  updateCartSummary();
+  closeDiscountModal();
+}
+
 // ===================== SALE PROCESSING =====================
 async function processSale(method) {
   if (cart.length === 0) return;
@@ -293,17 +341,34 @@ async function processSale(method) {
   const salesmanSelect = document.getElementById("salesmanSelect");
   const salesmanName = salesmanSelect ? salesmanSelect.value : "";
 
+  // Calculate totals with discount
+  let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  let discountAmount = 0;
+
+  if (window.cartDiscount) {
+    if (window.cartDiscount.type === 'percent') {
+      discountAmount = subtotal * (window.cartDiscount.value / 100);
+    } else if (window.cartDiscount.type === 'value') {
+      discountAmount = window.cartDiscount.value;
+    }
+  }
+
+  let total = subtotal - discountAmount;
+  if (total < 0) total = 0;
+
   const saleData = {
     items: cart.map(item => ({
       productId: item._id,
       name: item.name,
       price: item.price,
       qty: item.qty,
-      total: item.price * item.qty
+      total: item.price * item.qty,
+      code: item.barcode // Send barcode as code
     })),
-    total: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+    total: total,
     paymentMethod: method,
     salesman: salesmanName,
+    discount: window.cartDiscount, // Send discount info
     date: new Date()
   };
 
@@ -322,10 +387,12 @@ async function processSale(method) {
       const sale = await response.json();
       printReceipt(sale);
       clearCart();
+      window.cartDiscount = null; // Reset discount
       loadProducts(); // Refresh stock
-      alert('Sale completed successfully!');
+      // alert('Sale completed successfully!'); 
     } else {
-      alert('Failed to process sale');
+      const errData = await response.json();
+      alert(`Failed to process sale: ${errData.msg || 'Unknown error'}`);
     }
   } catch (error) {
     console.error('Error processing sale:', error);
