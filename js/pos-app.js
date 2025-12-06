@@ -462,10 +462,9 @@ async function processSale(method) {
     }
   } catch (error) {
     console.error('Error processing sale:', error);
-    alert('Error processing sale');
+    alert('Error processing sale: ' + error.message);
   }
-  win.document.write(html);
-  win.document.close();
+
 }
 
 async function printDailySummary() {
@@ -552,6 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkTrialStatus();
   checkOpenShift();
   loadProducts();
+  loadSalesmen();
 
   // Event Listeners
   document.getElementById('productSearch')?.addEventListener('input', (e) => {
