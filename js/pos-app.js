@@ -105,29 +105,48 @@ async function submitCloseShift() {
     }
   } catch (error) {
     console.error('Error closing shift:', error);
-              <p>📞 +201126522373</p>
-              <p>📧 info@itqansolutions.org</p>
-            </div >
-      <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
-          </div >
-      `;
-      } else {
+  }
+}
+
+async function checkTrialStatus() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/tenant/trial-status`, {
+      headers: { 'x-auth-token': token }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.isExpired) {
+        document.body.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f8f9fa;text-align:center;">
+            <div style="background:white;padding:40px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);max-width:500px;">
+              <h1 style="color:#e74c3c;margin-bottom:20px;">Trial Expired</h1>
+              <p style="font-size:18px;margin-bottom:30px;">Your trial period has ended. Please contact support to activate the full version.</p>
+              <div style="font-weight:bold;color:#2c3e50;margin-bottom:20px;">
+                <p>📞 +201126522373</p>
+                <p>📧 info@itqansolutions.org</p>
+              </div>
+              <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
+            </div>
+          </div>
+        `;
+      } else if (data.daysRemaining <= 3) {
         // Show warning banner
         const banner = document.createElement('div');
         banner.style.cssText = `
-    background: ${ data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12' };
-    color: white;
-    text - align: center;
-    padding: 10px;
-    font - weight: bold;
-    position: sticky;
-    top: 0;
-    z - index: 999;
-    `;
+          background: ${data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12'};
+          color: white;
+          text-align: center;
+          padding: 10px;
+          font-weight: bold;
+          position: sticky;
+          top: 0;
+          z-index: 999;
+        `;
         banner.innerHTML = `
-          ⚠️ Trial Version: ${ data.daysRemaining } days remaining. 
-          < a href = "tel:+201126522373" style = "color:white;text-decoration:underline;margin-left:10px;" > Contact to Activate</a >
-      `;
+          ⚠️ Trial Version: ${data.daysRemaining} days remaining. 
+          <a href="tel:+201126522373" style="color:white;text-decoration:underline;margin-left:10px;">Contact to Activate</a>
+        `;
         document.body.prepend(banner);
       }
     }
@@ -168,27 +187,27 @@ function ensureSearchClickable() {
 async function loadProducts() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${ API_URL }/products`, {
-    headers: { 'x-auth-token': token }
-  });
-  if (!response.ok) throw new Error('Failed to fetch products');
+    const response = await fetch(`${API_URL}/products`, {
+      headers: { 'x-auth-token': token }
+    });
+    if (!response.ok) throw new Error('Failed to fetch products');
 
-  const products = await response.json();
-  allProducts = products;
-  filteredProducts = products;
-  renderProducts();
+    const products = await response.json();
+    allProducts = products;
+    filteredProducts = products;
+    renderProducts();
 
-  if (products.length === 0) {
-    console.warn('No products found in database');
+    if (products.length === 0) {
+      console.warn('No products found in database');
+    }
+  } catch (error) {
+    console.error('Error loading products:', error);
+    alert('Failed to load products. Ensure server is running at ' + API_URL);
+    // Fallback to empty or show error
+    allProducts = [];
+    filteredProducts = [];
+    renderProducts();
   }
-} catch (error) {
-  console.error('Error loading products:', error);
-  alert('Failed to load products. Ensure server is running at ' + API_URL);
-  // Fallback to empty or show error
-  allProducts = [];
-  filteredProducts = [];
-  renderProducts();
-}
 }
 
 function renderProducts() {
@@ -508,3 +527,62 @@ async function printDailySummary() {
     alert('Failed to print daily summary');
   }
 }
+
+async function loadSettings() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/settings`, {
+      headers: { 'x-auth-token': token }
+    });
+    if (response.ok) {
+      const settings = await response.json();
+      if (settings.shopName) localStorage.setItem('shopName', settings.shopName);
+      if (settings.shopAddress) localStorage.setItem('shopAddress', settings.shopAddress);
+      if (settings.shopLogo) localStorage.setItem('shopLogo', settings.shopLogo);
+      if (settings.footerMessage) localStorage.setItem('footerMessage', settings.footerMessage);
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+  }
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  loadSettings();
+  checkTrialStatus();
+  checkOpenShift();
+  loadProducts();
+
+  // Event Listeners
+  document.getElementById('productSearch')?.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase();
+    filteredProducts = allProducts.filter(p =>
+      p.name.toLowerCase().includes(term) ||
+      (p.barcode && p.barcode.includes(term))
+    );
+    renderProducts(filteredProducts);
+  });
+
+  document.getElementById('categoryFilter')?.addEventListener('change', (e) => {
+    const cat = e.target.value;
+    if (cat) {
+      filteredProducts = allProducts.filter(p => p.category === cat);
+    } else {
+      filteredProducts = allProducts;
+    }
+    renderProducts(filteredProducts);
+  });
+
+  document.getElementById('payButton')?.addEventListener('click', processSale);
+  document.getElementById('holdButton')?.addEventListener('click', () => alert('Hold feature coming soon'));
+  document.getElementById('discountButton')?.addEventListener('click', openDiscountModal);
+
+  // Shift Modals
+  document.getElementById('confirmOpenShift')?.addEventListener('click', submitOpenShift);
+  document.getElementById('confirmCloseShift')?.addEventListener('click', submitCloseShift);
+  document.getElementById('closeShiftBtn')?.addEventListener('click', closeShift);
+
+  // Language
+  const lang = localStorage.getItem('pos_language') || 'en';
+  updatePOSLanguage(lang);
+});
