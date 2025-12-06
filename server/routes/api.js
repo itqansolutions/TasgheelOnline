@@ -40,860 +40,865 @@ router.post('/customers', auth, async (req, res) => {
         });
         const customer = await newCustomer.save();
         res.json(customer);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-        // @route   DELETE /api/customers/:id
-        // @desc    Delete customer
-        // @access  Private
-        router.delete('/customers/:id', auth, async (req, res) => {
-            try {
-                const customer = await Customer.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!customer) return res.status(404).json({ msg: 'Customer not found' });
+// @route   DELETE /api/customers/:id
+// @desc    Delete customer
+// @access  Private
+router.delete('/customers/:id', auth, async (req, res) => {
+    try {
+        const customer = await Customer.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!customer) return res.status(404).json({ msg: 'Customer not found' });
 
-                await Customer.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'Customer removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
+        await Customer.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Customer removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// TENANT / TRIAL
+router.get('/tenant/trial-status', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId);
+        if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+
+        const now = new Date();
+        const trialEnds = new Date(tenant.trialEndsAt);
+        const diffTime = trialEnds - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const isExpired = diffTime < 0;
+
+        res.json({
+            trialEndsAt: tenant.trialEndsAt,
+            daysRemaining: diffDays,
+            isExpired
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SETTINGS
+// @route   GET /api/settings
+// @desc    Get shop settings
+// @access  Private
+router.get('/settings', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId);
+        if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+        res.json(tenant.settings || {});
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/settings
+// @desc    Update shop settings
+// @access  Private
+router.put('/settings', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId);
+        if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+
+        const { shopName, shopAddress, shopLogo, footerMessage } = req.body;
+
+        // Initialize settings object if it doesn't exist
+        if (!tenant.settings) tenant.settings = {};
+
+        if (shopName) tenant.settings.shopName = shopName;
+        if (shopAddress) tenant.settings.shopAddress = shopAddress;
+        if (shopLogo) tenant.settings.shopLogo = shopLogo;
+        if (footerMessage) tenant.settings.footerMessage = footerMessage;
+
+        await tenant.save();
+        res.json(tenant.settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// PRODUCTS
+
+// @route   GET /api/products
+// @desc    Get all products for tenant
+// @access  Private
+router.get('/products', auth, async (req, res) => {
+    try {
+        const products = await Product.find({ tenantId: req.tenantId });
+        res.json(products);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/products
+// @desc    Add new product
+// @access  Private
+router.post('/products', auth, async (req, res) => {
+    try {
+        const newProduct = new Product({
+            tenantId: req.tenantId,
+            ...req.body
+        });
+        const product = await newProduct.save();
+        res.json(product);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/products/:id
+// @desc    Update product
+// @access  Private
+router.put('/products/:id', auth, async (req, res) => {
+    try {
+        let product = await Product.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!product) return res.status(404).json({ msg: 'Product not found' });
+
+        // Update fields
+        const { name, barcode, price, cost, stock, category, minStock } = req.body;
+        if (name) product.name = name;
+        if (barcode) product.barcode = barcode;
+        if (price) product.price = price;
+        if (cost) product.cost = cost;
+        if (stock !== undefined) product.stock = stock;
+        if (category) product.category = category;
+        if (minStock !== undefined) product.minStock = minStock;
+
+        await product.save();
+        res.json(product);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/products/:id
+// @desc    Delete product
+// @access  Private
+router.delete('/products/:id', auth, async (req, res) => {
+    try {
+        const product = await Product.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!product) return res.status(404).json({ msg: 'Product not found' });
+
+        await Product.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Product removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SALES
+
+// @route   POST /api/sales
+// @desc    Create a new sale
+// @access  Private
+router.post('/sales', auth, async (req, res) => {
+    try {
+        const { items, total, paymentMethod, salesman } = req.body;
+
+        // Generate Receipt ID
+        const count = await Sale.countDocuments({ tenantId: req.tenantId });
+        const receiptId = `REC-${Date.now()}-${count + 1}`;
+
+        const newSale = new Sale({
+            tenantId: req.tenantId,
+            receiptId,
+            date: new Date(),
+            method: paymentMethod, // Map paymentMethod to method
+            cashier: req.user.username, // Set cashier from logged-in user
+            salesman,
+            total,
+            items
         });
 
-        // TENANT / TRIAL
-        router.get('/tenant/trial-status', auth, async (req, res) => {
-            try {
-                const tenant = await Tenant.findById(req.tenantId);
-                if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+        const sale = await newSale.save();
 
-                const now = new Date();
-                const trialEnds = new Date(tenant.trialEndsAt);
-                const diffTime = trialEnds - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const isExpired = diffTime < 0;
-
-                res.json({
-                    trialEndsAt: tenant.trialEndsAt,
-                    daysRemaining: diffDays,
-                    isExpired
-                });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
+        // Update stock
+        for (const item of items) {
+            // Find product by ID first, then fallback to barcode if needed
+            let product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
+            if (!product && item.code) {
+                product = await Product.findOne({ barcode: item.code, tenantId: req.tenantId });
             }
-        });
 
-        // SETTINGS
-        // @route   GET /api/settings
-        // @desc    Get shop settings
-        // @access  Private
-        router.get('/settings', auth, async (req, res) => {
-            try {
-                const tenant = await Tenant.findById(req.tenantId);
-                if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
-                res.json(tenant.settings || {});
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   PUT /api/settings
-        // @desc    Update shop settings
-        // @access  Private
-        router.put('/settings', auth, async (req, res) => {
-            try {
-                const tenant = await Tenant.findById(req.tenantId);
-                if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
-
-                const { shopName, shopAddress, shopLogo, footerMessage } = req.body;
-
-                // Initialize settings object if it doesn't exist
-                if (!tenant.settings) tenant.settings = {};
-
-                if (shopName) tenant.settings.shopName = shopName;
-                if (shopAddress) tenant.settings.shopAddress = shopAddress;
-                if (shopLogo) tenant.settings.shopLogo = shopLogo;
-                if (footerMessage) tenant.settings.footerMessage = footerMessage;
-
-                await tenant.save();
-                res.json(tenant.settings);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // PRODUCTS
-
-        // @route   GET /api/products
-        // @desc    Get all products for tenant
-        // @access  Private
-        router.get('/products', auth, async (req, res) => {
-            try {
-                const products = await Product.find({ tenantId: req.tenantId });
-                res.json(products);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/products
-        // @desc    Add new product
-        // @access  Private
-        router.post('/products', auth, async (req, res) => {
-            try {
-                const newProduct = new Product({
-                    tenantId: req.tenantId,
-                    ...req.body
-                });
-                const product = await newProduct.save();
-                res.json(product);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   PUT /api/products/:id
-        // @desc    Update product
-        // @access  Private
-        router.put('/products/:id', auth, async (req, res) => {
-            try {
-                let product = await Product.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!product) return res.status(404).json({ msg: 'Product not found' });
-
-                // Update fields
-                const { name, barcode, price, cost, stock, category, minStock } = req.body;
-                if (name) product.name = name;
-                if (barcode) product.barcode = barcode;
-                if (price) product.price = price;
-                if (cost) product.cost = cost;
-                if (stock !== undefined) product.stock = stock;
-                if (category) product.category = category;
-                if (minStock !== undefined) product.minStock = minStock;
-
+            if (product) {
+                product.stock -= item.qty;
                 await product.save();
-                res.json(product);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
             }
+        }
+
+        res.json(sale);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET /api/sales
+// @desc    Get all sales
+// @access  Private
+router.get('/sales', auth, async (req, res) => {
+    try {
+        const sales = await Sale.find({ tenantId: req.tenantId }).sort({ date: -1 });
+        res.json(sales);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET /api/sales/daily
+// @desc    Get daily sales summary
+// @access  Private
+router.get('/sales/daily', auth, async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const sales = await Sale.find({
+            tenantId: req.tenantId,
+            date: { $gte: today }
         });
 
-        // @route   DELETE /api/products/:id
-        // @desc    Delete product
-        // @access  Private
-        router.delete('/products/:id', auth, async (req, res) => {
-            try {
-                const product = await Product.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!product) return res.status(404).json({ msg: 'Product not found' });
+        const totalSales = sales.reduce((acc, sale) => acc + sale.total, 0);
+        const totalOrders = sales.length;
 
-                await Product.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'Product removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
+        res.json({
+            date: today,
+            totalSales,
+            totalOrders,
+            sales
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET /api/sales/:id
+// @desc    Get single sale by ID (or receiptId)
+// @access  Private
+router.get('/sales/:id', auth, async (req, res) => {
+    try {
+        // Try to find by _id first, then by receiptId
+        let sale;
+        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+            sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        }
+
+        if (!sale) {
+            sale = await Sale.findOne({ receiptId: req.params.id, tenantId: req.tenantId });
+        }
+
+        if (!sale) return res.status(404).json({ msg: 'Sale not found' });
+
+        res.json(sale);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/sales/:id/return
+// @desc    Process a return (partial or full)
+// @access  Private
+router.post('/sales/:id/return', auth, async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{ code, qty }]
+        let sale;
+
+        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+            sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        }
+        if (!sale) {
+            sale = await Sale.findOne({ receiptId: req.params.id, tenantId: req.tenantId });
+        }
+        if (!sale) return res.status(404).json({ msg: 'Sale not found' });
+
+        const returnRecord = {
+            items: [],
+            totalRefund: 0,
+            cashier: req.user.username,
+            date: new Date()
+        };
+
+        for (const returnItem of items) {
+            const saleItem = sale.items.find(i => i.code === returnItem.code || i._id.toString() === returnItem.code);
+
+            if (!saleItem) continue;
+
+            const remainingQty = saleItem.qty - (saleItem.returnedQty || 0);
+            if (returnItem.qty > remainingQty) {
+                return res.status(400).json({ msg: `Cannot return more than sold quantity for item ${saleItem.name}` });
             }
+
+            // Update sale item
+            saleItem.returnedQty = (saleItem.returnedQty || 0) + returnItem.qty;
+
+            // Calculate refund (simplified, assuming proportional discount)
+            const itemPrice = saleItem.price; // This is unit price
+            const refundAmount = itemPrice * returnItem.qty;
+
+            returnRecord.items.push({
+                code: saleItem.code,
+                qty: returnItem.qty,
+                refundAmount
+            });
+            returnRecord.totalRefund += refundAmount;
+
+            // Update Product Stock
+            // Try finding by ID first (if code is ID), then by barcode
+            let product = await Product.findOne({ _id: saleItem.productId, tenantId: req.tenantId });
+            if (!product && saleItem.code) {
+                product = await Product.findOne({ barcode: saleItem.code, tenantId: req.tenantId });
+            }
+
+            if (product) {
+                product.stock += returnItem.qty;
+                await product.save();
+            }
+        }
+
+        if (returnRecord.items.length > 0) {
+            sale.returns.push(returnRecord);
+
+            // Check if fully returned
+            const allReturned = sale.items.every(i => i.qty === (i.returnedQty || 0));
+            sale.status = allReturned ? 'returned' : 'partial_returned';
+
+            await sale.save();
+            res.json(sale);
+        } else {
+            res.status(400).json({ msg: 'No valid items to return' });
+        }
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SALESMEN
+
+// @route   GET /api/salesmen
+// @desc    Get all salesmen
+// @access  Private
+router.get('/salesmen', auth, async (req, res) => {
+    try {
+        const salesmen = await Salesman.find({ tenantId: req.tenantId });
+        res.json(salesmen);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/salesmen
+// @desc    Add new salesman
+// @access  Private
+router.post('/salesmen', auth, async (req, res) => {
+    try {
+        const newSalesman = new Salesman({
+            tenantId: req.tenantId,
+            ...req.body
+        });
+        const salesman = await newSalesman.save();
+        res.json(salesman);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/salesmen/:id
+// @desc    Delete salesman
+// @access  Private
+router.delete('/salesmen/:id', auth, async (req, res) => {
+    try {
+        const salesman = await Salesman.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!salesman) return res.status(404).json({ msg: 'Salesman not found' });
+
+        await Salesman.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Salesman removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/salesmen/:id
+// @desc    Update salesman (e.g. targets)
+// @access  Private
+router.put('/salesmen/:id', auth, async (req, res) => {
+    try {
+        let salesman = await Salesman.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!salesman) return res.status(404).json({ msg: 'Salesman not found' });
+
+        // Update fields
+        if (req.body.targets) salesman.targets = req.body.targets;
+        if (req.body.name) salesman.name = req.body.name;
+
+        await salesman.save();
+        res.json(salesman);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// EXPENSES
+
+// @route   GET /api/expenses
+// @desc    Get all expenses
+// @access  Private
+router.get('/expenses', auth, async (req, res) => {
+    try {
+        const expenses = await Expense.find({ tenantId: req.tenantId });
+        res.json(expenses);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/expenses
+// @desc    Add new expense
+// @access  Private
+router.post('/expenses', auth, async (req, res) => {
+    try {
+        const newExpense = new Expense({
+            tenantId: req.tenantId,
+            ...req.body
+        });
+        const expense = await newExpense.save();
+        res.json(expense);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/expenses/:id
+// @desc    Delete expense
+// @access  Private
+router.delete('/expenses/:id', auth, async (req, res) => {
+    try {
+        const expense = await Expense.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!expense) return res.status(404).json({ msg: 'Expense not found' });
+
+        await Expense.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Expense removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SETTINGS
+
+// @route   GET /api/settings
+// @desc    Get tenant settings
+// @access  Private
+router.get('/settings', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId).select('settings');
+        res.json(tenant.settings || {});
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   PUT /api/settings
+// @desc    Update tenant settings
+// @access  Private
+router.put('/settings', auth, async (req, res) => {
+    try {
+        const tenant = await Tenant.findById(req.tenantId);
+        if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
+
+        tenant.settings = { ...tenant.settings, ...req.body };
+        await tenant.save();
+        res.json(tenant.settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// USERS
+
+// @route   GET /api/users
+// @desc    Get all users for tenant
+// @access  Private
+router.get('/users', auth, async (req, res) => {
+    try {
+        const users = await User.find({ tenantId: req.tenantId }).select('-password');
+        res.json(users);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/users
+// @desc    Create a new user
+// @access  Private
+router.post('/users', auth, async (req, res) => {
+    try {
+        const { username, password, role } = req.body;
+
+        // Check if user exists
+        let user = await User.findOne({ username, tenantId: req.tenantId });
+        if (user) {
+            return res.status(400).json({ msg: 'User already exists' });
+        }
+
+        user = new User({
+            tenantId: req.tenantId,
+            username,
+            password,
+            role
         });
 
-        // SALES
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
 
-        // @route   POST /api/sales
-        // @desc    Create a new sale
-        // @access  Private
-        router.post('/sales', auth, async (req, res) => {
-            try {
-                const { items, total, paymentMethod, salesman } = req.body;
+        await user.save();
+        res.json({ msg: 'User created' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-                // Generate Receipt ID
-                const count = await Sale.countDocuments({ tenantId: req.tenantId });
-                const receiptId = `REC-${Date.now()}-${count + 1}`;
+// @route   DELETE /api/users/:id
+// @desc    Delete user
+// @access  Private
+router.delete('/users/:id', auth, async (req, res) => {
+    try {
+        const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!user) return res.status(404).json({ msg: 'User not found' });
 
-                const newSale = new Sale({
-                    tenantId: req.tenantId,
-                    receiptId,
-                    date: new Date(),
-                    method: paymentMethod, // Map paymentMethod to method
-                    cashier: req.user.username, // Set cashier from logged-in user
-                    salesman,
-                    total,
-                    items
-                });
+        await User.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'User removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-                const sale = await newSale.save();
+// CATEGORIES
 
-                // Update stock
-                for (const item of items) {
-                    // Find product by ID first, then fallback to barcode if needed
-                    let product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
-                    if (!product && item.code) {
-                        product = await Product.findOne({ barcode: item.code, tenantId: req.tenantId });
-                    }
+// @route   GET /api/categories
+// @desc    Get all categories
+// @access  Private
+router.get('/categories', auth, async (req, res) => {
+    try {
+        const categories = await Category.find({ tenantId: req.tenantId }).sort({ name: 1 });
+        res.json(categories);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-                    if (product) {
-                        product.stock -= item.qty;
-                        await product.save();
-                    }
-                }
-
-                res.json(sale);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
+// @route   POST /api/categories
+// @desc    Add new category
+// @access  Private
+router.post('/categories', auth, async (req, res) => {
+    try {
+        const newCategory = new Category({
+            tenantId: req.tenantId,
+            ...req.body
         });
+        const category = await newCategory.save();
+        res.json(category);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-        // @route   GET /api/sales
-        // @desc    Get all sales
-        // @access  Private
-        router.get('/sales', auth, async (req, res) => {
-            try {
-                const sales = await Sale.find({ tenantId: req.tenantId }).sort({ date: -1 });
-                res.json(sales);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
+// @route   PUT /api/categories/:id
+// @desc    Update category
+// @access  Private
+router.put('/categories/:id', auth, async (req, res) => {
+    try {
+        let category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!category) return res.status(404).json({ msg: 'Category not found' });
 
-        // @route   GET /api/sales/daily
-        // @desc    Get daily sales summary
-        // @access  Private
-        router.get('/sales/daily', auth, async (req, res) => {
-            try {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+        const { name, nameEn } = req.body;
+        if (name) category.name = name;
+        if (nameEn) category.nameEn = nameEn;
 
-                const sales = await Sale.find({
-                    tenantId: req.tenantId,
-                    date: { $gte: today }
-                });
+        await category.save();
+        res.json(category);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-                const totalSales = sales.reduce((acc, sale) => acc + sale.total, 0);
-                const totalOrders = sales.length;
+// @route   DELETE /api/categories/:id
+// @desc    Delete category
+// @access  Private
+router.delete('/categories/:id', auth, async (req, res) => {
+    try {
+        const category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!category) return res.status(404).json({ msg: 'Category not found' });
 
-                res.json({
-                    date: today,
-                    totalSales,
-                    totalOrders,
-                    sales
-                });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
+        await Category.deleteOne({ _id: req.params.id });
+        res.json({ msg: 'Category removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-        // @route   GET /api/sales/:id
-        // @desc    Get single sale by ID (or receiptId)
-        // @access  Private
-        router.get('/sales/:id', auth, async (req, res) => {
-            try {
-                // Try to find by _id first, then by receiptId
-                let sale;
-                if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-                    sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                }
+// INVENTORY / STOCK ADJUSTMENT
 
-                if (!sale) {
-                    sale = await Sale.findOne({ receiptId: req.params.id, tenantId: req.tenantId });
-                }
+// @route   POST /api/inventory/adjust
+// @desc    Adjust stock (audit)
+// @access  Private
+router.post('/inventory/adjust', auth, async (req, res) => {
+    try {
+        const { items } = req.body; // items: [{ productId, newStock, reason }]
 
-                if (!sale) return res.status(404).json({ msg: 'Sale not found' });
+        const adjustmentRecord = {
+            tenantId: req.tenantId,
+            adjustedBy: req.user.username,
+            date: new Date(),
+            items: []
+        };
 
-                res.json(sale);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
+        for (const item of items) {
+            const product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
+            if (product) {
+                const oldStock = product.stock;
+                const newStock = parseInt(item.newStock);
+                const difference = newStock - oldStock;
 
-        // @route   POST /api/sales/:id/return
-        // @desc    Process a return (partial or full)
-        // @access  Private
-        router.post('/sales/:id/return', auth, async (req, res) => {
-            try {
-                const { items } = req.body; // items: [{ code, qty }]
-                let sale;
+                if (difference !== 0) {
+                    product.stock = newStock;
+                    await product.save();
 
-                if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-                    sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                }
-                if (!sale) {
-                    sale = await Sale.findOne({ receiptId: req.params.id, tenantId: req.tenantId });
-                }
-                if (!sale) return res.status(404).json({ msg: 'Sale not found' });
-
-                const returnRecord = {
-                    items: [],
-                    totalRefund: 0,
-                    cashier: req.user.username,
-                    date: new Date()
-                };
-
-                for (const returnItem of items) {
-                    const saleItem = sale.items.find(i => i.code === returnItem.code || i._id.toString() === returnItem.code);
-
-                    if (!saleItem) continue;
-
-                    const remainingQty = saleItem.qty - (saleItem.returnedQty || 0);
-                    if (returnItem.qty > remainingQty) {
-                        return res.status(400).json({ msg: `Cannot return more than sold quantity for item ${saleItem.name}` });
-                    }
-
-                    // Update sale item
-                    saleItem.returnedQty = (saleItem.returnedQty || 0) + returnItem.qty;
-
-                    // Calculate refund (simplified, assuming proportional discount)
-                    const itemPrice = saleItem.price; // This is unit price
-                    const refundAmount = itemPrice * returnItem.qty;
-
-                    returnRecord.items.push({
-                        code: saleItem.code,
-                        qty: returnItem.qty,
-                        refundAmount
+                    adjustmentRecord.items.push({
+                        productId: product._id,
+                        productName: product.name,
+                        oldStock,
+                        newStock,
+                        difference,
+                        reason: item.reason || 'Manual Adjustment'
                     });
-                    returnRecord.totalRefund += refundAmount;
-
-                    // Update Product Stock
-                    // Try finding by ID first (if code is ID), then by barcode
-                    let product = await Product.findOne({ _id: saleItem.productId, tenantId: req.tenantId });
-                    if (!product && saleItem.code) {
-                        product = await Product.findOne({ barcode: saleItem.code, tenantId: req.tenantId });
-                    }
-
-                    if (product) {
-                        product.stock += returnItem.qty;
-                        await product.save();
-                    }
                 }
-
-                if (returnRecord.items.length > 0) {
-                    sale.returns.push(returnRecord);
-
-                    // Check if fully returned
-                    const allReturned = sale.items.every(i => i.qty === (i.returnedQty || 0));
-                    sale.status = allReturned ? 'returned' : 'partial_returned';
-
-                    await sale.save();
-                    res.json(sale);
-                } else {
-                    res.status(400).json({ msg: 'No valid items to return' });
-                }
-
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
             }
+        }
+
+        if (adjustmentRecord.items.length > 0) {
+            const adjustment = new StockAdjustment(adjustmentRecord);
+            await adjustment.save();
+            res.json({ msg: 'Stock adjusted successfully', adjustment });
+        } else {
+            res.json({ msg: 'No changes made' });
+        }
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// SHIFT MANAGEMENT
+
+// @route   GET /api/shifts/current
+// @desc    Get current open shift for user
+// @access  Private
+router.get('/shifts/current', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: user.username,
+            status: 'open'
+        });
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/shifts/open
+// @desc    Open a new shift
+// @access  Private
+router.post('/shifts/open', auth, async (req, res) => {
+    try {
+        const existingShift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
         });
 
-        // SALESMEN
+        if (existingShift) {
+            return res.status(400).json({ msg: 'Shift already open' });
+        }
 
-        // @route   GET /api/salesmen
-        // @desc    Get all salesmen
-        // @access  Private
-        router.get('/salesmen', auth, async (req, res) => {
-            try {
-                const salesmen = await Salesman.find({ tenantId: req.tenantId });
-                res.json(salesmen);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
+        const { startCash } = req.body;
+
+        // Fetch user to get username (since it might not be in token)
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const newShift = new Shift({
+            tenantId: req.tenantId,
+            cashier: user.username,
+            startCash,
+            status: 'open'
         });
 
-        // @route   POST /api/salesmen
-        // @desc    Add new salesman
-        // @access  Private
-        router.post('/salesmen', auth, async (req, res) => {
-            try {
-                const newSalesman = new Salesman({
-                    tenantId: req.tenantId,
-                    ...req.body
-                });
-                const salesman = await newSalesman.save();
-                res.json(salesman);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
+        await newShift.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'OPEN_SHIFT',
+            details: { shiftId: newShift._id, startCash }
+        });
+        await log.save();
+
+        res.json(newShift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/shifts/close
+// @desc    Close current shift
+// @access  Private
+router.post('/shifts/close', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: user.username,
+            status: 'open'
         });
 
-        // @route   DELETE /api/salesmen/:id
-        // @desc    Delete salesman
-        // @access  Private
-        router.delete('/salesmen/:id', auth, async (req, res) => {
-            try {
-                const salesman = await Salesman.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!salesman) return res.status(404).json({ msg: 'Salesman not found' });
+        if (!shift) {
+            return res.status(400).json({ msg: 'No open shift found' });
+        }
 
-                await Salesman.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'Salesman removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
+        const { actualCash } = req.body;
+
+        // Calculate expected cash
+        // Start Cash + Sales (Cash) + Cash In - Cash Out - Returns (Cash)
+        // This is a simplified calculation. For production, you'd query Sales for this shift.
+        // For now, we'll rely on the frontend or a separate calculation service.
+        // But let's at least mark it closed.
+
+        shift.status = 'closed';
+        shift.endTime = Date.now();
+        shift.actualCash = actualCash;
+
+        await shift.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'CLOSE_SHIFT',
+            details: { shiftId: shift._id, actualCash }
         });
+        await log.save();
 
-        // @route   PUT /api/salesmen/:id
-        // @desc    Update salesman (e.g. targets)
-        // @access  Private
-        router.put('/salesmen/:id', auth, async (req, res) => {
-            try {
-                let salesman = await Salesman.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!salesman) return res.status(404).json({ msg: 'Salesman not found' });
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
-                // Update fields
-                if (req.body.targets) salesman.targets = req.body.targets;
-                if (req.body.name) salesman.name = req.body.name;
 
-                await salesman.save();
-                res.json(salesman);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
+
+// @route   POST /api/sales/:id/cancel
+// @desc    Cancel a sale and restore stock
+// @access  Private
+router.post('/sales/:id/cancel', auth, async (req, res) => {
+    try {
+        const sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!sale) return res.status(404).json({ msg: 'Sale not found' });
+
+        if (sale.status === 'cancelled') {
+            return res.status(400).json({ msg: 'Sale already cancelled' });
+        }
+
+        // Restore stock
+        for (const item of sale.items) {
+            const product = await Product.findById(item.productId);
+            if (product) {
+                product.stock += item.qty;
+                await product.save();
             }
+        }
+
+        sale.status = 'cancelled';
+        await sale.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'CANCEL_SALE',
+            details: { saleId: sale._id, receiptId: sale.receiptId }
         });
-
-        // EXPENSES
-
-        // @route   GET /api/expenses
-        // @desc    Get all expenses
-        // @access  Private
-        router.get('/expenses', auth, async (req, res) => {
-            try {
-                const expenses = await Expense.find({ tenantId: req.tenantId });
-                res.json(expenses);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/expenses
-        // @desc    Add new expense
-        // @access  Private
-        router.post('/expenses', auth, async (req, res) => {
-            try {
-                const newExpense = new Expense({
-                    tenantId: req.tenantId,
-                    ...req.body
-                });
-                const expense = await newExpense.save();
-                res.json(expense);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   DELETE /api/expenses/:id
-        // @desc    Delete expense
-        // @access  Private
-        router.delete('/expenses/:id', auth, async (req, res) => {
-            try {
-                const expense = await Expense.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!expense) return res.status(404).json({ msg: 'Expense not found' });
-
-                await Expense.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'Expense removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // SETTINGS
-
-        // @route   GET /api/settings
-        // @desc    Get tenant settings
-        // @access  Private
-        router.get('/settings', auth, async (req, res) => {
-            try {
-                const tenant = await Tenant.findById(req.tenantId).select('settings');
-                res.json(tenant.settings || {});
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   PUT /api/settings
-        // @desc    Update tenant settings
-        // @access  Private
-        router.put('/settings', auth, async (req, res) => {
-            try {
-                const tenant = await Tenant.findById(req.tenantId);
-                if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
-
-                tenant.settings = { ...tenant.settings, ...req.body };
-                await tenant.save();
-                res.json(tenant.settings);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // USERS
-
-        // @route   GET /api/users
-        // @desc    Get all users for tenant
-        // @access  Private
-        router.get('/users', auth, async (req, res) => {
-            try {
-                const users = await User.find({ tenantId: req.tenantId }).select('-password');
-                res.json(users);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/users
-        // @desc    Create a new user
-        // @access  Private
-        router.post('/users', auth, async (req, res) => {
-            try {
-                const { username, password, role } = req.body;
-
-                // Check if user exists
-                let user = await User.findOne({ username, tenantId: req.tenantId });
-                if (user) {
-                    return res.status(400).json({ msg: 'User already exists' });
-                }
-
-                user = new User({
-                    tenantId: req.tenantId,
-                    username,
-                    password,
-                    role
-                });
-
-                const salt = await bcrypt.genSalt(10);
-                user.password = await bcrypt.hash(password, salt);
-
-                await user.save();
-                res.json({ msg: 'User created' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   DELETE /api/users/:id
-        // @desc    Delete user
-        // @access  Private
-        router.delete('/users/:id', auth, async (req, res) => {
-            try {
-                const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!user) return res.status(404).json({ msg: 'User not found' });
-
-                await User.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'User removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // CATEGORIES
-
-        // @route   GET /api/categories
-        // @desc    Get all categories
-        // @access  Private
-        router.get('/categories', auth, async (req, res) => {
-            try {
-                const categories = await Category.find({ tenantId: req.tenantId }).sort({ name: 1 });
-                res.json(categories);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/categories
-        // @desc    Add new category
-        // @access  Private
-        router.post('/categories', auth, async (req, res) => {
-            try {
-                const newCategory = new Category({
-                    tenantId: req.tenantId,
-                    ...req.body
-                });
-                const category = await newCategory.save();
-                res.json(category);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   PUT /api/categories/:id
-        // @desc    Update category
-        // @access  Private
-        router.put('/categories/:id', auth, async (req, res) => {
-            try {
-                let category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!category) return res.status(404).json({ msg: 'Category not found' });
-
-                const { name, nameEn } = req.body;
-                if (name) category.name = name;
-                if (nameEn) category.nameEn = nameEn;
-
-                await category.save();
-                res.json(category);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   DELETE /api/categories/:id
-        // @desc    Delete category
-        // @access  Private
-        router.delete('/categories/:id', auth, async (req, res) => {
-            try {
-                const category = await Category.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!category) return res.status(404).json({ msg: 'Category not found' });
-
-                await Category.deleteOne({ _id: req.params.id });
-                res.json({ msg: 'Category removed' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // INVENTORY / STOCK ADJUSTMENT
-
-        // @route   POST /api/inventory/adjust
-        // @desc    Adjust stock (audit)
-        // @access  Private
-        router.post('/inventory/adjust', auth, async (req, res) => {
-            try {
-                const { items } = req.body; // items: [{ productId, newStock, reason }]
-
-                const adjustmentRecord = {
-                    tenantId: req.tenantId,
-                    adjustedBy: req.user.username,
-                    date: new Date(),
-                    items: []
-                };
-
-                for (const item of items) {
-                    const product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
-                    if (product) {
-                        const oldStock = product.stock;
-                        const newStock = parseInt(item.newStock);
-                        const difference = newStock - oldStock;
-
-                        if (difference !== 0) {
-                            product.stock = newStock;
-                            await product.save();
-
-                            adjustmentRecord.items.push({
-                                productId: product._id,
-                                productName: product.name,
-                                oldStock,
-                                newStock,
-                                difference,
-                                reason: item.reason || 'Manual Adjustment'
-                            });
-                        }
-                    }
-                }
-
-                if (adjustmentRecord.items.length > 0) {
-                    const adjustment = new StockAdjustment(adjustmentRecord);
-                    await adjustment.save();
-                    res.json({ msg: 'Stock adjusted successfully', adjustment });
-                } else {
-                    res.json({ msg: 'No changes made' });
-                }
-
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // SHIFT MANAGEMENT
-
-        // @route   GET /api/shifts/current
-        // @desc    Get current open shift for user
-        // @access  Private
-        router.get('/shifts/current', auth, async (req, res) => {
-            try {
-                const user = await User.findById(req.user.id);
-                if (!user) return res.status(404).json({ msg: 'User not found' });
-
-                const shift = await Shift.findOne({
-                    tenantId: req.tenantId,
-                    cashier: user.username,
-                    status: 'open'
-                });
-                res.json(shift);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/shifts/open
-        // @desc    Open a new shift
-        // @access  Private
-        router.post('/shifts/open', auth, async (req, res) => {
-            try {
-                const existingShift = await Shift.findOne({
-                    tenantId: req.tenantId,
-                    cashier: req.user.username,
-                    status: 'open'
-                });
-
-                if (existingShift) {
-                    return res.status(400).json({ msg: 'Shift already open' });
-                }
-
-                const { startCash } = req.body;
-
-                // Fetch user to get username (since it might not be in token)
-                const user = await User.findById(req.user.id);
-                if (!user) return res.status(404).json({ msg: 'User not found' });
-
-                const newShift = new Shift({
-                    tenantId: req.tenantId,
-                    cashier: user.username,
-                    startCash,
-                    status: 'open'
-                });
-
-                await newShift.save();
-
-                // Log action
-                const log = new AuditLog({
-                    tenantId: req.tenantId,
-                    user: req.user.username,
-                    action: 'OPEN_SHIFT',
-                    details: { shiftId: newShift._id, startCash }
-                });
-                await log.save();
-
-                res.json(newShift);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // @route   POST /api/shifts/close
-        // @desc    Close current shift
-        // @access  Private
-        router.post('/shifts/close', auth, async (req, res) => {
-            try {
-                const user = await User.findById(req.user.id);
-                if (!user) return res.status(404).json({ msg: 'User not found' });
-
-                const shift = await Shift.findOne({
-                    tenantId: req.tenantId,
-                    cashier: user.username,
-                    status: 'open'
-                });
-
-                if (!shift) {
-                    return res.status(400).json({ msg: 'No open shift found' });
-                }
-
-                const { actualCash } = req.body;
-
-                // Calculate expected cash
-                // Start Cash + Sales (Cash) + Cash In - Cash Out - Returns (Cash)
-                // This is a simplified calculation. For production, you'd query Sales for this shift.
-                // For now, we'll rely on the frontend or a separate calculation service.
-                // But let's at least mark it closed.
-
-                shift.status = 'closed';
-                shift.endTime = Date.now();
-                shift.actualCash = actualCash;
-
-                await shift.save();
-
-                // Log action
-                const log = new AuditLog({
-                    tenantId: req.tenantId,
-                    user: req.user.username,
-                    action: 'CLOSE_SHIFT',
-                    details: { shiftId: shift._id, actualCash }
-                });
-                await log.save();
-
-                res.json(shift);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-
-
-        // @route   POST /api/sales/:id/cancel
-        // @desc    Cancel a sale and restore stock
-        // @access  Private
-        router.post('/sales/:id/cancel', auth, async (req, res) => {
-            try {
-                const sale = await Sale.findOne({ _id: req.params.id, tenantId: req.tenantId });
-                if (!sale) return res.status(404).json({ msg: 'Sale not found' });
-
-                if (sale.status === 'cancelled') {
-                    return res.status(400).json({ msg: 'Sale already cancelled' });
-                }
-
-                // Restore stock
-                for (const item of sale.items) {
-                    const product = await Product.findById(item.productId);
-                    if (product) {
-                        product.stock += item.qty;
-                        await product.save();
-                    }
-                }
-
-                sale.status = 'cancelled';
-                await sale.save();
-
-                // Log action
-                const log = new AuditLog({
-                    tenantId: req.tenantId,
-                    user: req.user.username,
-                    action: 'CANCEL_SALE',
-                    details: { saleId: sale._id, receiptId: sale.receiptId }
-                });
-                await log.save();
-
-                res.json({ msg: 'Sale cancelled and stock restored' });
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        // AUDIT LOGS
-
-        // @route   GET /api/audit-logs
-        // @desc    Get audit logs
-        // @access  Private (Admin only)
-        router.get('/audit-logs', auth, async (req, res) => {
-            try {
-                if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
-                    return res.status(403).json({ msg: 'Access denied' });
-                }
-
-                const logs = await AuditLog.find({ tenantId: req.tenantId })
-                    .sort({ timestamp: -1 })
-                    .limit(100);
-                res.json(logs);
-            } catch (err) {
-                console.error(err.message);
-                res.status(500).send('Server Error');
-            }
-        });
-
-        module.exports = router;
+        await log.save();
+
+        res.json({ msg: 'Sale cancelled and stock restored' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// AUDIT LOGS
+
+// @route   GET /api/audit-logs
+// @desc    Get audit logs
+// @access  Private (Admin only)
+router.get('/audit-logs', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+            return res.status(403).json({ msg: 'Access denied' });
+        }
+
+        const logs = await AuditLog.find({ tenantId: req.tenantId })
+            .sort({ timestamp: -1 })
+            .limit(100);
+        res.json(logs);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+module.exports = router;
