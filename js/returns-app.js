@@ -130,5 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
       alert('Failed to process return');
     }
   });
+  // Check for receiptId in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const receiptIdParam = urlParams.get('receiptId');
+  if (receiptIdParam) {
+    document.getElementById('receipt-id').value = receiptIdParam;
+    // Trigger search
+    searchForm.dispatchEvent(new Event('submit'));
+  }
 });
 

@@ -56,9 +56,8 @@ async function renderReceiptsTable() {
       <td>
         <div style="display:flex; flex-wrap: wrap; gap:5px; justify-content:center;">
           <button class="btn btn-secondary btn-action" title="Print" onclick="printReceipt('${r._id}')">🖨️</button>
-          <button class="btn btn-warning btn-action" title="Full Return" onclick="alert('Return feature requires backend update')">↩️</button>
-          <button class="btn btn-primary btn-action" title="Partial Return" onclick="alert('Return feature requires backend update')">🔁</button>
-          <button class="btn btn-danger btn-action" title="Cancel" onclick="alert('Cancel feature requires backend update')">❌</button>
+          <button class="btn btn-warning btn-action" title="Return" onclick="window.location.href='returns.html?receiptId=${r.receiptId}'">↩️</button>
+          <button class="btn btn-danger btn-action" title="Cancel" onclick="cancelSale('${r._id}')">❌</button>
         </div>
       </td>
     `;
