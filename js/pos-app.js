@@ -16,6 +16,12 @@ async function checkOpenShift() {
     const response = await fetch(`${API_URL}/shifts/current`, {
       headers: { 'x-auth-token': token }
     });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Failed to fetch shift status (${response.status})`);
+    }
+
     const shift = await response.json();
 
     if (!shift) {
@@ -29,6 +35,7 @@ async function checkOpenShift() {
     }
   } catch (error) {
     console.error('Error checking shift:', error);
+    alert('Failed to check shift status: ' + error.message + '. Please ensure server is running and reload.');
   }
 }
 
