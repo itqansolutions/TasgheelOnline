@@ -1,4 +1,4 @@
-ÿş// POS JS with salesman support and fixed receipt printing (final version)
+ï¿½ï¿½// POS JS with salesman support and fixed receipt printing (final version)
 let allProducts = [];
 let filteredProducts = [];
 let cart = [];
@@ -162,7 +162,7 @@ async function checkTrialStatus() {
   }
 }
 
-// ÙŠØ±Ø¨Ø·ıÿıÿıÿıÿıÿıÿ´ Ù…Ø±Ø©ıÿıÿıÿıÿıÿ© ÙÙ‚Ø·
+// ÙŠØ±Ø¨Ø·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ù…Ø±Ø©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ÙÙ‚Ø·
 function bindSearchOnce() {
   const el = document.getElementById("productSearch");
   if (el && !el.dataset.bound) {
@@ -171,21 +171,21 @@ function bindSearchOnce() {
   }
 }
 
-// ÙŠØªØ£ÙƒØ¯ıÿıÿ† Ø§Ù„Ø³ÙŠØ±Ø´ıÿıÿıÿ‚ Ø£ÙŠıÿıÿıÿıÿ© ÙˆÙ…Ø´ıÿıÿıÿıÿıÿ¨
+// ÙŠØªØ£ÙƒØ¯ï¿½ï¿½ï¿½ï¿½ï¿½ Ø§Ù„Ø³ÙŠØ±Ø´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø£ÙŠï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ÙˆÙ…Ø´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 function ensureSearchClickable() {
   const el = document.getElementById("productSearch");
   if (el) {
     el.style.pointerEvents = "auto";
     el.style.position = "relative";
     el.style.zIndex = "1000";
-    //ıÿıÿıÿıÿıÿ¡ Ø£ÙŠıÿıÿıÿıÿıÿ„ Ù…Ù…ÙƒÙ†ıÿıÿıÿıÿ† Ù„Ø³Ù‡ıÿıÿıÿıÿ± Ø¨Ø¹Ø¯ıÿıÿıÿıÿıÿıÿ¹
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø£ÙŠï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ù…Ù…ÙƒÙ†ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ù„Ø³Ù‡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø¨Ø¹Ø¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     ["discountModal", "auditModal"].forEach(id => {
       const m = document.getElementById(id);
       if (m && getComputedStyle(m).display !== "none") {
         m.style.display = "none";
       }
     });
-    // Ø¶Ù…Ø§Ù†ıÿıÿıÿıÿıÿıÿıÿ² Ø£ÙˆÙ„ıÿıÿıÿ· ÙÙŠıÿıÿıÿ¶ Ø§Ù„Ø¨ÙŠØ¦Ø§Øª
+    // Ø¶Ù…Ø§Ù†ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø£ÙˆÙ„ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ÙÙŠï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø§Ù„Ø¨ÙŠØ¦Ø§Øª
     el.addEventListener("mousedown", () => el.focus(), { once: true });
   }
 }
@@ -234,7 +234,7 @@ function renderProducts() {
     div.onclick = () => addToCart(product);
     div.innerHTML = `
       <h4>${product.name}</h4>
-      <p>${product.price.toFixed(2)} Ø¬ıÿ…</p>
+      <p>${product.price.toFixed(2)} Ø¬ï¿½ï¿½ï¿½</p>
       <p>Stock: ${product.stock}</p>
     `;
     grid.appendChild(div);
@@ -311,8 +311,8 @@ function updateCartSummary() {
   if (cart.length === 0) {
     cartEmptyText.style.display = "block";
     if (cartCounter) cartCounter.textContent = "0";
-    if (cartSubtotal) cartSubtotal.textContent = "0.00ıÿ¬.Ù…";
-    if (cartTotal) cartTotal.textContent = "Total: 0.00 Ø¬ıÿ…";
+    if (cartSubtotal) cartSubtotal.textContent = "0.00ï¿½ï¿½ï¿½.Ù…";
+    if (cartTotal) cartTotal.textContent = "Total: 0.00 Ø¬ï¿½ï¿½ï¿½";
     disableActionButtons(true);
     return;
   }
@@ -350,12 +350,12 @@ function updateCartSummary() {
   if (total < 0) total = 0;
 
   if (cartCounter) cartCounter.textContent = cart.length;
-  if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)}ıÿ¬.Ù…`;
+  if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)}ï¿½ï¿½ï¿½.Ù…`;
 
   const discountEl = document.getElementById("cartDiscount");
-  if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} Ø¬ıÿ…`;
+  if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} Ø¬ï¿½ï¿½ï¿½`;
 
-  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} Ø¬ıÿ…`;
+  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} Ø¬ï¿½ï¿½ï¿½`;
 }
 
 function removeFromCart(index) {
@@ -493,7 +493,7 @@ async function printDailySummary() {
     const html = `
       <html>
       <head>
-        <title>${t("Daily Summary", ıÿıÿıÿıÿµ Ø§Ù„ÙŠÙˆÙ…")}</title>
+        <title>${t("Daily Summary", ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø§Ù„ÙŠÙˆÙ…")}</title>
         <style>
           body { font-family: Arial, sans-serif; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; text-align: center; }
           .container { width: 72mm; margin: 0 auto; }
@@ -505,19 +505,19 @@ async function printDailySummary() {
       <body>
         <div class="container">
           <h2>${shopName}</h2>
-          <h3>${t("Daily Summary", "Ù…Ù„Ø®Øµıÿıÿıÿıÿıÿ…")}</h3>
+          <h3>${t("Daily Summary", "Ù…Ù„Ø®Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")}</h3>
           <p>${dateFormatted}</p>
           <hr/>
           <div class="summary-item">
-            <span>${t("Total Orders", "Ø¹Ø¯Ø¯ıÿıÿıÿıÿıÿıÿıÿª")}</span>
+            <span>${t("Total Orders", "Ø¹Ø¯Ø¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")}</span>
             <span>${data.totalOrders}</span>
           </div>
           <div class="summary-item">
-            <span>${t("Total Sales", ıÿıÿıÿıÿıÿıÿŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª")}</span>
+            <span>${t("Total Sales", ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª")}</span>
             <span>${data.totalSales.toFixed(2)}</span>
           </div>
           <hr/>
-          <p>${t("Printed at", ıÿıÿıÿ¹ ÙÙŠ")}: ${new Date().toLocaleTimeString()}</p>
+          <p>${t("Printed at", ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ÙÙŠ")}: ${new Date().toLocaleTimeString()}</p>
         </div>
         <script>window.onload = () => window.print();</script>
       </body>
@@ -617,9 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
          c o n s t   l a n g   =   l o c a l S t o r a g e . g e t I t e m ( ' p o s _ l a n g u a g e ' )   | |   ' e n ' ;  
          c o n s t   t   =   ( e n ,   a r )   = >   ( l a n g   = = =   ' a r '   ?   a r   :   e n ) ;  
          c o n s t   p a y m e n t M a p   =   {  
-             c a s h :   t ( " C a s h " ,   " 8  8 7¯ 8y" ) ,  
-             c a r d :   t ( " C a r d " ,   " 7¨ 7· 7§ 8 7© " ) ,  
-             m o b i l e :   t ( " M o b i l e " ,   " 8& 8Æ7¨ 7§ 8y8 " )  
+             c a s h :   t ( " C a s h " ,   " 8  8 7ï¿½ 8y" ) ,  
+             c a r d :   t ( " C a r d " ,   " 7ï¿½ 7ï¿½ 7ï¿½ 8 7ï¿½ " ) ,  
+             m o b i l e :   t ( " M o b i l e " ,   " 8& 8ï¿½7ï¿½ 7ï¿½ 8y8 " )  
          } ;  
   
          l e t   t o t a l D i s c o u n t   =   0 ;  
@@ -635,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  d i s c o u n t S t r   =   ` $ { i t e m . d i s c o u n t . v a l u e } % ` ;  
              }   e l s e   i f   ( i t e m . d i s c o u n t ? . t y p e   = = =   " v a l u e " )   {  
                  d i s c o u n t A m o u n t P e r U n i t   =   i t e m . d i s c o u n t . v a l u e ;  
-                 d i s c o u n t S t r   =   ` $ { d i s c o u n t A m o u n t P e r U n i t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7¬ . 8& '   :   ' E G P ' } ` ;  
+                 d i s c o u n t S t r   =   ` $ { d i s c o u n t A m o u n t P e r U n i t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7ï¿½ . 8& '   :   ' E G P ' } ` ;  
              }  
   
              c o n s t   i t e m D i s c o u n t T o t a l   =   d i s c o u n t A m o u n t P e r U n i t   *   i t e m . q t y ;  
@@ -661,7 +661,7 @@ document.addEventListener('DOMContentLoaded', () => {
          c o n s t   h t m l   =   `  
              < h t m l >  
              < h e a d >  
-                 < t i t l e > $ { t ( " R e c e i p t " ,   " 7§ 8 7¥ 8y7µ 7§ 8 " ) } < / t i t l e >  
+                 < t i t l e > $ { t ( " R e c e i p t " ,   " 7ï¿½ 8 7ï¿½ 8y7ï¿½ 7ï¿½ 8 " ) } < / t i t l e >  
                  < s t y l e >  
                      b o d y   {   f o n t - f a m i l y :   A r i a l ,   s a n s - s e r i f ;   f o n t - s i z e :   1 1 . 5 p x ;   f o n t - w e i g h t :   b o l d ;   l i n e - h e i g h t :   1 . 7 ;   d i r e c t i o n :   $ { l a n g   = = =   ' a r '   ?   ' r t l '   :   ' l t r ' } ;   m a r g i n :   0 ;   p a d d i n g :   0 ;   }  
                      . r e c e i p t - c o n t a i n e r   {   w i d t h :   7 2 m m ;   m a r g i n :   0 ;   p a d d i n g :   5 p x   0 ;   b a c k g r o u n d :   # f f f ;   b o x - s i z i n g :   b o r d e r - b o x ;   }  
@@ -688,35 +688,35 @@ document.addEventListener('DOMContentLoaded', () => {
                      < h 2   c l a s s = " c e n t e r " > $ { s h o p N a m e } < / h 2 >  
                      < p   c l a s s = " c e n t e r " > $ { s h o p A d d r e s s } < / p >  
                      < h r / >  
-                     < p > $ { t ( " R e c e i p t   N o " ,   " 7± 8 8&   7§ 8 8~7§ 7¾8Æ7± 7© " ) } :   $ { r e c e i p t . r e c e i p t I d } < / p >  
-                     < p > $ { t ( " C a s h i e r " ,   " 7§ 8 8’7§ 7´ 8y7± " ) } :   $ { r e c e i p t . c a s h i e r } < / p >  
-                     < p > $ { t ( " S a l e s m a n " ,   " 7§ 8 7¨ 7§ 7¦ 7¹ " ) } :   $ { r e c e i p t . s a l e s m a n   | |   ' - ' } < / p >  
-                     < p > $ { t ( " D a t e " ,   " 7§ 8 7¾7§ 7± 8y7® " ) } :   $ { d a t e F o r m a t t e d } < / p >  
-                     < p > $ { t ( " P a y m e n t   M e t h o d " ,   " 7· 7± 8y8 7©   7§ 8 7¯ 8~7¹ " ) } :   $ { p a y m e n t M a p [ r e c e i p t . m e t h o d ]   | |   ' - ' } < / p >  
+                     < p > $ { t ( " R e c e i p t   N o " ,   " 7ï¿½ 8 8&   7ï¿½ 8 8~7ï¿½ 7ï¿½8ï¿½7ï¿½ 7ï¿½ " ) } :   $ { r e c e i p t . r e c e i p t I d } < / p >  
+                     < p > $ { t ( " C a s h i e r " ,   " 7ï¿½ 8 8ï¿½7ï¿½ 7ï¿½ 8y7ï¿½ " ) } :   $ { r e c e i p t . c a s h i e r } < / p >  
+                     < p > $ { t ( " S a l e s m a n " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 7ï¿½ 7ï¿½ " ) } :   $ { r e c e i p t . s a l e s m a n   | |   ' - ' } < / p >  
+                     < p > $ { t ( " D a t e " ,   " 7ï¿½ 8 7ï¿½7ï¿½ 7ï¿½ 8y7ï¿½ " ) } :   $ { d a t e F o r m a t t e d } < / p >  
+                     < p > $ { t ( " P a y m e n t   M e t h o d " ,   " 7ï¿½ 7ï¿½ 8y8 7ï¿½   7ï¿½ 8 7ï¿½ 8~7ï¿½ " ) } :   $ { p a y m e n t M a p [ r e c e i p t . m e t h o d ]   | |   ' - ' } < / p >  
                      < t a b l e >  
                          < t h e a d >  
                              < t r >  
-                                 < t h > $ { t ( " C o d e " ,   " 7§ 8 8’8Æ7¯ " ) } < / t h >  
-                                 < t h > $ { t ( " N a m e " ,   " 7§ 8 7§ 7³ 8& " ) } < / t h >  
-                                 < t h > $ { t ( " Q t y " ,   " 7§ 8 8’8& 8y7© " ) } < / t h >  
-                                 < t h > $ { t ( " U n i t   P r i c e " ,   " 7³ 7¹ 7±   7§ 8 8Æ7­ 7¯ 7© " ) } < / t h >  
-                                 < t h > $ { t ( " T o t a l " ,   " 7§ 8 7¥ 7¬ 8& 7§ 8 8y" ) } < / t h >  
-                                 < t h > $ { t ( " D i s c o u n t " ,   " 7§ 8 7® 7µ 8& " ) } < / t h >  
+                                 < t h > $ { t ( " C o d e " ,   " 7ï¿½ 8 8ï¿½8ï¿½7ï¿½ " ) } < / t h >  
+                                 < t h > $ { t ( " N a m e " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 8& " ) } < / t h >  
+                                 < t h > $ { t ( " Q t y " ,   " 7ï¿½ 8 8ï¿½8& 8y7ï¿½ " ) } < / t h >  
+                                 < t h > $ { t ( " U n i t   P r i c e " ,   " 7ï¿½ 7ï¿½ 7ï¿½   7ï¿½ 8 8ï¿½7ï¿½ 7ï¿½ 7ï¿½ " ) } < / t h >  
+                                 < t h > $ { t ( " T o t a l " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 8& 7ï¿½ 8 8y" ) } < / t h >  
+                                 < t h > $ { t ( " D i s c o u n t " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 8& " ) } < / t h >  
                              < / t r >  
                          < / t h e a d >  
                          < t b o d y > $ { i t e m s H t m l } < / t b o d y >  
                      < / t a b l e >  
                      < d i v   c l a s s = " s u m m a r y " >  
-                         < p > $ { t ( " S u b t o t a l " ,   " 7§ 8 7¥ 7¬ 8& 7§ 8 8y  7§ 8 8~7± 7¹ 8y" ) } :   $ { s u b t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7¬ . 8& '   :   ' E G P ' } < / p >  
-                         < p > $ { t ( " T o t a l   D i s c o u n t " ,   " 7¥ 7¬ 8& 7§ 8 8y  7§ 8 7® 7µ 8& " ) } :   $ { t o t a l D i s c o u n t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7¬ . 8& '   :   ' E G P ' } < / p >  
-                         < p > $ { t ( " T o t a l " ,   " 7§ 8 7¥ 7¬ 8& 7§ 8 8y  7§ 8 8  8! 7§ 7¦ 8y" ) } :   $ { r e c e i p t . t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7¬ . 8& '   :   ' E G P ' } < / p >  
+                         < p > $ { t ( " S u b t o t a l " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 8& 7ï¿½ 8 8y  7ï¿½ 8 8~7ï¿½ 7ï¿½ 8y" ) } :   $ { s u b t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7ï¿½ . 8& '   :   ' E G P ' } < / p >  
+                         < p > $ { t ( " T o t a l   D i s c o u n t " ,   " 7ï¿½ 7ï¿½ 8& 7ï¿½ 8 8y  7ï¿½ 8 7ï¿½ 7ï¿½ 8& " ) } :   $ { t o t a l D i s c o u n t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7ï¿½ . 8& '   :   ' E G P ' } < / p >  
+                         < p > $ { t ( " T o t a l " ,   " 7ï¿½ 8 7ï¿½ 7ï¿½ 8& 7ï¿½ 8 8y  7ï¿½ 8 8  8! 7ï¿½ 7ï¿½ 8y" ) } :   $ { r e c e i p t . t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7ï¿½ . 8& '   :   ' E G P ' } < / p >  
                      < / d i v >  
                      < h r / >  
                      $ { r e c e i p t F o o t e r M e s s a g e   ?   ` < p   c l a s s = " f o o t e r "   s t y l e = " f o n t - s i z e : 1 3 p x ;   f o n t - w e i g h t :   b o l d ; " > $ { r e c e i p t F o o t e r M e s s a g e } < / p > `   :   ' ' }  
                      < p   c l a s s = " f o o t e r " >  
                          < s t r o n g > T a s h g h e e l   P O S   & c o p y ;   2 0 2 5 < / s t r o n g > < b r >  
-                         Kº    < a   h r e f = " t e l : + 2 0 1 1 2 6 5 2 2 3 7 3 " > 0 1 1 2 6 5 2 2 3 7 3 < / a >   /   < a   h r e f = " t e l : + 2 0 1 1 5 5 2 5 3 8 8 6 " > 0 1 1 5 5 2 5 3 8 8 6 < / a > < b r >  
-                         < s p a n   i d = " f o o t e r T e x t " > $ { t ( " D e s i g n e d   a n d   d e v e l o p e d   b y   I t q a n " ,   " 7¾7µ 8& 8y8&   8Æ7¾7· 8Æ8y7±   I t q a n " ) } < / s p a n >  
+                         Kï¿½    < a   h r e f = " t e l : + 2 0 1 1 2 6 5 2 2 3 7 3 " > 0 1 1 2 6 5 2 2 3 7 3 < / a >   /   < a   h r e f = " t e l : + 2 0 1 1 5 5 2 5 3 8 8 6 " > 0 1 1 5 5 2 5 3 8 8 6 < / a > < b r >  
+                         < s p a n   i d = " f o o t e r T e x t " > $ { t ( " D e s i g n e d   a n d   d e v e l o p e d   b y   I t q a n " ,   " 7ï¿½7ï¿½ 8& 8y8&   8ï¿½7ï¿½7ï¿½ 8ï¿½8y7ï¿½   I t q a n " ) } < / s p a n >  
                      < / p >  
                  < / d i v >  
                  < s c r i p t > w i n d o w . o n l o a d   =   ( )   = >   w i n d o w . p r i n t ( ) ; < / s c r i p t >  
@@ -803,15 +803,15 @@ document.addEventListener('DOMContentLoaded', () => {
      r e n d e r P r o d u c t s ( ) ;  
  }  
  
- w i n d o w . f i l t e r P r o d u c t s   =   f i l t e r P r o d u c t s ; 
- w i n d o w . p r o c e s s S a l e   =   p r o c e s s S a l e ; 
- w i n d o w . c l o s e S h i f t   =   c l o s e S h i f t ; 
- w i n d o w . s u b m i t O p e n S h i f t   =   s u b m i t O p e n S h i f t ; 
- w i n d o w . s u b m i t C l o s e S h i f t   =   s u b m i t C l o s e S h i f t ; 
- w i n d o w . s c a n B a r c o d e   =   s c a n B a r c o d e ; 
- w i n d o w . c l e a r C a r t   =   c l e a r C a r t ; 
- w i n d o w . h o l d T r a n s a c t i o n   =   h o l d T r a n s a c t i o n ; 
- w i n d o w . o p e n D i s c o u n t M o d a l   =   o p e n D i s c o u n t M o d a l ; 
- w i n d o w . s a v e D i s c o u n t   =   s a v e D i s c o u n t ; 
- w i n d o w . c l o s e D i s c o u n t M o d a l   =   c l o s e D i s c o u n t M o d a l ;  
- 
+
+window.filterProducts = filterProducts;
+window.processSale = processSale;
+window.closeShift = closeShift;
+window.submitOpenShift = submitOpenShift;
+window.submitCloseShift = submitCloseShift;
+window.scanBarcode = scanBarcode;
+window.clearCart = clearCart;
+window.holdTransaction = holdTransaction;
+window.openDiscountModal = openDiscountModal;
+window.saveDiscount = saveDiscount;
+window.closeDiscountModal = closeDiscountModal;
