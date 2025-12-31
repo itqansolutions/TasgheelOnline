@@ -73,12 +73,19 @@
                 <input type="number" id="product-price" step="0.01" required>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <input type="checkbox" id="product-unlimited" onchange="toggleStockFields()"
+                  style="width:auto; margin:0;">
+                <label for="product-unlimited" data-i18n="unlimited_stock" style="margin:0;">Unlimited Stock /
+                  Service</label>
+              </div>
+
+              <div class="form-group" id="cost-container">
                 <label for="product-cost" data-i18n="cost">Cost:</label>
                 <input type="number" id="product-cost" step="0.01">
               </div>
 
-              <div class="form-group">
+              <div class="form-group" id="stock-container">
                 <label for="product-stock" data-i18n="stock">Stock:</label>
                 <input type="number" id="product-stock" min="0">
               </div>

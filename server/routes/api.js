@@ -253,7 +253,7 @@ router.post('/sales', auth, async (req, res) => {
                 product = await Product.findOne({ barcode: item.code, tenantId: req.tenantId });
             }
 
-            if (product) {
+            if (product && product.trackStock !== false) {
                 product.stock -= item.qty;
                 await product.save();
             }

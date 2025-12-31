@@ -294,10 +294,12 @@ function renderProducts() {
     div.className = "product-card";
     if (product.stock <= 0) div.classList.add("out-of-stock");
     div.onclick = () => addToCart(product);
+    const stockDisplay = (product.trackStock === false) ? '<span style="font-size:1.5em; color:#2ecc71;">∞</span>' : `Stock: ${product.stock}`;
+
     div.innerHTML = `
       <h4>${product.name}</h4>
-      <p>${product.price.toFixed(2)} ج.م</p>
-      <p>Stock: ${product.stock}</p>
+      <p>${product.price.toFixed(2)}</p>
+      <p>${stockDisplay}</p>
     `;
     grid.appendChild(div);
   });
@@ -348,8 +350,20 @@ async function loadSalesmen() {
 // ===================== CART LOGIC =====================
 function addToCart(product) {
   console.log('Adding to cart:', product);
+
+  // Check stock (if tracked)
+  if (product.trackStock !== false && product.stock <= 0) {
+    alert("Out of stock!");
+    return;
+  }
+
   const existingItem = cart.find(item => item._id === product._id);
   if (existingItem) {
+    // Check stock for existing item (if tracked)
+    if (product.trackStock !== false && existingItem.qty >= product.stock) {
+      alert("Not enough stock!");
+      return;
+    }
     existingItem.qty++;
   } else {
     cart.push({ ...product, qty: 1 });

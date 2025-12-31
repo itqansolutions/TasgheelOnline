@@ -17,7 +17,22 @@ document.addEventListener("DOMContentLoaded", () => {
   window.saveStockAudit = saveStockAudit;
   window.deleteProduct = deleteProduct;
   window.editProduct = editProduct;
+  window.toggleStockFields = toggleStockFields;
 });
+
+function toggleStockFields() {
+  const isUnlimited = document.getElementById("product-unlimited").checked;
+  const stockContainer = document.getElementById("stock-container");
+  const costContainer = document.getElementById("cost-container"); // User asked to hide cost too? "doesn't have stock / cost" - Yes.
+
+  if (isUnlimited) {
+    stockContainer.style.display = 'none';
+    costContainer.style.display = 'none';
+  } else {
+    stockContainer.style.display = 'block';
+    costContainer.style.display = 'block';
+  }
+}
 
 // --- PRODUCTS ---
 
@@ -44,13 +59,18 @@ async function loadProducts() {
     products.forEach((p) => {
       const row = document.createElement("tr");
 
-      // Low Stock Alert
-      if (p.stock <= (p.minStock || 5)) {
-        row.style.backgroundColor = "#fff3cd"; // Warning color
+      // Low Stock Alert (Only if tracking stock)
+      if (p.trackStock !== false) {
+        if (p.stock <= (p.minStock || 5)) {
+          row.style.backgroundColor = "#fff3cd"; // Warning color
+        }
+        if (p.stock <= 0) {
+          row.style.backgroundColor = "#f8d7da"; // Danger color
+        }
       }
-      if (p.stock <= 0) {
-        row.style.backgroundColor = "#f8d7da"; // Danger color
-      }
+
+      const stockDisplay = (p.trackStock === false) ? '<span style="font-size:1.2em;">∞</span>' : (p.stock || 0);
+      const costDisplay = (p.trackStock === false) ? '-' : (p.cost?.toFixed(2) || "0.00");
 
       row.innerHTML = `
         <td>${p.code || "-"}</td>
@@ -58,8 +78,8 @@ async function loadProducts() {
         <td>${p.barcode || "-"}</td>
         <td>${p.category || "-"}</td>
         <td>${p.price?.toFixed(2) || "0.00"}</td>
-        <td>${p.cost?.toFixed(2) || "0.00"}</td>
-        <td>${p.stock || 0}</td>
+        <td>${costDisplay}</td>
+        <td>${stockDisplay}</td>
         <td>
           <button class="btn btn-secondary btn-action" onclick="editProduct('${p._id}')">✏️</button>
           <button class="btn btn-danger btn-action" onclick="deleteProduct('${p._id}')">🗑️</button>
@@ -81,12 +101,28 @@ async function handleAddProduct(e) {
   const category = document.getElementById("product-category").value;
   const barcode = document.getElementById("product-barcode").value.trim();
   const price = parseFloat(document.getElementById("product-price").value);
-  const cost = parseFloat(document.getElementById("product-cost").value) || 0;
-  const stock = parseInt(document.getElementById("product-stock").value) || 0;
+  const isUnlimited = document.getElementById("product-unlimited").checked;
+
+  let cost = 0;
+  let stock = 0;
+
+  if (!isUnlimited) {
+    cost = parseFloat(document.getElementById("product-cost").value) || 0;
+    stock = parseInt(document.getElementById("product-stock").value) || 0;
+  }
 
   if (!name || isNaN(price)) return alert("Please fill required fields");
 
-  const product = { code, name, category, barcode, price, cost, stock };
+  const product = {
+    code,
+    name,
+    category,
+    barcode,
+    price,
+    cost,
+    stock,
+    trackStock: !isUnlimited
+  };
 
   try {
     const token = localStorage.getItem('token');
@@ -102,6 +138,8 @@ async function handleAddProduct(e) {
     if (response.ok) {
       alert('Product added successfully');
       e.target.reset();
+      // Reset checkbox state visibility
+      toggleStockFields();
       loadProducts();
     } else {
       const err = await response.json();
