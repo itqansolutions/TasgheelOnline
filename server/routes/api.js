@@ -69,13 +69,20 @@ router.get('/tenant/trial-status', auth, async (req, res) => {
         if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
 
         const now = new Date();
-        const trialEnds = new Date(tenant.trialEndsAt);
-        const diffTime = trialEnds - now;
+        // Determine effective end date
+        let effectiveEndDate = new Date(tenant.trialEndsAt);
+
+        // If there is a subscription end date that is later than trial, use it
+        if (tenant.subscriptionEndsAt && new Date(tenant.subscriptionEndsAt) > effectiveEndDate) {
+            effectiveEndDate = new Date(tenant.subscriptionEndsAt);
+        }
+
+        const diffTime = effectiveEndDate - now;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const isExpired = diffTime < 0;
 
         res.json({
-            trialEndsAt: tenant.trialEndsAt,
+            trialEndsAt: effectiveEndDate,
             daysRemaining: diffDays,
             isExpired
         });
