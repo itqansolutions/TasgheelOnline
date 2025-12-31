@@ -8,6 +8,15 @@ const shiftSchema = new mongoose.Schema({
     startCash: { type: Number, required: true },
     endCash: Number, // Expected cash
     actualCash: Number, // Counted cash
+
+    // Snapshot fields
+    totalSales: { type: Number, default: 0 },
+    cashSales: { type: Number, default: 0 },
+    cardSales: { type: Number, default: 0 },
+    mobileSales: { type: Number, default: 0 },
+    returnsTotal: { type: Number, default: 0 },
+    expensesTotal: { type: Number, default: 0 },
+
     status: { type: String, enum: ['open', 'closed'], default: 'open' },
     transactions: [{
         type: { type: String, enum: ['in', 'out'], required: true },

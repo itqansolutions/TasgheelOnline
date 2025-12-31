@@ -213,9 +213,21 @@ router.post('/sales', auth, async (req, res) => {
         const count = await Sale.countDocuments({ tenantId: req.tenantId });
         const receiptId = `REC-${Date.now()}-${count + 1}`;
 
+        // Find active shift
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
+        });
+
+        if (!shift) {
+            return res.status(400).json({ msg: 'No open shift found. Please open a shift first.' });
+        }
+
         const newSale = new Sale({
             tenantId: req.tenantId,
             receiptId,
+            shiftId: shift._id,
             date: new Date(),
             method: paymentMethod, // Map paymentMethod to method
             cashier: req.user.username, // Set cashier from logged-in user
@@ -790,6 +802,89 @@ router.post('/shifts/open', auth, async (req, res) => {
     }
 });
 
+// @route   GET /shifts/summary
+// @desc    Get summary for current open shift (for closing preview)
+// @access  Private
+router.get('/shifts/summary', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const shift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: user.username,
+            status: 'open'
+        });
+
+        if (!shift) return res.status(400).json({ msg: 'No open shift found' });
+
+        // Calculate totals for this shift
+        // 1. Sales linked to this shift
+        const sales = await Sale.find({ shiftId: shift._id, tenantId: req.tenantId });
+
+        let cashSales = 0;
+        let cardSales = 0;
+        let mobileSales = 0;
+        let totalSales = 0;
+        let totalRefunds = 0;
+
+        sales.forEach(sale => {
+            if (sale.status !== 'cancelled') {
+                totalSales += sale.total;
+                if (sale.method === 'cash') cashSales += sale.total;
+                else if (sale.method === 'card') cardSales += sale.total;
+                else if (sale.method === 'mobile') mobileSales += sale.total;
+            }
+
+            // Returns attached to these sales (or we could track returns separately if needed)
+            // Currently returns are embedded in sales.
+            if (sale.returns && sale.returns.length > 0) {
+                sale.returns.forEach(ret => {
+                    totalRefunds += ret.totalRefund;
+                });
+            }
+        });
+
+        // 2. Expenses (Time based for now, strictly between shift start and now)
+        // Ideally we'd link expenses to shiftId too, but per requirement "strictly between timestamps"
+        const expenses = await Expense.find({
+            tenantId: req.tenantId,
+            date: { $gte: shift.startTime },
+            // Optional: filter by user if expenses are user-specific? Usually expenses are general.
+            // But let's assume general for the shop for now or user-specific if requested.
+            // Requirement says "Expenses (if applicable)". Let's include all shop expenses for this duration? 
+            // Or only those added by the cashier? safer to include all or just cashier's. 
+            // Let's stick to cashier's to balance THEIR drawer.
+            // Actually often expenses are taken from the drawer, so they should be user-specific or drawer-specific.
+            // Let's assume expenses recorded by this user affect this drawer.
+            // But Expense model doesn't strictly have 'createdBy'. It has 'date'. 
+            // Let's assume expenses are global valid deductions for now, or just ignore if not linked.
+            // Wait, standard POS: Expense = Cash Out.
+        });
+
+        let expensesTotal = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+        // Expected Cash in Drawer = Start + Cash Sales - Cash Returns (assuming returns are cash) - Expenses
+        // Note: Returns might be to card. But usually POS returns are cash. Let's assume cash for safety.
+        const expectedCash = shift.startCash + cashSales - totalRefunds - expensesTotal;
+
+        res.json({
+            startCash: shift.startCash,
+            cashSales,
+            cardSales,
+            mobileSales,
+            totalSales,
+            totalRefunds,
+            expensesTotal,
+            expectedCash
+        });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   POST /api/shifts/close
 // @desc    Close current shift
 // @access  Private
@@ -810,15 +905,49 @@ router.post('/shifts/close', auth, async (req, res) => {
 
         const { actualCash } = req.body;
 
-        // Calculate expected cash
-        // Start Cash + Sales (Cash) + Cash In - Cash Out - Returns (Cash)
-        // This is a simplified calculation. For production, you'd query Sales for this shift.
-        // For now, we'll rely on the frontend or a separate calculation service.
-        // But let's at least mark it closed.
+        // Perform calculation again to seal the data
+        const sales = await Sale.find({ shiftId: shift._id, tenantId: req.tenantId });
+
+        let cashSales = 0;
+        let cardSales = 0;
+        let mobileSales = 0;
+        let totalSales = 0;
+        let totalRefunds = 0;
+
+        sales.forEach(sale => {
+            if (sale.status !== 'cancelled') {
+                totalSales += sale.total;
+                if (sale.method === 'cash') cashSales += sale.total;
+                else if (sale.method === 'card') cardSales += sale.total;
+                else if (sale.method === 'mobile') mobileSales += sale.total;
+            }
+            if (sale.returns && sale.returns.length > 0) {
+                sale.returns.forEach(ret => {
+                    totalRefunds += ret.totalRefund;
+                });
+            }
+        });
+
+        const expenses = await Expense.find({
+            tenantId: req.tenantId,
+            date: { $gte: shift.startTime }
+        });
+        const expensesTotal = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+
+        const expectedCash = shift.startCash + cashSales - totalRefunds - expensesTotal;
 
         shift.status = 'closed';
         shift.endTime = Date.now();
         shift.actualCash = actualCash;
+        shift.endCash = expectedCash; // Expected
+
+        // Save snapshots
+        shift.totalSales = totalSales;
+        shift.cashSales = cashSales;
+        shift.cardSales = cardSales;
+        shift.mobileSales = mobileSales;
+        shift.returnsTotal = totalRefunds;
+        shift.expensesTotal = expensesTotal;
 
         await shift.save();
 
@@ -827,7 +956,7 @@ router.post('/shifts/close', auth, async (req, res) => {
             tenantId: req.tenantId,
             user: req.user.username,
             action: 'CLOSE_SHIFT',
-            details: { shiftId: shift._id, actualCash }
+            details: { shiftId: shift._id, actualCash, expectedCash, diff: actualCash - expectedCash }
         });
         await log.save();
 

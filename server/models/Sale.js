@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const saleSchema = new mongoose.Schema({
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
     receiptId: { type: String, required: true }, // e.g., receipt_123456
+    shiftId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
     date: { type: Date, default: Date.now },
     method: { type: String, enum: ['cash', 'card', 'mobile'], required: true },
     cashier: { type: String, required: true },
