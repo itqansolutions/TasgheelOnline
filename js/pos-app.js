@@ -1,11 +1,12 @@
 // POS JS with salesman support and fixed receipt printing (final version)
+console.log("POS Script Starting...");
 let allProducts = [];
 let filteredProducts = [];
 let cart = [];
 let currentDiscountIndex = null;
-
-// API_URL is already defined in auth.js
-// const API_URL = window.API_URL || '/api';
+window.cart = cart; // Debug access
+// Ensure API_URL is available
+const API_URL = window.API_URL || '/api';
 
 // ===================== INIT =====================
 // SHIFT MANAGEMENT
@@ -105,9 +106,17 @@ async function submitOpenShift() {
   }
 }
 
-async function closeShift() {
+window.closeShift = async function () {
   try {
     const token = localStorage.getItem('token');
+    if (!token) { console.error("No token"); return; }
+
+    // Check if API_URL is defined
+    if (typeof API_URL === 'undefined') {
+      alert('System Error: API_URL not defined. Reload page.');
+      return;
+    }
+
     const response = await fetch(`${API_URL}/shifts/summary`, {
       headers: { 'x-auth-token': token }
     });
@@ -115,15 +124,21 @@ async function closeShift() {
     if (response.ok) {
       const data = await response.json();
 
-      document.getElementById('summaryStartCash').textContent = data.startCash.toFixed(2);
-      document.getElementById('summaryCashSales').textContent = data.cashSales.toFixed(2);
-      document.getElementById('summaryCardSales').textContent = data.cardSales.toFixed(2);
-      document.getElementById('summaryMobileSales').textContent = data.mobileSales.toFixed(2);
-      document.getElementById('summaryReturns').textContent = data.totalRefunds.toFixed(2);
-      document.getElementById('summaryExpenses').textContent = data.expensesTotal.toFixed(2);
-      document.getElementById('summaryExpectedCash').textContent = data.expectedCash.toFixed(2);
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val.toFixed(2);
+      };
 
-      document.getElementById('closeShiftModal').style.display = 'flex';
+      setVal('summaryStartCash', data.startCash);
+      setVal('summaryCashSales', data.cashSales);
+      setVal('summaryCardSales', data.cardSales);
+      setVal('summaryMobileSales', data.mobileSales);
+      setVal('summaryReturns', data.totalRefunds);
+      setVal('summaryExpenses', data.expensesTotal);
+      setVal('summaryExpectedCash', data.expectedCash);
+
+      const modal = document.getElementById('closeShiftModal');
+      if (modal) modal.style.display = 'flex';
     } else {
       alert('Failed to load shift summary');
     }
@@ -131,10 +146,11 @@ async function closeShift() {
     console.error(err);
     alert('Error loading summary');
   }
-}
+};
 
-async function submitCloseShift() {
-  const actualCash = parseFloat(document.getElementById('actualCashInput').value);
+window.submitCloseShift = async function () {
+  const actualCashInput = document.getElementById('actualCashInput');
+  const actualCash = parseFloat(actualCashInput ? actualCashInput.value : 0);
   if (isNaN(actualCash)) return alert('Please enter actual cash amount');
 
   if (!confirm('Are you sure you want to close the shift?')) return;
@@ -159,7 +175,7 @@ async function submitCloseShift() {
   } catch (error) {
     console.error('Error closing shift:', error);
   }
-}
+};
 
 async function checkTrialStatus() {
   try {
