@@ -21,15 +21,18 @@ async function checkOpenShift() {
       headers: { 'x-auth-token': token }
     });
 
-    if (!response.ok) {
-      // If 404/others, maybe no shift? 
-      // Our API returns 200 with null if no shift? 
-      // Let's see API: "res.json(shift)" which is null if not found.
-      // So response is OK, body is null.
+    const shift = await response.json();
+
+    // Get current user safely from storage, fallback to DOM if needed, but storage is source of truth
+    let currentUser = 'User';
+    try {
+      const userObj = JSON.parse(localStorage.getItem('currentUser'));
+      if (userObj && userObj.username) currentUser = userObj.username;
+    } catch (e) {
+      console.error("Error parsing user", e);
     }
 
-    const shift = await response.json();
-    const currentUser = document.getElementById('currentUserName')?.textContent || 'User';
+    console.log(`Shift Check: Shift Cashier='${shift?.cashier}', Current User='${currentUser}'`);
 
     if (!shift) {
       // No open shift, show modal
