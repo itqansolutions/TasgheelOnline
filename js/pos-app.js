@@ -1,4 +1,4 @@
-��// POS JS with salesman support and fixed receipt printing (final version)
+// POS JS with salesman support and fixed receipt printing (final version)
 let allProducts = [];
 let filteredProducts = [];
 let cart = [];
@@ -18,10 +18,10 @@ async function checkOpenShift() {
     });
 
     if (!response.ok) {
-        // If 404/others, maybe no shift? 
-        // Our API returns 200 with null if no shift? 
-        // Let's see API: "res.json(shift)" which is null if not found.
-        // So response is OK, body is null.
+      // If 404/others, maybe no shift? 
+      // Our API returns 200 with null if no shift? 
+      // Let's see API: "res.json(shift)" which is null if not found.
+      // So response is OK, body is null.
     }
 
     const shift = await response.json();
@@ -34,15 +34,15 @@ async function checkOpenShift() {
     } else {
       // Shift exists. Check ownership.
       if (shift.cashier === currentUser) {
-          // Same user. Offer to Resume.
-          document.getElementById('resumeShiftTime').textContent = new Date(shift.startTime).toLocaleString();
-          document.getElementById('resumeShiftModal').style.display = 'flex';
-          disablePOS();
+        // Same user. Offer to Resume.
+        document.getElementById('resumeShiftTime').textContent = new Date(shift.startTime).toLocaleString();
+        document.getElementById('resumeShiftModal').style.display = 'flex';
+        disablePOS();
       } else {
-          // Different user. Block.
-          document.getElementById('lockedShiftUser').textContent = shift.cashier;
-          document.getElementById('lockedShiftModal').style.display = 'flex';
-          disablePOS();
+        // Different user. Block.
+        document.getElementById('lockedShiftUser').textContent = shift.cashier;
+        document.getElementById('lockedShiftModal').style.display = 'flex';
+        disablePOS();
       }
     }
   } catch (error) {
@@ -52,18 +52,18 @@ async function checkOpenShift() {
 }
 
 function resumeShift() {
-    document.getElementById('resumeShiftModal').style.display = 'none';
-    enablePOS();
+  document.getElementById('resumeShiftModal').style.display = 'none';
+  enablePOS();
 }
 
 function closeShiftFromResume() {
-    document.getElementById('resumeShiftModal').style.display = 'none';
-    closeShift(); // Opens the close modal logic
+  document.getElementById('resumeShiftModal').style.display = 'none';
+  closeShift(); // Opens the close modal logic
 }
 
 function disablePOS() {
   document.querySelectorAll('.btn').forEach(btn => {
-    if (!btn.closest('#openShiftModal') && !btn.closest('.sidebar-footer')) {
+    if (!btn.closest('#openShiftModal') && !btn.closest('#resumeShiftModal') && !btn.closest('.sidebar-footer')) {
       btn.disabled = true;
     }
   });
@@ -114,7 +114,7 @@ async function closeShift() {
 
     if (response.ok) {
       const data = await response.json();
-      
+
       document.getElementById('summaryStartCash').textContent = data.startCash.toFixed(2);
       document.getElementById('summaryCashSales').textContent = data.cashSales.toFixed(2);
       document.getElementById('summaryCardSales').textContent = data.cardSales.toFixed(2);
@@ -122,14 +122,14 @@ async function closeShift() {
       document.getElementById('summaryReturns').textContent = data.totalRefunds.toFixed(2);
       document.getElementById('summaryExpenses').textContent = data.expensesTotal.toFixed(2);
       document.getElementById('summaryExpectedCash').textContent = data.expectedCash.toFixed(2);
-      
+
       document.getElementById('closeShiftModal').style.display = 'flex';
     } else {
-        alert('Failed to load shift summary');
+      alert('Failed to load shift summary');
     }
   } catch (err) {
-      console.error(err);
-      alert('Error loading summary');
+    console.error(err);
+    alert('Error loading summary');
   }
 }
 
@@ -208,7 +208,7 @@ async function checkTrialStatus() {
   }
 }
 
-// يربط������������� مرة����������� فقط
+// يربط السيرش مرة واحدة فقط
 function bindSearchOnce() {
   const el = document.getElementById("productSearch");
   if (el && !el.dataset.bound) {
@@ -217,21 +217,21 @@ function bindSearchOnce() {
   }
 }
 
-// يتأكد����� السيرش������� أي��������� ومش�����������
+// يتأكد ان السيرش شغال أي وقت ومش متغطي
 function ensureSearchClickable() {
   const el = document.getElementById("productSearch");
   if (el) {
     el.style.pointerEvents = "auto";
     el.style.position = "relative";
     el.style.zIndex = "1000";
-    //����������� أي����������� ممكن��������� لسه��������� بعد�������������
+    // يقفل أي مودال ممكن لسه مفتوح بالغلط
     ["discountModal", "auditModal"].forEach(id => {
       const m = document.getElementById(id);
       if (m && getComputedStyle(m).display !== "none") {
         m.style.display = "none";
       }
     });
-    // ضمان��������������� أول������� في������� البيئات
+    // ضمان الفوكس أول ما يفتح في كل البيئات
     el.addEventListener("mousedown", () => el.focus(), { once: true });
   }
 }
@@ -280,7 +280,7 @@ function renderProducts() {
     div.onclick = () => addToCart(product);
     div.innerHTML = `
       <h4>${product.name}</h4>
-      <p>${product.price.toFixed(2)} ج���</p>
+      <p>${product.price.toFixed(2)} ج.م</p>
       <p>Stock: ${product.stock}</p>
     `;
     grid.appendChild(div);
@@ -357,8 +357,8 @@ function updateCartSummary() {
   if (cart.length === 0) {
     cartEmptyText.style.display = "block";
     if (cartCounter) cartCounter.textContent = "0";
-    if (cartSubtotal) cartSubtotal.textContent = "0.00���.م";
-    if (cartTotal) cartTotal.textContent = "Total: 0.00 ج���";
+    if (cartSubtotal) cartSubtotal.textContent = "0.00 ج.م";
+    if (cartTotal) cartTotal.textContent = "Total: 0.00 ج.م";
     disableActionButtons(true);
     return;
   }
@@ -396,12 +396,12 @@ function updateCartSummary() {
   if (total < 0) total = 0;
 
   if (cartCounter) cartCounter.textContent = cart.length;
-  if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)}���.م`;
+  if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)} ج.م`;
 
   const discountEl = document.getElementById("cartDiscount");
-  if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} ج���`;
+  if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} ج.م`;
 
-  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} ج���`;
+  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} ج.م`;
 }
 
 function removeFromCart(index) {
@@ -539,7 +539,7 @@ async function printDailySummary() {
     const html = `
       <html>
       <head>
-        <title>${t("Daily Summary", ��������� اليوم")}</title>
+        <title>${t("Daily Summary", "ملخص اليوم")}</title>
         <style>
           body { font-family: Arial, sans-serif; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; text-align: center; }
           .container { width: 72mm; margin: 0 auto; }
@@ -551,19 +551,19 @@ async function printDailySummary() {
       <body>
         <div class="container">
           <h2>${shopName}</h2>
-          <h3>${t("Daily Summary", "ملخص�����������")}</h3>
+          <h3>${t("Daily Summary", "ملخص اليومية")}</h3>
           <p>${dateFormatted}</p>
           <hr/>
           <div class="summary-item">
-            <span>${t("Total Orders", "عدد���������������")}</span>
+            <span>${t("Total Orders", "عدد الطلبات")}</span>
             <span>${data.totalOrders}</span>
           </div>
           <div class="summary-item">
-            <span>${t("Total Sales", ������������� المبيعات")}</span>
+            <span>${t("Total Sales", "إجمالي المبيعات")}</span>
             <span>${data.totalSales.toFixed(2)}</span>
           </div>
           <hr/>
-          <p>${t("Printed at", ������� في")}: ${new Date().toLocaleTimeString()}</p>
+          <p>${t("Printed at", "طبع في")}: ${new Date().toLocaleTimeString()}</p>
         </div>
         <script>window.onload = () => window.print();</script>
       </body>
@@ -641,425 +641,216 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePOSLanguage(lang);
 });
 
- 
- a s y n c   f u n c t i o n   p r i n t R e c e i p t ( r e c e i p t )   { 
- 
-     t r y   { 
- 
-         / /   I f   p a s s e d   a n   I D   i n s t e a d   o f   o b j e c t ,   f e t c h   i t   ( j u s t   i n   c a s e ) 
- 
-         i f   ( t y p e o f   r e c e i p t   = = =   ' s t r i n g ' )   { 
- 
-                 c o n s t   t o k e n   =   l o c a l S t o r a g e . g e t I t e m ( ' t o k e n ' ) ; 
- 
-                 c o n s t   r e s p o n s e   =   a w a i t   f e t c h ( ` $ { A P I _ U R L } / s a l e s / $ { r e c e i p t } ` ,   { 
- 
-                         h e a d e r s :   {   ' x - a u t h - t o k e n ' :   t o k e n   } 
- 
-                 } ) ; 
- 
-                 i f   ( ! r e s p o n s e . o k )   { 
- 
-                         a l e r t ( ' F a i l e d   t o   l o a d   r e c e i p t   f o r   p r i n t i n g ' ) ; 
- 
-                         r e t u r n ; 
- 
-                 } 
- 
-                 r e c e i p t   =   a w a i t   r e s p o n s e . j s o n ( ) ; 
- 
-         } 
- 
- 
- 
-         c o n s t   s h o p N a m e   =   l o c a l S t o r a g e . g e t I t e m ( ' s h o p N a m e ' )   | |   ' M y   S h o p ' ; 
- 
-         c o n s t   s h o p A d d r e s s   =   l o c a l S t o r a g e . g e t I t e m ( ' s h o p A d d r e s s ' )   | |   ' ' ; 
- 
-         c o n s t   s h o p L o g o   =   l o c a l S t o r a g e . g e t I t e m ( ' s h o p L o g o ' )   | |   ' ' ; 
- 
-         c o n s t   r e c e i p t F o o t e r M e s s a g e   =   l o c a l S t o r a g e . g e t I t e m ( ' f o o t e r M e s s a g e ' )   | |   ' ' ; 
- 
- 
- 
-         c o n s t   l a n g   =   l o c a l S t o r a g e . g e t I t e m ( ' p o s _ l a n g u a g e ' )   | |   ' e n ' ; 
- 
-         c o n s t   t   =   ( e n ,   a r )   = >   ( l a n g   = = =   ' a r '   ?   a r   :   e n ) ; 
- 
-         c o n s t   p a y m e n t M a p   =   { 
- 
-             c a s h :   t ( " C a s h " ,   " 8  8 7� 8y" ) , 
- 
-             c a r d :   t ( " C a r d " ,   " 7� 7� 7� 8 7� " ) , 
- 
-             m o b i l e :   t ( " M o b i l e " ,   " 8& 8�7� 7� 8y8 " ) 
- 
-         } ; 
- 
- 
- 
-         l e t   t o t a l D i s c o u n t   =   0 ; 
- 
-         l e t   s u b t o t a l   =   0 ; 
- 
- 
- 
-         c o n s t   i t e m s H t m l   =   r e c e i p t . i t e m s . m a p ( i t e m   = >   { 
- 
-             c o n s t   o r i g i n a l T o t a l   =   i t e m . p r i c e   *   i t e m . q t y ; 
- 
-             l e t   d i s c o u n t S t r   =   " - " ; 
- 
-             l e t   d i s c o u n t A m o u n t P e r U n i t   =   0 ; 
- 
- 
- 
-             i f   ( i t e m . d i s c o u n t ? . t y p e   = = =   " p e r c e n t " )   { 
- 
-                 d i s c o u n t A m o u n t P e r U n i t   =   i t e m . p r i c e   *   ( i t e m . d i s c o u n t . v a l u e   /   1 0 0 ) ; 
- 
-                 d i s c o u n t S t r   =   ` $ { i t e m . d i s c o u n t . v a l u e } % ` ; 
- 
-             }   e l s e   i f   ( i t e m . d i s c o u n t ? . t y p e   = = =   " v a l u e " )   { 
- 
-                 d i s c o u n t A m o u n t P e r U n i t   =   i t e m . d i s c o u n t . v a l u e ; 
- 
-                 d i s c o u n t S t r   =   ` $ { d i s c o u n t A m o u n t P e r U n i t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7� . 8& '   :   ' E G P ' } ` ; 
- 
-             } 
- 
- 
- 
-             c o n s t   i t e m D i s c o u n t T o t a l   =   d i s c o u n t A m o u n t P e r U n i t   *   i t e m . q t y ; 
- 
-             t o t a l D i s c o u n t   + =   i t e m D i s c o u n t T o t a l ; 
- 
-             s u b t o t a l   + =   o r i g i n a l T o t a l ; 
- 
- 
- 
-             r e t u r n   ` 
- 
-                 < t r > 
- 
-                     < t d > $ { i t e m . c o d e   | |   ' - ' } < / t d > 
- 
-                     < t d > $ { i t e m . n a m e   | |   ' - ' } < / t d > 
- 
-                     < t d > $ { i t e m . q t y } < / t d > 
- 
-                     < t d > $ { i t e m . p r i c e . t o F i x e d ( 2 ) } < / t d > 
- 
-                     < t d > $ { o r i g i n a l T o t a l . t o F i x e d ( 2 ) } < / t d > 
- 
-                     < t d > $ { d i s c o u n t S t r } < / t d > 
- 
-                 < / t r > 
- 
-             ` ; 
- 
-         } ) . j o i n ( ' ' ) ; 
- 
- 
- 
-         c o n s t   d a t e F o r m a t t e d   =   n e w   D a t e ( r e c e i p t . d a t e ) . t o L o c a l e S t r i n g ( l a n g   = = =   ' a r '   ?   ' a r - E G '   :   ' e n - U S ' ,   { 
- 
-             y e a r :   ' n u m e r i c ' ,   m o n t h :   ' 2 - d i g i t ' ,   d a y :   ' 2 - d i g i t ' ,   h o u r :   ' 2 - d i g i t ' ,   m i n u t e :   ' 2 - d i g i t ' ,   h o u r 1 2 :   t r u e 
- 
-         } ) ; 
- 
- 
- 
-         c o n s t   h t m l   =   ` 
- 
-             < h t m l > 
- 
-             < h e a d > 
- 
-                 < t i t l e > $ { t ( " R e c e i p t " ,   " 7� 8 7� 8y7� 7� 8 " ) } < / t i t l e > 
- 
-                 < s t y l e > 
- 
-                     b o d y   {   f o n t - f a m i l y :   A r i a l ,   s a n s - s e r i f ;   f o n t - s i z e :   1 1 . 5 p x ;   f o n t - w e i g h t :   b o l d ;   l i n e - h e i g h t :   1 . 7 ;   d i r e c t i o n :   $ { l a n g   = = =   ' a r '   ?   ' r t l '   :   ' l t r ' } ;   m a r g i n :   0 ;   p a d d i n g :   0 ;   } 
- 
-                     . r e c e i p t - c o n t a i n e r   {   w i d t h :   7 2 m m ;   m a r g i n :   0 ;   p a d d i n g :   5 p x   0 ;   b a c k g r o u n d :   # f f f ;   b o x - s i z i n g :   b o r d e r - b o x ;   } 
- 
-                     . c e n t e r   {   t e x t - a l i g n :   c e n t e r ;   } 
- 
-                     i m g . l o g o   {   m a x - h e i g h t :   7 0 p x ;   d i s p l a y :   b l o c k ;   m a r g i n :   0   a u t o   5 p x ;   } 
- 
-                     h 2   {   m a r g i n :   3 p x   0 ;   f o n t - s i z e :   1 5 p x ;   f o n t - w e i g h t :   b o l d ;   w i d t h :   1 0 0 % ;   w o r d - w r a p :   b r e a k - w o r d ;   } 
- 
-                     p   {   m a r g i n :   2 p x   8 p x ;   f o n t - w e i g h t :   b o l d ;   } 
- 
-                     t a b l e   {   w i d t h :   9 8 % ;   b o r d e r - c o l l a p s e :   c o l l a p s e ;   m a r g i n :   8 p x   a u t o   4 p x ;   t a b l e - l a y o u t :   f i x e d ;   } 
- 
-                     t h ,   t d   {   b o r d e r :   1 p x   d a s h e d   # 4 4 4 ;   p a d d i n g :   4 p x   5 p x ;   t e x t - a l i g n :   c e n t e r ;   f o n t - s i z e :   1 1 p x ;   w h i t e - s p a c e :   n o r m a l ;   w o r d - b r e a k :   b r e a k - w o r d ;   f o n t - w e i g h t :   b o l d ;   } 
- 
-                     t h : n t h - c h i l d ( 1 ) ,   t d : n t h - c h i l d ( 1 )   {   w i d t h :   1 4 % ;   } 
- 
-                     t h : n t h - c h i l d ( 2 ) ,   t d : n t h - c h i l d ( 2 )   {   w i d t h :   2 8 % ;   } 
- 
-                     t h : n t h - c h i l d ( 3 ) ,   t d : n t h - c h i l d ( 3 )   {   w i d t h :   1 0 % ;   } 
- 
-                     t h : n t h - c h i l d ( 4 ) ,   t d : n t h - c h i l d ( 4 )   {   w i d t h :   1 4 % ;   } 
- 
-                     t h : n t h - c h i l d ( 5 ) ,   t d : n t h - c h i l d ( 5 )   {   w i d t h :   1 6 % ;   } 
- 
-                     t h : n t h - c h i l d ( 6 ) ,   t d : n t h - c h i l d ( 6 )   {   w i d t h :   1 8 % ;   } 
- 
-                     . s u m m a r y   {   m a r g i n :   1 0 p x   8 p x   0 ;   f o n t - s i z e :   1 2 p x ;   f o n t - w e i g h t :   b o l d ;   } 
- 
-                     . f o o t e r   {   t e x t - a l i g n :   c e n t e r ;   m a r g i n :   1 2 p x   0   0 ;   f o n t - s i z e :   1 0 . 5 p x ;   b o r d e r - t o p :   1 p x   d a s h e d   # c c c ;   p a d d i n g - t o p :   6 p x ;   f o n t - w e i g h t :   b o l d ;   } 
- 
-                     @ m e d i a   p r i n t   {   @ p a g e   {   s i z e :   7 2 m m   a u t o ;   m a r g i n :   0 ;   }   b o d y   {   m a r g i n :   0 ;   p a d d i n g :   0 ;   }   a   {   c o l o r :   b l a c k ;   t e x t - d e c o r a t i o n :   n o n e ;   }   } 
- 
-                 < / s t y l e > 
- 
-             < / h e a d > 
- 
-             < b o d y > 
- 
-                 < d i v   c l a s s = " r e c e i p t - c o n t a i n e r " > 
- 
-                     $ { s h o p L o g o   ?   ` < i m g   s r c = " $ { s h o p L o g o } "   c l a s s = " l o g o " > `   :   ' ' } 
- 
-                     < h 2   c l a s s = " c e n t e r " > $ { s h o p N a m e } < / h 2 > 
- 
-                     < p   c l a s s = " c e n t e r " > $ { s h o p A d d r e s s } < / p > 
- 
-                     < h r / > 
- 
-                     < p > $ { t ( " R e c e i p t   N o " ,   " 7� 8 8&   7� 8 8~7� 7�8�7� 7� " ) } :   $ { r e c e i p t . r e c e i p t I d } < / p > 
- 
-                     < p > $ { t ( " C a s h i e r " ,   " 7� 8 8�7� 7� 8y7� " ) } :   $ { r e c e i p t . c a s h i e r } < / p > 
- 
-                     < p > $ { t ( " S a l e s m a n " ,   " 7� 8 7� 7� 7� 7� " ) } :   $ { r e c e i p t . s a l e s m a n   | |   ' - ' } < / p > 
- 
-                     < p > $ { t ( " D a t e " ,   " 7� 8 7�7� 7� 8y7� " ) } :   $ { d a t e F o r m a t t e d } < / p > 
- 
-                     < p > $ { t ( " P a y m e n t   M e t h o d " ,   " 7� 7� 8y8 7�   7� 8 7� 8~7� " ) } :   $ { p a y m e n t M a p [ r e c e i p t . m e t h o d ]   | |   ' - ' } < / p > 
- 
-                     < t a b l e > 
- 
-                         < t h e a d > 
- 
-                             < t r > 
- 
-                                 < t h > $ { t ( " C o d e " ,   " 7� 8 8�8�7� " ) } < / t h > 
- 
-                                 < t h > $ { t ( " N a m e " ,   " 7� 8 7� 7� 8& " ) } < / t h > 
- 
-                                 < t h > $ { t ( " Q t y " ,   " 7� 8 8�8& 8y7� " ) } < / t h > 
- 
-                                 < t h > $ { t ( " U n i t   P r i c e " ,   " 7� 7� 7�   7� 8 8�7� 7� 7� " ) } < / t h > 
- 
-                                 < t h > $ { t ( " T o t a l " ,   " 7� 8 7� 7� 8& 7� 8 8y" ) } < / t h > 
- 
-                                 < t h > $ { t ( " D i s c o u n t " ,   " 7� 8 7� 7� 8& " ) } < / t h > 
- 
-                             < / t r > 
- 
-                         < / t h e a d > 
- 
-                         < t b o d y > $ { i t e m s H t m l } < / t b o d y > 
- 
-                     < / t a b l e > 
- 
-                     < d i v   c l a s s = " s u m m a r y " > 
- 
-                         < p > $ { t ( " S u b t o t a l " ,   " 7� 8 7� 7� 8& 7� 8 8y  7� 8 8~7� 7� 8y" ) } :   $ { s u b t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7� . 8& '   :   ' E G P ' } < / p > 
- 
-                         < p > $ { t ( " T o t a l   D i s c o u n t " ,   " 7� 7� 8& 7� 8 8y  7� 8 7� 7� 8& " ) } :   $ { t o t a l D i s c o u n t . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7� . 8& '   :   ' E G P ' } < / p > 
- 
-                         < p > $ { t ( " T o t a l " ,   " 7� 8 7� 7� 8& 7� 8 8y  7� 8 8  8! 7� 7� 8y" ) } :   $ { r e c e i p t . t o t a l . t o F i x e d ( 2 ) }   $ { l a n g   = = =   ' a r '   ?   ' 7� . 8& '   :   ' E G P ' } < / p > 
- 
-                     < / d i v > 
- 
-                     < h r / > 
- 
-                     $ { r e c e i p t F o o t e r M e s s a g e   ?   ` < p   c l a s s = " f o o t e r "   s t y l e = " f o n t - s i z e : 1 3 p x ;   f o n t - w e i g h t :   b o l d ; " > $ { r e c e i p t F o o t e r M e s s a g e } < / p > `   :   ' ' } 
- 
-                     < p   c l a s s = " f o o t e r " > 
- 
-                         < s t r o n g > T a s h g h e e l   P O S   & c o p y ;   2 0 2 5 < / s t r o n g > < b r > 
- 
-                         K� 
-   < a   h r e f = " t e l : + 2 0 1 1 2 6 5 2 2 3 7 3 " > 0 1 1 2 6 5 2 2 3 7 3 < / a >   /   < a   h r e f = " t e l : + 2 0 1 1 5 5 2 5 3 8 8 6 " > 0 1 1 5 5 2 5 3 8 8 6 < / a > < b r > 
- 
-                         < s p a n   i d = " f o o t e r T e x t " > $ { t ( " D e s i g n e d   a n d   d e v e l o p e d   b y   I t q a n " ,   " 7�7� 8& 8y8&   8�7�7� 8�8y7�   I t q a n " ) } < / s p a n > 
- 
-                     < / p > 
- 
-                 < / d i v > 
- 
-                 < s c r i p t > w i n d o w . o n l o a d   =   ( )   = >   w i n d o w . p r i n t ( ) ; < / s c r i p t > 
- 
-             < / b o d y > 
- 
-             < / h t m l > 
- 
-         ` ; 
- 
- 
- 
-         c o n s t   p r i n t W i n d o w   =   w i n d o w . o p e n ( ' ' ,   ' _ b l a n k ' ) ; 
- 
-         p r i n t W i n d o w . d o c u m e n t . w r i t e ( h t m l ) ; 
- 
-         p r i n t W i n d o w . d o c u m e n t . c l o s e ( ) ; 
- 
- 
- 
-     }   c a t c h   ( e r r o r )   { 
- 
-         c o n s o l e . e r r o r ( ' E r r o r   p r i n t i n g   r e c e i p t : ' ,   e r r o r ) ; 
- 
-         a l e r t ( ' F a i l e d   t o   p r i n t   r e c e i p t ' ) ; 
- 
-     } 
- 
- } 
- 
- 
- 
- / /   C a t e g o r i e s 
- 
- a s y n c   f u n c t i o n   l o a d C a t e g o r i e s ( )   { 
- 
-     t r y   { 
- 
-         c o n s t   t o k e n   =   l o c a l S t o r a g e . g e t I t e m ( ' t o k e n ' ) ; 
- 
-         c o n s t   r e s p o n s e   =   a w a i t   f e t c h ( $ { A P I _ U R L } / c a t e g o r i e s ,   { 
- 
-             h e a d e r s :   {   ' x - a u t h - t o k e n ' :   t o k e n   } 
- 
-         } ) ; 
- 
-         i f   ( ! r e s p o n s e . o k )   t h r o w   n e w   E r r o r ( ' F a i l e d   t o   f e t c h   c a t e g o r i e s ' ) ; 
- 
-         c o n s t   c a t e g o r i e s   =   a w a i t   r e s p o n s e . j s o n ( ) ; 
- 
-         r e n d e r C a t e g o r i e s ( c a t e g o r i e s ) ; 
- 
-     }   c a t c h   ( e r r o r )   { 
- 
-         c o n s o l e . e r r o r ( ' E r r o r   l o a d i n g   c a t e g o r i e s : ' ,   e r r o r ) ; 
- 
-     } 
- 
- } 
- 
- 
- 
- f u n c t i o n   r e n d e r C a t e g o r i e s ( c a t e g o r i e s )   { 
- 
-     c o n s t   c o n t a i n e r   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' c a t e g o r y C o n t a i n e r ' ) ; 
- 
-     i f   ( ! c o n t a i n e r )   r e t u r n ; 
- 
-     
- 
-     c o n s t   e x i s t i n g B u t t o n s   =   c o n t a i n e r . q u e r y S e l e c t o r A l l ( ' b u t t o n : n o t ( [ d a t a - i d = " a l l " ] ) ' ) ; 
- 
-     e x i s t i n g B u t t o n s . f o r E a c h ( b t n   = >   b t n . r e m o v e ( ) ) ; 
- 
- 
- 
-     c a t e g o r i e s . f o r E a c h ( c a t   = >   { 
- 
-         c o n s t   b t n   =   d o c u m e n t . c r e a t e E l e m e n t ( ' b u t t o n ' ) ; 
- 
-         b t n . c l a s s N a m e   =   ' b t n   b t n - s e c o n d a r y   c a t e g o r y - b t n ' ; 
- 
-         c o n s t   l a n g   =   l o c a l S t o r a g e . g e t I t e m ( ' p o s _ l a n g u a g e ' )   | |   ' e n ' ; 
- 
-         b t n . t e x t C o n t e n t   =   l a n g   = = =   ' a r '   ?   c a t . n a m e   :   ( c a t . n a m e E n   | |   c a t . n a m e ) ; 
- 
-         
- 
-         b t n . o n c l i c k   =   ( )   = >   f i l t e r P r o d u c t s ( c a t . _ i d ,   b t n ) ; 
- 
-         b t n . d a t a s e t . i d   =   c a t . _ i d ; 
- 
-         c o n t a i n e r . a p p e n d C h i l d ( b t n ) ; 
- 
-     } ) ; 
- 
- } 
- 
- 
- 
- f u n c t i o n   f i l t e r P r o d u c t s ( c a t e g o r y I d ,   b t n C l i c k e d )   { 
- 
-     c o n s t   b u t t o n s   =   d o c u m e n t . q u e r y S e l e c t o r A l l ( ' . c a t e g o r y - b t n ' ) ; 
- 
-     b u t t o n s . f o r E a c h ( b t n   = >   { 
- 
-         b t n . c l a s s L i s t . r e m o v e ( ' a c t i v e ' ) ; 
- 
-         b t n . c l a s s L i s t . r e m o v e ( ' b t n - p r i m a r y ' ) ; 
- 
-         b t n . c l a s s L i s t . a d d ( ' b t n - s e c o n d a r y ' ) ; 
- 
-     } ) ; 
- 
- 
- 
-     i f   ( b t n C l i c k e d )   { 
- 
-             b t n C l i c k e d . c l a s s L i s t . a d d ( ' a c t i v e ' ) ; 
- 
-             b t n C l i c k e d . c l a s s L i s t . r e m o v e ( ' b t n - s e c o n d a r y ' ) ; 
- 
-             b t n C l i c k e d . c l a s s L i s t . a d d ( ' b t n - p r i m a r y ' ) ; 
- 
-     }   e l s e   { 
- 
-             c o n s t   a l l B t n   =   d o c u m e n t . q u e r y S e l e c t o r ( ' . c a t e g o r y - b t n [ d a t a - i d = " a l l " ] ' ) ; 
- 
-             i f   ( a l l B t n   & &   c a t e g o r y I d   = = =   ' a l l ' )   { 
- 
-                     a l l B t n . c l a s s L i s t . a d d ( ' a c t i v e ' ) ; 
- 
-                     a l l B t n . c l a s s L i s t . r e m o v e ( ' b t n - s e c o n d a r y ' ) ; 
- 
-                     a l l B t n . c l a s s L i s t . a d d ( ' b t n - p r i m a r y ' ) ; 
- 
-             } 
- 
-     } 
- 
- 
- 
-     c o n s t   s e a r c h I n p u t   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' p r o d u c t S e a r c h ' ) ; 
- 
-     i f   ( s e a r c h I n p u t )   s e a r c h I n p u t . v a l u e   =   ' ' ;   
- 
- 
- 
-     i f   ( c a t e g o r y I d   = = =   ' a l l ' )   { 
- 
-         f i l t e r e d P r o d u c t s   =   a l l P r o d u c t s ; 
- 
-     }   e l s e   { 
- 
-         f i l t e r e d P r o d u c t s   =   a l l P r o d u c t s . f i l t e r ( p   = >   { 
- 
-                 c o n s t   p C a t I d   =   t y p e o f   p . c a t e g o r y   = = =   ' o b j e c t '   ?   p . c a t e g o r y ? . _ i d   :   p . c a t e g o r y ; 
- 
-                 r e t u r n   p C a t I d   = = =   c a t e g o r y I d ; 
- 
-         } ) ; 
- 
-     } 
- 
-     r e n d e r P r o d u c t s ( ) ; 
- 
- } 
- 
- 
+async function printReceipt(receipt) {
+  try {
+    // If passed an ID instead of object, fetch it (just in case)  
+    if (typeof receipt === 'string') {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/sales/${receipt}`, {
+        headers: { 'x-auth-token': token }
+      });
+      if (!response.ok) {
+        alert('Failed to load receipt for printing');
+        return;
+      }
+      receipt = await response.json();
+    }
+
+    const shopName = localStorage.getItem('shopName') || 'My Shop';
+    const shopAddress = localStorage.getItem('shopAddress') || '';
+    const shopLogo = localStorage.getItem('shopLogo') || '';
+    const receiptFooterMessage = localStorage.getItem('footerMessage') || '';
+
+    const lang = localStorage.getItem('pos_language') || 'en';
+    const t = (en, ar) => (lang === 'ar' ? ar : en);
+    const paymentMap = {
+      cash: t("Cash", "كاش"),
+      card: t("Card", "بطاقة"),
+      mobile: t("Mobile", "محفظة")
+    };
+
+    let totalDiscount = 0;
+    let subtotal = 0;
+
+    const itemsHtml = receipt.items.map(item => {
+      const originalTotal = item.price * item.qty;
+      let discountStr = "-";
+      let discountAmountPerUnit = 0;
+
+      if (item.discount?.type === "percent") {
+        discountAmountPerUnit = item.price * (item.discount.value / 100);
+        discountStr = `${item.discount.value}%`;
+      } else if (item.discount?.type === "value") {
+        discountAmountPerUnit = item.discount.value;
+        discountStr = `${discountAmountPerUnit.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}`;
+      }
+
+      const itemDiscountTotal = discountAmountPerUnit * item.qty;
+      totalDiscount += itemDiscountTotal;
+      subtotal += originalTotal;
+
+      return `  
+                 <tr>  
+                     <td>${item.code || '-'}</td>  
+                     <td>${item.name || '-'}</td>  
+                     <td>${item.qty}</td>  
+                     <td>${item.price.toFixed(2)}</td>  
+                     <td>${originalTotal.toFixed(2)}</td>  
+                     <td>${discountStr}</td>  
+                 </tr>  
+             `;
+    }).join('');
+
+    const dateFormatted = new Date(receipt.date).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', {
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
+    });
+
+    const html = `  
+             <html>  
+             <head>  
+                 <title>${t("Receipt", "فاتورة")}</title>  
+                 <style>  
+                     body { font-family: Arial, sans-serif; font-size: 11.5px; font-weight: bold; line-height: 1.7; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; margin: 0; padding: 0; }  
+                     .receipt-container { width: 72mm; margin: 0; padding: 5px 0; background: #fff; box-sizing: border-box; }  
+                     .center { text-align: center; }  
+                     img.logo { max-height: 70px; display: block; margin: 0 auto 5px; }  
+                     h2 { margin: 3px 0; font-size: 15px; font-weight: bold; width: 100%; word-wrap: break-word; }  
+                     p { margin: 2px 8px; font-weight: bold; }  
+                     table { width: 98%; border-collapse: collapse; margin: 8px auto 4px; table-layout: fixed; }  
+                     th, td { border: 1px dashed #444; padding: 4px 5px; text-align: center; font-size: 11px; white-space: normal; word-break: break-word; font-weight: bold; }  
+                     th:nth-child(1), td:nth-child(1) { width: 14%; }  
+                     th:nth-child(2), td:nth-child(2) { width: 28%; }  
+                     th:nth-child(3), td:nth-child(3) { width: 10%; }  
+                     th:nth-child(4), td:nth-child(4) { width: 14%; }  
+                     th:nth-child(5), td:nth-child(5) { width: 16%; }  
+                     th:nth-child(6), td:nth-child(6) { width: 18%; }  
+                     .summary { margin: 10px 8px 0; font-size: 12px; font-weight: bold; }  
+                     .footer { text-align: center; margin: 12px 0 0; font-size: 10.5px; border-top: 1px dashed #ccc; padding-top: 6px; font-weight: bold; }  
+                     @media print { @page { size: 72mm auto; margin: 0; } body { margin: 0; padding: 0; } a { color: black; text-decoration: none; } }  
+                 </style>  
+             </head>  
+             <body>  
+                 <div class="receipt-container">  
+                     ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}  
+                     <h2 class="center">${shopName}</h2>  
+                     <p class="center">${shopAddress}</p>  
+                     <hr/>  
+                     <p>${t("Receipt No", "رقم الفاتورة")}: ${receipt.receiptId}</p>  
+                     <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>  
+                     <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>  
+                     <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>  
+                     <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.method] || '-'}</p>  
+                     <table>  
+                         <thead>  
+                             <tr>  
+                                 <th>${t("Code", "كود")}</th>  
+                                 <th>${t("Name", "الاسم")}</th>  
+                                 <th>${t("Qty", "كمية")}</th>  
+                                 <th>${t("Unit Price", "سعر الوحدة")}</th>  
+                                 <th>${t("Total", "الإجمالي")}</th>  
+                                 <th>${t("Discount", "الخصم")}</th>  
+                             </tr>  
+                         </thead>  
+                         <tbody>${itemsHtml}</tbody>  
+                     </table>  
+                     <div class="summary">  
+                         <p>${t("Subtotal", "المجموع الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+                         <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+                         <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+                     </div>  
+                     <hr/>  
+                     ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}  
+                     <p class="footer">  
+                         <strong>Tashgheel POS &copy; 2025</strong><br>  
+                         K    
+   <a href="tel:+201126522373">01126522373</a> / <a href="tel:+201155253886">01155253886</a><br>  
+                         <span id="footerText">${t("Designed and developed by Itqan", "تم التطوير بواسطة Itqan")}</span>  
+                     </p>  
+                 </div>  
+                 <script>window.onload = () => window.print();</script>  
+             </body>  
+             </html>  
+         `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+  } catch (error) {
+    console.error('Error printing receipt:', error);
+    alert('Failed to print receipt');
+  }
+}
+
+// Categories  
+async function loadCategories() {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/categories`, {
+      headers: { 'x-auth-token': token }
+    });
+    if (!response.ok) throw new Error('Failed to fetch categories');
+    const categories = await response.json();
+    renderCategories(categories);
+  } catch (error) {
+    console.error('Error loading categories:', error);
+  }
+}
+
+function renderCategories(categories) {
+  const container = document.getElementById('categoryContainer');
+  if (!container) return;
+
+  const existingButtons = container.querySelectorAll('button:not([data-id="all"])');
+  existingButtons.forEach(btn => btn.remove());
+
+  categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-secondary category-btn';
+    const lang = localStorage.getItem('pos_language') || 'en';
+    btn.textContent = lang === 'ar' ? cat.name : (cat.nameEn || cat.name);
+
+    btn.onclick = () => filterProducts(cat._id, btn);
+    btn.dataset.id = cat._id;
+    container.appendChild(btn);
+  });
+}
+
+function filterProducts(categoryId, btnClicked) {
+  const buttons = document.querySelectorAll('.category-btn');
+  buttons.forEach(btn => {
+    btn.classList.remove('active');
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+  });
+
+  if (btnClicked) {
+    btnClicked.classList.add('active');
+    btnClicked.classList.remove('btn-secondary');
+    btnClicked.classList.add('btn-primary');
+  } else {
+    const allBtn = document.querySelector('.category-btn[data-id="all"]');
+    if (allBtn && categoryId === 'all') {
+      allBtn.classList.add('active');
+      allBtn.classList.remove('btn-secondary');
+      allBtn.classList.add('btn-primary');
+    }
+  }
+
+  const searchInput = document.getElementById('productSearch');
+  if (searchInput) searchInput.value = '';
+
+  if (categoryId === 'all') {
+    filteredProducts = allProducts;
+  } else {
+    filteredProducts = allProducts.filter(p => {
+      const pCatId = typeof p.category === 'object' ? p.category?._id : p.category;
+      return pCatId === categoryId;
+    });
+  }
+
+  renderProducts();
+}
 
 window.filterProducts = filterProducts;
 window.processSale = processSale;
