@@ -4,6 +4,7 @@ let allProducts = [];
 let filteredProducts = [];
 let cart = [];
 let currentDiscountIndex = null;
+let isReadOnly = false;
 window.cart = cart; // Debug access
 // Ensure API_URL is available
 // Ensure API_URL is available
@@ -46,16 +47,45 @@ async function checkOpenShift() {
         document.getElementById('resumeShiftModal').style.display = 'flex';
         disablePOS();
       } else {
-        // Different user. Block.
-        document.getElementById('lockedShiftUser').textContent = shift.cashier;
-        document.getElementById('lockedShiftModal').style.display = 'flex';
-        disablePOS();
+        // Different user. Read Only Mode.
+        console.log("Read Only Mode Activated");
+        isReadOnly = true;
+        enableReadOnlyMode(shift.cashier);
       }
     }
   } catch (error) {
     console.error('Error checking shift:', error);
     alert('Failed to check shift status: ' + error.message);
   }
+}
+
+function enableReadOnlyMode(ownerName) {
+  const banner = document.getElementById('readOnlyBanner');
+  const userSpan = document.getElementById('readOnlyUser');
+  if (banner && userSpan) {
+    userSpan.textContent = ownerName;
+    banner.style.display = 'block';
+  }
+
+  // Enable search and navigation, but disable actions
+  enablePOS(); // First enable everything
+
+  // Disable transaction buttons
+  const buttonsToDisable = ['cashBtn', 'cardBtn', 'mobileBtn', 'holdBtn', 'clearCartBtn', 'closeShiftBtn', 'scanBtn'];
+  buttonsToDisable.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = true;
+    // Also disable parent button if it's the span inside
+    if (id === 'closeShiftBtn') {
+      const closeBtn = btn.closest('button');
+      if (closeBtn) closeBtn.disabled = true;
+    }
+  });
+
+  // Disable adding to cart?
+  // Maybe allow adding to see total but prevent checkout.
+  // The requirement says "deny making any transaction". 
+  // I will allow adding to cart to calculator totals, but checkout is blocked by disabled buttons + check in processSale.
 }
 
 function resumeShift() {
@@ -491,6 +521,10 @@ function saveDiscount() {
 
 // ===================== SALE PROCESSING =====================
 async function processSale(method) {
+  if (isReadOnly) {
+    alert("Read-Only Mode: Transactions are disabled.");
+    return;
+  }
   if (cart.length === 0) return;
 
   const salesmanSelect = document.getElementById("salesmanSelect");
