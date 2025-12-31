@@ -98,6 +98,14 @@
           <!-- Products Section -->
           <div>
             <div class="card">
+              <!-- Categories Section -->
+              <div id="categoryContainer"
+                style="display:flex; gap:10px; overflow-x:auto; padding:10px; border-bottom:1px solid #eee; margin-bottom:10px; white-space:nowrap;">
+                <button class="btn btn-primary category-btn active" onclick="filterProducts('all')" data-id="all"
+                  data-i18n="all_categories">All</button>
+                <!-- Categories will be loaded here -->
+              </div>
+
               <div class="card-header">
                 <span id="productsTitle" data-i18n="products_title">Products</span>
                 <div style="display:flex;gap:10px;align-items:center;">
