@@ -49,6 +49,13 @@ const translations = {
         clear_btn: "Clear",
         close_day_btn: "Close Day",
         day_summary_title: "Day Summary",
+        all_categories: "All",
+        open_shift: "Open Shift",
+        close_shift: "Close Shift",
+        enter_start_cash: "Please enter start cash",
+        start_shift: "Start Shift",
+        confirm_close_shift: "Are you sure you want to close shift?",
+        actual_cash: "Actual Cash",
 
         // Discount Modal
         discount_modal_title: "Discount",
@@ -155,6 +162,13 @@ const translations = {
         clear_btn: "مسح",
         close_day_btn: "إغلاق اليومية",
         day_summary_title: "ملخص اليومية",
+        all_categories: "الكل",
+        open_shift: "فتح وردية",
+        close_shift: "إغلاق الوردية",
+        enter_start_cash: "برجاء إدخال مبلغ البداية",
+        start_shift: "بدء الوردية",
+        confirm_close_shift: "هل أنت متأكد من إغلاق الوردية؟",
+        actual_cash: "النقد الفعلي",
 
         // Discount Modal
         discount_modal_title: "خصم",

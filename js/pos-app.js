@@ -803,3 +803,15 @@ document.addEventListener('DOMContentLoaded', () => {
      r e n d e r P r o d u c t s ( ) ;  
  }  
  
+ w i n d o w . f i l t e r P r o d u c t s   =   f i l t e r P r o d u c t s ; 
+ w i n d o w . p r o c e s s S a l e   =   p r o c e s s S a l e ; 
+ w i n d o w . c l o s e S h i f t   =   c l o s e S h i f t ; 
+ w i n d o w . s u b m i t O p e n S h i f t   =   s u b m i t O p e n S h i f t ; 
+ w i n d o w . s u b m i t C l o s e S h i f t   =   s u b m i t C l o s e S h i f t ; 
+ w i n d o w . s c a n B a r c o d e   =   s c a n B a r c o d e ; 
+ w i n d o w . c l e a r C a r t   =   c l e a r C a r t ; 
+ w i n d o w . h o l d T r a n s a c t i o n   =   h o l d T r a n s a c t i o n ; 
+ w i n d o w . o p e n D i s c o u n t M o d a l   =   o p e n D i s c o u n t M o d a l ; 
+ w i n d o w . s a v e D i s c o u n t   =   s a v e D i s c o u n t ; 
+ w i n d o w . c l o s e D i s c o u n t M o d a l   =   c l o s e D i s c o u n t M o d a l ;  
+ 
