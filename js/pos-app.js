@@ -6,7 +6,10 @@ let cart = [];
 let currentDiscountIndex = null;
 window.cart = cart; // Debug access
 // Ensure API_URL is available
-const API_URL = window.API_URL || '/api';
+// Ensure API_URL is available
+if (typeof API_URL === 'undefined') {
+  window.API_URL = '/api';
+}
 
 // ===================== INIT =====================
 // SHIFT MANAGEMENT
