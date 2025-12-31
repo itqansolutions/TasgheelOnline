@@ -16,6 +16,7 @@ module.exports = async function (req, res, next) {
 
         const now = new Date();
         if (!tenant.isSubscribed && now > tenant.trialEndsAt) {
+            console.warn(`Trial expired for tenant ${tenant._id}. Trial ended ${tenant.trialEndsAt}`);
             return res.status(403).json({ msg: 'Trial expired. Please subscribe.', code: 'TRIAL_EXPIRED' });
         }
 

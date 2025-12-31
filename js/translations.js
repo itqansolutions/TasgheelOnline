@@ -61,6 +61,9 @@ const translations = {
         discount_cancel: "Cancel",
 
         // Products Page
+        products: "Products",
+        product: "Product",
+        add: "Add",
         add_product: "Add Product",
         product_code: "Product Code",
         product_name: "Product Name",
@@ -164,6 +167,9 @@ const translations = {
         discount_cancel: "إلغاء",
 
         // Products Page
+        products: "المنتجات",
+        product: "المنتج",
+        add: "إضافة",
         add_product: "إضافة منتج",
         product_code: "كود المنتج",
         product_name: "اسم المنتج",

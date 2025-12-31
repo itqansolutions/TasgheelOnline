@@ -27,6 +27,15 @@ async function loadProducts() {
     const response = await fetch(`${API_URL}/products`, {
       headers: { 'x-auth-token': token }
     });
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Failed to load products:', err);
+      // Only alert if it's a specific known error to avoid spamming, or show a toast
+      if (response.status === 403 || response.status === 401) {
+        alert(`Access Denied: ${err.msg || 'Please login again'}`);
+      }
+      return;
+    }
     const products = await response.json();
 
     const tbody = document.getElementById("product-table-body");
@@ -135,6 +144,11 @@ async function loadCategories() {
     const response = await fetch(`${API_URL}/categories`, {
       headers: { 'x-auth-token': token }
     });
+    if (!response.ok) {
+      // Handle error gracefully
+      console.warn('Failed to load categories');
+      return;
+    }
     const categories = await response.json();
 
     const select = document.getElementById("product-category");
