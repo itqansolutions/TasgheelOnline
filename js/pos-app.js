@@ -757,19 +757,16 @@ async function printReceipt(receipt, providedSettings = null) {
       receipt = await response.json();
     }
 
-    let shopName, shopAddress, shopLogo, receiptFooterMessage;
+    const getSetting = (key, defaultVal = '') => {
+      if (providedSettings && providedSettings[key]) return providedSettings[key];
+      return localStorage.getItem(key) || defaultVal;
+    };
 
-    if (providedSettings) {
-      shopName = providedSettings.shopName || 'My Shop';
-      shopAddress = providedSettings.shopAddress || '';
-      shopLogo = providedSettings.shopLogo || '';
-      receiptFooterMessage = providedSettings.footerMessage || '';
-    } else {
-      shopName = localStorage.getItem('shopName') || 'My Shop';
-      shopAddress = localStorage.getItem('shopAddress') || '';
-      shopLogo = localStorage.getItem('shopLogo') || '';
-      receiptFooterMessage = localStorage.getItem('footerMessage') || '';
-    }
+    const shopName = getSetting('shopName', 'My Shop');
+    const shopAddress = getSetting('shopAddress');
+    const shopLogo = getSetting('shopLogo');
+    const receiptFooterMessage = getSetting('footerMessage');
+
 
     const lang = localStorage.getItem('pos_language') || 'en';
     const t = (en, ar) => (lang === 'ar' ? ar : en);
