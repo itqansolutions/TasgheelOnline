@@ -139,14 +139,26 @@ const translations = {
         // Admin
         admin_title: "Admin Panel",
         users_settings: "Users & Settings",
+        settings_saved: "Settings saved successfully!",
+        shop_settings: "Shop Settings",
+        shop_name: "Shop Name:",
+        shop_address: "Shop Address:",
+        shop_logo: "Shop Logo:",
+        footer_message: "Receipt Footer Message:",
+        user_management: "User Management",
+        username: "Username:",
+        password: "Password:",
+        role: "Role:",
+        cashier: "Cashier",
+        manager: "Manager",
+        admin: "Admin",
         create_user: "Create User",
-        fullname: "Full Name",
-        role: "Role",
+        actions: "Actions",
         customer_management: "Customer Management",
-        customer_name: "Name",
-        customer_phone: "Phone",
-        customer_email: "Email",
-        customer_address: "Address",
+        customer_name: "Name:",
+        customer_phone: "Phone:",
+        customer_email: "Email:",
+        customer_address: "Address:",
         save_customer: "Save Customer",
         audit_logs: "Audit Logs",
         timestamp: "Time",
@@ -300,14 +312,26 @@ const translations = {
         // Admin
         admin_title: "لوحة التحكم",
         users_settings: "المستخدمين والإعدادات",
+        settings_saved: "تم حفظ الإعدادات بنجاح",
+        shop_settings: "إعدادات المتجر",
+        shop_name: "اسم المتجر:",
+        shop_address: "عنوان المتجر:",
+        shop_logo: "شعار المتجر:",
+        footer_message: "رسالة تذييل الفاتورة:",
+        user_management: "إدارة المستخدمين",
+        username: "اسم المستخدم:",
+        password: "كلمة المرور:",
+        role: "الدور:",
+        cashier: "الكاشير",
+        manager: "مدير",
+        admin: "مشرف",
         create_user: "إنشاء مستخدم",
-        fullname: "الاسم الكامل",
-        role: "الدور",
+        actions: "الإجراءات",
         customer_management: "إدارة العملاء",
-        customer_name: "الاسم",
-        customer_phone: "الهاتف",
-        customer_email: "البريد الإلكتروني",
-        customer_address: "العنوان",
+        customer_name: "الاسم:",
+        customer_phone: "الهاتف:",
+        customer_email: "البريد:",
+        customer_address: "العنوان:",
         save_customer: "حفظ العميل",
         audit_logs: "سجلات النظام",
         timestamp: "الوقت",
@@ -381,9 +405,15 @@ function applyTranslations() {
     });
 }
 
+function getTranslation(key) {
+    const lang = localStorage.getItem('pos_language') || 'en';
+    return translations[lang]?.[key] || key;
+}
+
 // Make globally available
 window.setLanguage = setLanguage;
 window.applyTranslations = applyTranslations;
+window.getTranslation = getTranslation;
 
 // Apply on load
 document.addEventListener('DOMContentLoaded', applyTranslations);

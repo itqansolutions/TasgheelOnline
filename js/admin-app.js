@@ -1,6 +1,5 @@
 // admin-app.js
-
-const API_URL = '/api';
+// API_URL is defined in auth.js
 
 document.addEventListener('DOMContentLoaded', () => {
   // === Shop Settings ===
@@ -251,73 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadUsers();
   loadCustomers();
-  applyTranslations();
+  // applyTranslations() is called by translations.js on DOMContentLoaded
 });
 
-// === Translations ===
-function getTranslation(key) {
-  const translations = {
-    settings_saved: {
-      en: 'Settings saved successfully!',
-      ar: 'تم حفظ الإعدادات بنجاح'
-    }
-  };
-  const lang = localStorage.getItem('pos_language') || 'en';
-  return translations[key]?.[lang] || key;
-}
-
-function applyTranslations() {
-  const lang = localStorage.getItem('pos_language') || 'en';
-  const translations = {
-    en: {
-      admin_panel: 'Admin Panel',
-      shop_settings: 'Shop Settings',
-      shop_name: 'Shop Name:',
-      shop_address: 'Shop Address:',
-      shop_logo: 'Shop Logo:',
-      save: 'Save',
-      user_management: 'User Management',
-      username: 'Username:',
-      password: 'Password:',
-      role: 'Role:',
-      cashier: 'Cashier',
-      admin: 'Admin',
-      create_user: 'Create User',
-      actions: 'Actions',
-      customer_management: 'Customer Management',
-      customer_name: 'Name:',
-      customer_phone: 'Phone:',
-      customer_email: 'Email:',
-      customer_address: 'Address:',
-      save_customer: 'Save Customer'
-    },
-    ar: {
-      admin_panel: 'لوحة التحكم',
-      shop_settings: 'إعدادات المتجر',
-      shop_name: 'اسم المتجر:',
-      shop_address: 'عنوان المتجر:',
-      shop_logo: 'شعار المتجر:',
-      save: 'حفظ',
-      user_management: 'إدارة المستخدمين',
-      username: 'اسم المستخدم:',
-      password: 'كلمة المرور:',
-      role: 'الدور:',
-      cashier: 'الكاشير',
-      admin: 'مشرف',
-      create_user: 'إنشاء مستخدم',
-      actions: 'الإجراءات',
-      customer_management: 'إدارة العملاء',
-      customer_name: 'الاسم:',
-      customer_phone: 'الهاتف:',
-      customer_email: 'البريد:',
-      customer_address: 'العنوان:',
-      save_customer: 'حفظ العميل'
-    }
-  };
-
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const translated = translations[lang]?.[key];
-    if (translated) el.innerText = translated;
-  });
-}
+// applyTranslations() is handled by translations.js
