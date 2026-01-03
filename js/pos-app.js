@@ -450,7 +450,7 @@ function updateCartSummary() {
     div.innerHTML = `
       <div>
         <strong>${item.name}</strong><br>
-        <small>${item.price.toFixed(2)} x ${item.qty}</small>
+        <small>${item.price.toFixed(2)} x <span onclick="editCartItemQty(${index})" style="cursor:pointer;border-bottom:1px dashed #333;font-weight:bold;" title="Click to edit quantity">${item.qty}</span></small>
       </div>
       <div>
         <span>${(item.price * item.qty).toFixed(2)}</span>
@@ -488,6 +488,30 @@ function removeFromCart(index) {
 
 function clearCart() {
   cart = [];
+  updateCartSummary();
+}
+
+function editCartItemQty(index) {
+  const item = cart[index];
+  if (!item) return;
+
+  const input = prompt(`Enter new quantity for ${item.name}:`, item.qty);
+  if (input === null) return; // Cancelled
+
+  const newQty = parseFloat(input);
+
+  if (isNaN(newQty) || newQty <= 0) {
+    alert("Invalid quantity!");
+    return;
+  }
+
+  // Check stock if tracked
+  if (item.trackStock !== false && newQty > item.stock) {
+    alert(`Not enough stock! Available: ${item.stock}`);
+    return;
+  }
+
+  item.qty = newQty;
   updateCartSummary();
 }
 
@@ -584,8 +608,12 @@ async function processSale(method) {
     });
 
     if (response.ok) {
-      const sale = await response.json();
-      printReceipt(sale);
+      const data = await response.json();
+      // Handle both old (sale only) and new ({sale, settings}) formats
+      const sale = data.sale || data;
+      const settings = data.settings || null;
+
+      printReceipt(sale, settings);
       clearCart();
       window.cartDiscount = null; // Reset discount
       loadProducts(); // Refresh stock
@@ -714,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePOSLanguage(lang);
 });
 
-async function printReceipt(receipt) {
+async function printReceipt(receipt, providedSettings = null) {
   try {
     // If passed an ID instead of object, fetch it (just in case)  
     if (typeof receipt === 'string') {
@@ -729,10 +757,19 @@ async function printReceipt(receipt) {
       receipt = await response.json();
     }
 
-    const shopName = localStorage.getItem('shopName') || 'My Shop';
-    const shopAddress = localStorage.getItem('shopAddress') || '';
-    const shopLogo = localStorage.getItem('shopLogo') || '';
-    const receiptFooterMessage = localStorage.getItem('footerMessage') || '';
+    let shopName, shopAddress, shopLogo, receiptFooterMessage;
+
+    if (providedSettings) {
+      shopName = providedSettings.shopName || 'My Shop';
+      shopAddress = providedSettings.shopAddress || '';
+      shopLogo = providedSettings.shopLogo || '';
+      receiptFooterMessage = providedSettings.footerMessage || '';
+    } else {
+      shopName = localStorage.getItem('shopName') || 'My Shop';
+      shopAddress = localStorage.getItem('shopAddress') || '';
+      shopLogo = localStorage.getItem('shopLogo') || '';
+      receiptFooterMessage = localStorage.getItem('footerMessage') || '';
+    }
 
     const lang = localStorage.getItem('pos_language') || 'en';
     const t = (en, ar) => (lang === 'ar' ? ar : en);
@@ -941,4 +978,5 @@ window.clearCart = clearCart;
 window.holdTransaction = holdTransaction;
 window.openDiscountModal = openDiscountModal;
 window.saveDiscount = saveDiscount;
+window.editCartItemQty = editCartItemQty;
 window.closeDiscountModal = closeDiscountModal;

@@ -217,9 +217,6 @@ router.post('/sales', auth, async (req, res) => {
         const { items, total, paymentMethod, salesman } = req.body;
 
         // Generate Receipt ID
-        const count = await Sale.countDocuments({ tenantId: req.tenantId });
-        const receiptId = `REC-${Date.now()}-${count + 1}`;
-
         // Find active shift
         const shift = await Shift.findOne({
             tenantId: req.tenantId,
@@ -230,6 +227,10 @@ router.post('/sales', auth, async (req, res) => {
         if (!shift) {
             return res.status(400).json({ msg: 'No open shift found. Please open a shift first.' });
         }
+
+        // Generate Receipt ID based on shift count
+        const shiftCount = await Sale.countDocuments({ shiftId: shift._id });
+        const receiptId = String(shiftCount + 1);
 
         const newSale = new Sale({
             tenantId: req.tenantId,
@@ -259,7 +260,13 @@ router.post('/sales', auth, async (req, res) => {
             }
         }
 
-        res.json(sale);
+        // Fetch tenant settings to return with sale
+        const tenant = await Tenant.findById(req.tenantId);
+
+        res.json({
+            sale,
+            settings: tenant ? tenant.settings : {}
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
