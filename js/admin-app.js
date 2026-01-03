@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (response.ok) {
+        const savedSettings = await response.json();
+        console.log('Settings Saved Successfully:', savedSettings);
         alert(getTranslation('settings_saved'));
       } else {
         alert('Failed to save settings');

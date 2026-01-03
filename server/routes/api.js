@@ -556,7 +556,20 @@ router.put('/settings', auth, async (req, res) => {
         const tenant = await Tenant.findById(req.tenantId);
         if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
 
-        tenant.settings = { ...tenant.settings, ...req.body };
+        // Ensure settings object exists
+        if (!tenant.settings) {
+            tenant.settings = {};
+        }
+
+        // Explicitly update fields to ensure Mongoose tracking
+        const { shopName, shopAddress, shopLogo, footerMessage } = req.body;
+
+        if (shopName !== undefined) tenant.settings.shopName = shopName;
+        if (shopAddress !== undefined) tenant.settings.shopAddress = shopAddress;
+        if (shopLogo !== undefined) tenant.settings.shopLogo = shopLogo;
+        if (footerMessage !== undefined) tenant.settings.footerMessage = footerMessage;
+
+        tenant.markModified('settings');
         await tenant.save();
         res.json(tenant.settings);
     } catch (err) {

@@ -139,6 +139,21 @@ const translations = {
         // Admin
         admin_title: "Admin Panel",
         users_settings: "Users & Settings",
+        create_user: "Create User",
+        fullname: "Full Name",
+        role: "Role",
+        customer_management: "Customer Management",
+        customer_name: "Name",
+        customer_phone: "Phone",
+        customer_email: "Email",
+        customer_address: "Address",
+        save_customer: "Save Customer",
+        audit_logs: "Audit Logs",
+        timestamp: "Time",
+        user: "User",
+        action: "Action",
+        details: "Details",
+        refresh_logs: "Refresh Logs",
 
         // Auth
         login_title: "Login",
@@ -285,6 +300,21 @@ const translations = {
         // Admin
         admin_title: "لوحة التحكم",
         users_settings: "المستخدمين والإعدادات",
+        create_user: "إنشاء مستخدم",
+        fullname: "الاسم الكامل",
+        role: "الدور",
+        customer_management: "إدارة العملاء",
+        customer_name: "الاسم",
+        customer_phone: "الهاتف",
+        customer_email: "البريد الإلكتروني",
+        customer_address: "العنوان",
+        save_customer: "حفظ العميل",
+        audit_logs: "سجلات النظام",
+        timestamp: "الوقت",
+        user: "المستخدم",
+        action: "الإجراء",
+        details: "التفاصيل",
+        refresh_logs: "تحديث السجلات",
 
         // Auth
         login_title: "تسجيل الدخول",
