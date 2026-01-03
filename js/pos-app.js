@@ -42,7 +42,15 @@ async function checkOpenShift() {
     } else {
       // Shift exists. Check ownership.
       if (shift.cashier === currentUser) {
-        // Same user. Offer to Resume.
+        // Same user.
+        // Check if we already resumed this session
+        if (sessionStorage.getItem('shiftResumed') === 'true') {
+          console.log("Shift already resumed this session.");
+          enablePOS();
+          return;
+        }
+
+        // Offer to Resume.
         document.getElementById('resumeShiftTime').textContent = new Date(shift.startTime).toLocaleString();
         document.getElementById('resumeShiftModal').style.display = 'flex';
         disablePOS();
@@ -90,6 +98,7 @@ function enableReadOnlyMode(ownerName) {
 
 function resumeShift() {
   document.getElementById('resumeShiftModal').style.display = 'none';
+  sessionStorage.setItem('shiftResumed', 'true');
   enablePOS();
 }
 
@@ -130,6 +139,7 @@ async function submitOpenShift() {
 
     if (response.ok) {
       document.getElementById('openShiftModal').style.display = 'none';
+      sessionStorage.setItem('shiftResumed', 'true');
       enablePOS();
       alert('Shift opened successfully!');
     } else {
@@ -204,6 +214,7 @@ window.submitCloseShift = async function () {
 
     if (response.ok) {
       alert('Shift closed successfully!');
+      sessionStorage.removeItem('shiftResumed');
       location.reload(); // Reload to show Open Shift modal again
     } else {
       alert('Failed to close shift');
@@ -328,7 +339,7 @@ function renderProducts() {
   filteredProducts.forEach((product) => {
     const div = document.createElement("div");
     div.className = "product-card";
-    if (product.stock <= 0) div.classList.add("out-of-stock");
+    if (product.trackStock !== false && product.stock <= 0) div.classList.add("out-of-stock");
     div.onclick = () => addToCart(product);
     const stockDisplay = (product.trackStock === false) ? '<span style="font-size:1.5em; color:#2ecc71;">∞</span>' : `Stock: ${product.stock}`;
 
@@ -687,15 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProducts(filteredProducts);
   });
 
-  document.getElementById('categoryFilter')?.addEventListener('change', (e) => {
-    const cat = e.target.value;
-    if (cat) {
-      filteredProducts = allProducts.filter(p => p.category === cat);
-    } else {
-      filteredProducts = allProducts;
-    }
-    renderProducts(filteredProducts);
-  });
+
 
   document.getElementById('payButton')?.addEventListener('click', processSale);
   document.getElementById('holdButton')?.addEventListener('click', () => alert('Hold feature coming soon'));
@@ -880,13 +883,13 @@ function renderCategories(categories) {
     const lang = localStorage.getItem('pos_language') || 'en';
     btn.textContent = lang === 'ar' ? cat.name : (cat.nameEn || cat.name);
 
-    btn.onclick = () => filterProducts(cat._id, btn);
-    btn.dataset.id = cat._id;
+    btn.onclick = () => filterProducts(cat.name, btn);
+    btn.dataset.id = cat.name;
     container.appendChild(btn);
   });
 }
 
-function filterProducts(categoryId, btnClicked) {
+function filterProducts(categoryName, btnClicked) {
   const buttons = document.querySelectorAll('.category-btn');
   buttons.forEach(btn => {
     btn.classList.remove('active');
@@ -899,24 +902,30 @@ function filterProducts(categoryId, btnClicked) {
     btnClicked.classList.remove('btn-secondary');
     btnClicked.classList.add('btn-primary');
   } else {
-    const allBtn = document.querySelector('.category-btn[data-id="all"]');
-    if (allBtn && categoryId === 'all') {
-      allBtn.classList.add('active');
-      allBtn.classList.remove('btn-secondary');
-      allBtn.classList.add('btn-primary');
+    // Try to find button by name if passed manually
+    const targetBtn = document.querySelector(`.category-btn[data-id="${categoryName}"]`);
+    if (targetBtn) {
+      targetBtn.classList.add('active');
+      targetBtn.classList.remove('btn-secondary');
+      targetBtn.classList.add('btn-primary');
+    } else {
+      // Fallback for 'all'
+      const allBtn = document.querySelector('.category-btn[data-id="all"]');
+      if (allBtn && categoryName === 'all') {
+        allBtn.classList.add('active');
+        allBtn.classList.remove('btn-secondary');
+        allBtn.classList.add('btn-primary');
+      }
     }
   }
 
   const searchInput = document.getElementById('productSearch');
   if (searchInput) searchInput.value = '';
 
-  if (categoryId === 'all') {
+  if (categoryName === 'all') {
     filteredProducts = allProducts;
   } else {
-    filteredProducts = allProducts.filter(p => {
-      const pCatId = typeof p.category === 'object' ? p.category?._id : p.category;
-      return pCatId === categoryId;
-    });
+    filteredProducts = allProducts.filter(p => p.category === categoryName);
   }
 
   renderProducts();

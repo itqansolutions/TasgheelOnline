@@ -42,6 +42,7 @@ async function login(username, password, businessEmail) {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('shiftResumed');
     window.location.href = 'index.html';
 }
 
