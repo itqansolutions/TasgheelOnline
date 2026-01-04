@@ -22,7 +22,7 @@ if (typeof API_URL === 'undefined') {
 async function checkOpenShift() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL} /shifts/current`, {
+    const response = await fetch(`${API_URL}/shifts/current`, {
       headers: { 'x-auth-token': token }
     });
 
@@ -167,7 +167,7 @@ window.closeShift = async function () {
       return;
     }
 
-    const response = await fetch(`${API_URL} /shifts/summary`, {
+    const response = await fetch(`${API_URL}/shifts/summary`, {
       headers: { 'x-auth-token': token }
     });
 
@@ -207,7 +207,7 @@ window.submitCloseShift = async function () {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL} /shifts/close`, {
+    const response = await fetch(`${API_URL}/shifts/close`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ window.submitCloseShift = async function () {
 async function checkTrialStatus() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL} /tenant/trial - status`, {
+    const response = await fetch(`${API_URL}/tenant/trial-status`, {
       headers: { 'x-auth-token': token }
     });
     if (response.ok) {
