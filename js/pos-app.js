@@ -502,8 +502,11 @@ function updateCartSummary() {
   if (taxCheckbox && taxCheckbox.checked && taxRate > 0) {
     taxAmount = discountedSubtotal * (taxRate / 100);
     localStorage.setItem('applyTax', 'true');
-  } else {
+  } else if (taxCheckbox && !taxCheckbox.checked) {
     localStorage.setItem('applyTax', 'false');
+  } else if (taxCheckbox && taxCheckbox.checked && taxRate === 0) {
+    // Checkbox is checked but rate is 0. Keep it checked (applyTax=true) but amount is 0.
+    localStorage.setItem('applyTax', 'true');
   }
 
   const finalTotal = discountedSubtotal + taxAmount;
@@ -775,6 +778,9 @@ async function loadSettings() {
         const taxCheckbox = document.getElementById('taxCheckbox');
         if (taxCheckbox) taxCheckbox.checked = true;
       }
+
+      // Refresh cart to apply new settings (tax rate, name, etc.)
+      updateCartSummary();
     }
   } catch (error) {
     console.error('Error loading settings:', error);
