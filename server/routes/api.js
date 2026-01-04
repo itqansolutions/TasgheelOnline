@@ -573,7 +573,10 @@ router.put('/settings', auth, async (req, res) => {
 
         tenant.markModified('settings');
         await tenant.save();
-        res.json(tenant.settings);
+
+        // Debug response with version
+        console.log('Saved Settings (v2):', tenant.settings);
+        res.json({ ...tenant.settings, _backendVersion: 'v2' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
