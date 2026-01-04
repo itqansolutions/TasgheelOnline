@@ -409,6 +409,7 @@ function addToCart(product) {
   }
 
   const existingItem = cart.find(item => item._id === product._id);
+
   if (existingItem) {
     // Check stock for existing item (if tracked)
     if (product.trackStock !== false && existingItem.qty >= product.stock) {
@@ -416,7 +417,9 @@ function addToCart(product) {
       return;
     }
     existingItem.qty++;
-  } else {
+  }
+
+  if (!existingItem) {
     cart.push({ ...product, qty: 1 });
   }
 
@@ -764,7 +767,9 @@ async function loadSettings() {
         localStorage.setItem('applyTax', settings.applyTax ? 'true' : 'false');
         const taxCheckbox = document.getElementById('taxCheckbox');
         if (taxCheckbox) taxCheckbox.checked = settings.applyTax;
-      } else if (localStorage.getItem('applyTax') === null) {
+      }
+
+      if (settings.applyTax === undefined && localStorage.getItem('applyTax') === null) {
         // Default to TRUE if not set
         localStorage.setItem('applyTax', 'true');
         const taxCheckbox = document.getElementById('taxCheckbox');
