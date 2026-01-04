@@ -14,8 +14,11 @@ const tenantSchema = new mongoose.Schema({
     shopName: String,
     shopAddress: String,
     shopLogo: String,
-    footerMessage: String
+    footerMessage: String,
+    taxRate: { type: Number, default: 0 },
+    taxName: { type: String, default: "Tax" }
   }
+}
 });
 
 module.exports = mongoose.model('Tenant', tenantSchema);

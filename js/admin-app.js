@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const logoPreview = document.getElementById('logo-preview');
   const shopForm = document.getElementById('shop-settings-form');
   const footerMessageInput = document.getElementById('footer-message');
+  const taxRateInput = document.getElementById('tax-rate');
+  const taxNameInput = document.getElementById('tax-name');
 
   let uploadedLogoBase64 = '';
 
@@ -24,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settings.shopName) shopNameInput.value = settings.shopName;
         if (settings.shopAddress) shopAddressInput.value = settings.shopAddress;
         if (settings.footerMessage) footerMessageInput.value = settings.footerMessage;
+        if (settings.taxRate !== undefined) taxRateInput.value = settings.taxRate;
+        if (settings.taxName) taxNameInput.value = settings.taxName;
         if (settings.shopLogo) {
           logoPreview.src = settings.shopLogo;
           logoPreview.style.display = 'block';
@@ -54,6 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
       shopName: shopNameInput.value.trim(),
       shopAddress: shopAddressInput.value.trim(),
       footerMessage: footerMessageInput.value.trim(),
+      taxRate: parseFloat(taxRateInput.value) || 0,
+      taxName: taxNameInput.value.trim(),
       shopLogo: uploadedLogoBase64
     };
 

@@ -562,12 +562,14 @@ router.put('/settings', auth, async (req, res) => {
         }
 
         // Explicitly update fields to ensure Mongoose tracking
-        const { shopName, shopAddress, shopLogo, footerMessage } = req.body;
+        const { shopName, shopAddress, shopLogo, footerMessage, taxRate, taxName } = req.body;
 
         if (shopName !== undefined) tenant.settings.shopName = shopName;
         if (shopAddress !== undefined) tenant.settings.shopAddress = shopAddress;
         if (shopLogo !== undefined) tenant.settings.shopLogo = shopLogo;
         if (footerMessage !== undefined) tenant.settings.footerMessage = footerMessage;
+        if (taxRate !== undefined) tenant.settings.taxRate = parseFloat(taxRate);
+        if (taxName !== undefined) tenant.settings.taxName = taxName;
 
         tenant.markModified('settings');
         await tenant.save();

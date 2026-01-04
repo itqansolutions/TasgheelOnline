@@ -5,7 +5,11 @@ const saleSchema = new mongoose.Schema({
     receiptId: { type: String, required: true }, // e.g., receipt_123456
     shiftId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
     date: { type: Date, default: Date.now },
-    method: { type: String, enum: ['cash', 'card', 'mobile'], required: true },
+    method: { type: String, enum: ['cash', 'card', 'mobile', 'split'], required: true },
+    splitPayments: [{
+        method: { type: String, enum: ['cash', 'card', 'mobile'] },
+        amount: Number
+    }],
     cashier: { type: String, required: true },
     salesman: String,
     total: { type: Number, required: true },

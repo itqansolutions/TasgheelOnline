@@ -1,10 +1,13 @@
+
 // POS JS with salesman support and fixed receipt printing (final version)
 console.log("POS Script Starting...");
 let allProducts = [];
 let filteredProducts = [];
 let cart = [];
-let currentDiscountIndex = null;
+let heldTransactions = JSON.parse(localStorage.getItem('heldTransactions')) || [];
+let currentShift = null;
 let isReadOnly = false;
+let heldOrdersInterval = null;
 window.cart = cart; // Debug access
 // Ensure API_URL is available
 // Ensure API_URL is available
@@ -18,7 +21,7 @@ if (typeof API_URL === 'undefined') {
 async function checkOpenShift() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/shifts/current`, {
+    const response = await fetch(`${API_URL} /shifts/current`, {
       headers: { 'x-auth-token': token }
     });
 
@@ -33,7 +36,7 @@ async function checkOpenShift() {
       console.error("Error parsing user", e);
     }
 
-    console.log(`Shift Check: Shift Cashier='${shift?.cashier}', Current User='${currentUser}'`);
+    console.log(`Shift Check: Shift Cashier = '${shift?.cashier}', Current User = '${currentUser}'`);
 
     if (!shift) {
       // No open shift, show modal
@@ -128,7 +131,7 @@ async function submitOpenShift() {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/shifts/open`, {
+    const response = await fetch(`${API_URL} /shifts/open`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -163,7 +166,7 @@ window.closeShift = async function () {
       return;
     }
 
-    const response = await fetch(`${API_URL}/shifts/summary`, {
+    const response = await fetch(`${API_URL} /shifts/summary`, {
       headers: { 'x-auth-token': token }
     });
 
@@ -203,7 +206,7 @@ window.submitCloseShift = async function () {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/shifts/close`, {
+    const response = await fetch(`${API_URL} /shifts/close`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,42 +230,42 @@ window.submitCloseShift = async function () {
 async function checkTrialStatus() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/tenant/trial-status`, {
+    const response = await fetch(`${API_URL} /tenant/trial - status`, {
       headers: { 'x-auth-token': token }
     });
     if (response.ok) {
       const data = await response.json();
       if (data.isExpired) {
         document.body.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f8f9fa;text-align:center;">
-            <div style="background:white;padding:40px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);max-width:500px;">
-              <h1 style="color:#e74c3c;margin-bottom:20px;">Trial Expired</h1>
-              <p style="font-size:18px;margin-bottom:30px;">Your trial period has ended. Please contact support to activate the full version.</p>
-              <div style="font-weight:bold;color:#2c3e50;margin-bottom:20px;">
-                <p>📞 +201126522373</p>
-                <p>📧 info@itqansolutions.org</p>
-              </div>
-              <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
-            </div>
-          </div>
-        `;
+  < div style = "display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f8f9fa;text-align:center;" >
+    <div style="background:white;padding:40px;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.1);max-width:500px;">
+      <h1 style="color:#e74c3c;margin-bottom:20px;">Trial Expired</h1>
+      <p style="font-size:18px;margin-bottom:30px;">Your trial period has ended. Please contact support to activate the full version.</p>
+      <div style="font-weight:bold;color:#2c3e50;margin-bottom:20px;">
+        <p>📞 +201126522373</p>
+        <p>📧 info@itqansolutions.org</p>
+      </div>
+      <button onclick="window.location.href='index.html'" class="btn btn-primary" style="margin-top:20px;">Back to Login</button>
+    </div>
+          </div >
+  `;
       } else if (data.daysRemaining <= 3) {
         // Show warning banner
         const banner = document.createElement('div');
         banner.style.cssText = `
-          background: ${data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12'};
-          color: white;
-          text-align: center;
-          padding: 10px;
-          font-weight: bold;
-          position: sticky;
-          top: 0;
-          z-index: 999;
-        `;
+background: ${data.daysRemaining <= 1 ? '#e74c3c' : '#f39c12'};
+color: white;
+text - align: center;
+padding: 10px;
+font - weight: bold;
+position: sticky;
+top: 0;
+z - index: 999;
+`;
         banner.innerHTML = `
           ⚠️ Trial Version: ${data.daysRemaining} days remaining. 
-          <a href="tel:+201126522373" style="color:white;text-decoration:underline;margin-left:10px;">Contact to Activate</a>
-        `;
+          < a href = "tel:+201126522373" style = "color:white;text-decoration:underline;margin-left:10px;" > Contact to Activate</a >
+  `;
         document.body.prepend(banner);
       }
     }
@@ -435,6 +438,13 @@ function updateCartSummary() {
     cartEmptyText.style.display = "block";
     if (cartCounter) cartCounter.textContent = "0";
     if (cartSubtotal) cartSubtotal.textContent = "0.00 ج.م";
+    if (cartTax) {
+      cartTax.textContent = "0.00 ج.م";
+      const taxLabel = document.getElementById('taxLabel');
+      const storedTaxName = localStorage.getItem('taxName') || 'Tax';
+      const taxRate = localStorage.getItem('taxRate') || 0;
+      if (taxLabel) taxLabel.textContent = `${storedTaxName} (${taxRate}%):`;
+    }
     if (cartTotal) cartTotal.textContent = "Total: 0.00 ج.م";
     disableActionButtons(true);
     return;
@@ -442,6 +452,7 @@ function updateCartSummary() {
 
   cartEmptyText.style.display = "none";
   disableActionButtons(false);
+  document.getElementById('splitBtn').disabled = false; // Enable Split Button logic
 
   cart.forEach((item, index) => {
     subtotal += item.price * item.qty;
@@ -469,8 +480,22 @@ function updateCartSummary() {
     }
   }
 
-  let total = subtotal - discountAmount;
-  if (total < 0) total = 0;
+  let discountedSubtotal = subtotal - discountAmount;
+  if (discountedSubtotal < 0) discountedSubtotal = 0;
+
+  // Calculate Tax
+  const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
+  const taxCheckbox = document.getElementById('taxCheckbox');
+  let taxAmount = 0;
+
+  if (taxCheckbox && taxCheckbox.checked && taxRate > 0) {
+    taxAmount = discountedSubtotal * (taxRate / 100);
+    localStorage.setItem('applyTax', 'true');
+  } else {
+    localStorage.setItem('applyTax', 'false');
+  }
+
+  const finalTotal = discountedSubtotal + taxAmount;
 
   if (cartCounter) cartCounter.textContent = cart.length;
   if (cartSubtotal) cartSubtotal.textContent = `${subtotal.toFixed(2)} ج.م`;
@@ -478,7 +503,17 @@ function updateCartSummary() {
   const discountEl = document.getElementById("cartDiscount");
   if (discountEl) discountEl.textContent = `${discountAmount.toFixed(2)} ج.م`;
 
-  if (cartTotal) cartTotal.textContent = `Total: ${total.toFixed(2)} ج.م`;
+  if (cartTax) {
+    cartTax.textContent = taxAmount.toFixed(2) + " ج.م";
+    const taxLabel = document.getElementById('taxLabel');
+    const storedTaxName = localStorage.getItem('taxName') || 'Tax';
+    if (taxLabel) taxLabel.textContent = `${storedTaxName} (${taxRate}%):`;
+  }
+  if (cartTotal) cartTotal.textContent = "Total: " + finalTotal.toFixed(2) + " ج.م";
+
+  // Persist for processing
+  window.currentTransactionTax = taxAmount;
+  window.currentTransactionTotal = finalTotal;
 }
 
 function removeFromCart(index) {
@@ -488,6 +523,10 @@ function removeFromCart(index) {
 
 function clearCart() {
   cart = [];
+  window.cartDiscount = null; // Clear discount when cart is cleared
+  const taxCheckbox = document.getElementById('taxCheckbox');
+  if (taxCheckbox) taxCheckbox.checked = false; // Reset tax checkbox
+  localStorage.setItem('applyTax', 'false'); // Ensure tax is not applied by default
   updateCartSummary();
 }
 
@@ -565,10 +604,13 @@ async function processSale(method) {
   const salesmanSelect = document.getElementById("salesmanSelect");
   const salesmanName = salesmanSelect ? salesmanSelect.value : "";
 
-  // Calculate totals with discount
+  // Use the pre-calculated total and tax from updateCartSummary
+  const finalTotal = window.currentTransactionTotal || 0;
+  const taxAmount = window.currentTransactionTax || 0;
+
+  // Recalculate subtotal and discount for saleData structure
   let subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   let discountAmount = 0;
-
   if (window.cartDiscount) {
     if (window.cartDiscount.type === 'percent') {
       discountAmount = subtotal * (window.cartDiscount.value / 100);
@@ -577,22 +619,24 @@ async function processSale(method) {
     }
   }
 
-  let total = subtotal - discountAmount;
-  if (total < 0) total = 0;
-
   const saleData = {
     items: cart.map(item => ({
-      productId: item._id,
+      code: item.code,
       name: item.name,
-      price: item.price,
       qty: item.qty,
+      price: item.price,
+      cost: item.cost,
       total: item.price * item.qty,
-      code: item.barcode // Send barcode as code
+      code: item.barcode
     })),
-    total: total,
+    subtotal: subtotal,
+    discount: window.cartDiscount,
+    discountAmount: discountAmount,
+    taxAmount: taxAmount,
+    total: finalTotal,
     paymentMethod: method,
+    splitPayments: window.currentSplitPayments || [], // Send split details if any
     salesman: salesmanName,
-    discount: window.cartDiscount, // Send discount info
     date: new Date()
   };
 
@@ -615,8 +659,11 @@ async function processSale(method) {
 
       printReceipt(sale, settings);
       clearCart();
-      window.cartDiscount = null; // Reset discount
-      loadProducts(); // Refresh stock
+      window.cartDiscount = null;
+      window.currentTransactionTax = 0;
+      window.currentTransactionTotal = 0;
+      window.currentSplitPayments = null; // Reset split
+      loadProducts();
       // alert('Sale completed successfully!'); 
     } else {
       const errData = await response.json();
@@ -697,10 +744,18 @@ async function loadSettings() {
     });
     if (response.ok) {
       const settings = await response.json();
+      // Save settings to localStorage for easy access
       if (settings.shopName) localStorage.setItem('shopName', settings.shopName);
       if (settings.shopAddress) localStorage.setItem('shopAddress', settings.shopAddress);
       if (settings.shopLogo) localStorage.setItem('shopLogo', settings.shopLogo);
       if (settings.footerMessage) localStorage.setItem('footerMessage', settings.footerMessage);
+      if (settings.taxRate !== undefined) localStorage.setItem('taxRate', settings.taxRate);
+      if (settings.taxName) localStorage.setItem('taxName', settings.taxName);
+      if (settings.applyTax !== undefined) {
+        localStorage.setItem('applyTax', settings.applyTax ? 'true' : 'false');
+        const taxCheckbox = document.getElementById('taxCheckbox');
+        if (taxCheckbox) taxCheckbox.checked = settings.applyTax;
+      }
     }
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -713,8 +768,14 @@ document.addEventListener('DOMContentLoaded', () => {
   checkTrialStatus();
   checkOpenShift();
   loadProducts();
-  loadSalesmen();
   loadCategories();
+  loadSalesmen();
+
+  renderHeldOrders();
+  if (heldTransactions.length > 0) {
+    updateHeldCount();
+    startHeldOrdersTimer();
+  }
 
   // Event Listeners
   document.getElementById('productSearch')?.addEventListener('input', (e) => {
@@ -729,8 +790,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   document.getElementById('payButton')?.addEventListener('click', processSale);
-  document.getElementById('holdButton')?.addEventListener('click', () => alert('Hold feature coming soon'));
+  document.getElementById('holdButton')?.addEventListener('click', holdTransaction);
   document.getElementById('discountButton')?.addEventListener('click', openDiscountModal);
+  document.getElementById('taxCheckbox')?.addEventListener('change', updateCartSummary);
+
 
   // Shift Modals
   document.getElementById('confirmOpenShift')?.addEventListener('click', submitOpenShift);
@@ -758,7 +821,7 @@ async function printReceipt(receipt, providedSettings = null) {
     }
 
     const getSetting = (key, defaultVal = '') => {
-      if (providedSettings && providedSettings[key]) return providedSettings[key];
+      if (providedSettings && providedSettings[key] !== undefined) return providedSettings[key];
       return localStorage.getItem(key) || defaultVal;
     };
 
@@ -766,18 +829,23 @@ async function printReceipt(receipt, providedSettings = null) {
     const shopAddress = getSetting('shopAddress');
     const shopLogo = getSetting('shopLogo');
     const receiptFooterMessage = getSetting('footerMessage');
+    const taxRate = parseFloat(getSetting('taxRate', 0));
+    const taxName = getSetting('taxName', 'Tax');
+    const applyTax = getSetting('applyTax', 'false') === 'true';
 
 
     const lang = localStorage.getItem('pos_language') || 'en';
     const t = (en, ar) => (lang === 'ar' ? ar : en);
     const paymentMap = {
-      cash: t("Cash", "كاش"),
+      cash: t("Cash", "نقدي"),
       card: t("Card", "بطاقة"),
-      mobile: t("Mobile", "محفظة")
+      mobile: t("Mobile", "محفظة"),
+      split: t("Split", "تقسيم")
     };
 
-    let totalDiscount = 0;
-    let subtotal = 0;
+    let totalDiscount = receipt.discountAmount || 0;
+    let subtotal = receipt.subtotal || receipt.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    let taxAmount = receipt.taxAmount || 0;
 
     const itemsHtml = receipt.items.map(item => {
       const originalTotal = item.price * item.qty;
@@ -792,9 +860,9 @@ async function printReceipt(receipt, providedSettings = null) {
         discountStr = `${discountAmountPerUnit.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}`;
       }
 
-      const itemDiscountTotal = discountAmountPerUnit * item.qty;
-      totalDiscount += itemDiscountTotal;
-      subtotal += originalTotal;
+      // totalDiscount is now taken from receipt.discountAmount, so no need to sum here
+      // subtotal is also taken from receipt.subtotal
+      // itemDiscountTotal is not used for overall totalDiscount calculation anymore
 
       return `  
                  <tr>  
@@ -846,8 +914,11 @@ async function printReceipt(receipt, providedSettings = null) {
                      <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>  
                      <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>  
                      <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>  
-                     <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.method] || '-'}</p>  
-                     <table>  
+                     <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.paymentMethod] || '-'}</p>  
+                     ${receipt.paymentMethod === 'split' && receipt.splitPayments ?
+        receipt.splitPayments.map(p => `<p style="font-size:0.8em; margin-left:10px;">- ${paymentMap[p.method]}: ${p.amount.toFixed(2)}</p>`).join('')
+        : ''}
+                     <table>    
                          <thead>  
                              <tr>  
                                  <th>${t("Code", "كود")}</th>  
@@ -863,8 +934,9 @@ async function printReceipt(receipt, providedSettings = null) {
                      <div class="summary">  
                          <p>${t("Subtotal", "المجموع الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
                          <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+                         ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
                          <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
-                     </div>  
+                     </div>    
                      <hr/>  
                      ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}  
                      <p class="footer">  
@@ -972,8 +1044,241 @@ window.submitOpenShift = submitOpenShift;
 window.submitCloseShift = submitCloseShift;
 window.scanBarcode = scanBarcode;
 window.clearCart = clearCart;
+// ===================== HELD ORDERS LOGIC =====================
+
+function switchPosTab(tab) {
+  const productGrid = document.getElementById('productGrid');
+  const heldGrid = document.getElementById('heldOrdersGrid');
+  const catContainer = document.getElementById('categoryContainer');
+  const tabProducts = document.getElementById('tabProducts');
+  const tabHeld = document.getElementById('tabHeld');
+
+  if (tab === 'products') {
+    productGrid.style.display = 'grid';
+    heldGrid.style.display = 'none';
+    catContainer.style.display = 'flex';
+
+    tabProducts.classList.add('btn-primary');
+    tabProducts.classList.remove('btn-secondary');
+    tabHeld.classList.remove('btn-primary');
+    tabHeld.classList.add('btn-secondary');
+  } else {
+    productGrid.style.display = 'none';
+    heldGrid.style.display = 'grid';
+    catContainer.style.display = 'none';
+
+    tabProducts.classList.remove('btn-primary');
+    tabProducts.classList.add('btn-secondary');
+    tabHeld.classList.add('btn-primary');
+    tabHeld.classList.remove('btn-secondary');
+    renderHeldOrders();
+  }
+}
+
+function updateHeldCount() {
+  const badge = document.getElementById('heldCountBadge');
+  if (heldTransactions.length > 0) {
+    badge.textContent = heldTransactions.length;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function holdTransaction() {
+  if (cart.length === 0) return alert("Cart is empty!");
+
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const namePrompt = lang === 'ar' ? "أدخل اسماً لهذا الطلب (اختياري):" : "Enter a name for this order (optional):";
+  const orderName = prompt(namePrompt) || "";
+
+  const heldOrder = {
+    id: Date.now(),
+    name: orderName,
+    timestamp: Date.now(),
+    cart: [...cart],
+    salesman: document.getElementById('salesmanSelect').value
+  };
+
+  heldTransactions.push(heldOrder);
+  localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+
+  clearCart();
+  updateHeldCount();
+  renderHeldOrders();
+  startHeldOrdersTimer();
+}
+
+function startHeldOrdersTimer() {
+  if (heldOrdersInterval) clearInterval(heldOrdersInterval);
+  heldOrdersInterval = setInterval(() => {
+    const timerElements = document.querySelectorAll('.held-timer');
+    timerElements.forEach(el => {
+      const timestamp = parseInt(el.dataset.timestamp);
+      el.textContent = getHeldDuration(timestamp);
+    });
+  }, 60000); // Update every minute
+}
+
+function getHeldDuration(timestamp) {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const heldFor = lang === 'ar' ? 'معلق منذ:' : 'Held for:';
+  return `${heldFor} ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function renderHeldOrders() {
+  const grid = document.getElementById('heldOrdersGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const t = {
+    resume: lang === 'ar' ? 'استكمال' : 'Resume',
+    discard: lang === 'ar' ? 'حذف' : 'Discard',
+    items: lang === 'ar' ? 'أصناف' : 'Items',
+    total: lang === 'ar' ? 'إجمالي' : 'Total'
+  };
+
+  if (heldTransactions.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">
+            ${lang === 'ar' ? 'لا توجد طلبات معلقة' : 'No held orders active'}
+        </div>`;
+    return;
+  }
+
+  heldTransactions.forEach(order => {
+    const total = order.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const card = document.createElement('div');
+    card.className = 'product-card'; // Reuse product card style
+    card.style.cursor = 'default';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.justifyContent = 'space-between';
+
+    card.innerHTML = `
+            <div style="padding:10px;">
+                <h4 style="margin:0">${order.name ? order.name : '#' + String(order.id).slice(-4)}</h4>
+                ${order.name ? `<small style="color:#888">Module #${String(order.id).slice(-4)}</small>` : ''}
+                <p style="color:#555;font-size:0.9em;">${order.cart.length} ${t.items}</p>
+                <p style="font-weight:bold;margin-top:5px;">${total.toFixed(2)}</p>
+                <p class="held-timer" data-timestamp="${order.timestamp}" style="color:red;font-size:0.8em;margin-top:5px;">
+                    ${getHeldDuration(order.timestamp)}
+                </p>
+                ${order.salesman ? `<p style="font-size:0.8em;color:#666">👤 ${order.salesman}</p>` : ''}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;">
+                <button onclick="resumeHeldOrder(${order.id})" class="btn btn-success" style="font-size:0.8em">${t.resume}</button>
+                <button onclick="discardHeldOrder(${order.id})" class="btn btn-danger" style="font-size:0.8em">${t.discard}</button>
+            </div>
+        `;
+    grid.appendChild(card);
+  });
+}
+
+function resumeHeldOrder(id) {
+  if (cart.length > 0) {
+    const lang = localStorage.getItem('pos_language') || 'en';
+    const msg = lang === 'ar' ? 'السلة ليست فارغة. هل تريد استبدالها؟' : 'Cart is not empty. Replace it?';
+    if (!confirm(msg)) return;
+  }
+
+  const orderIndex = heldTransactions.findIndex(o => o.id === id);
+  if (orderIndex === -1) return;
+
+  const order = heldTransactions[orderIndex];
+  cart = [...order.cart];
+  if (order.salesman) {
+    document.getElementById('salesmanSelect').value = order.salesman;
+  }
+
+  heldTransactions.splice(orderIndex, 1);
+  localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+
+  updateCartSummary();
+  updateHeldCount();
+  renderHeldOrders();
+  switchPosTab('products');
+}
+
+function discardHeldOrder(id) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  if (!confirm(lang === 'ar' ? 'تأكيد الحذف؟' : 'Confirm discard?')) return;
+
+  heldTransactions = heldTransactions.filter(o => o.id !== id);
+  localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+  updateHeldCount();
+  renderHeldOrders();
+}
+
+window.switchPosTab = switchPosTab;
+window.resumeHeldOrder = resumeHeldOrder;
+window.discardHeldOrder = discardHeldOrder;
 window.holdTransaction = holdTransaction;
 window.openDiscountModal = openDiscountModal;
 window.saveDiscount = saveDiscount;
 window.editCartItemQty = editCartItemQty;
 window.closeDiscountModal = closeDiscountModal;
+window.openSplitPaymentModal = openSplitPaymentModal;
+window.updateSplitCalculations = updateSplitCalculations;
+window.confirmSplitPayment = confirmSplitPayment;
+
+// ===================== SPLIT PAYMENT =====================
+function openSplitPaymentModal() {
+  if (cart.length === 0) return;
+
+  // Ensure calculation is up to date
+  const total = window.currentTransactionTotal || 0;
+
+  document.getElementById('splitPaymentModal').style.display = 'flex';
+  document.getElementById('splitTotalAmount').textContent = total.toFixed(2);
+
+  // Reset inputs
+  document.getElementById('splitCash').value = '';
+  document.getElementById('splitCard').value = '';
+  document.getElementById('splitMobile').value = '';
+
+  updateSplitCalculations();
+}
+
+function updateSplitCalculations() {
+  const total = window.currentTransactionTotal || 0;
+  const cash = parseFloat(document.getElementById('splitCash').value) || 0;
+  const card = parseFloat(document.getElementById('splitCard').value) || 0;
+  const mobile = parseFloat(document.getElementById('splitMobile').value) || 0;
+
+  const paid = cash + card + mobile;
+  const remaining = total - paid;
+
+  const remainingEl = document.getElementById('splitRemaining');
+  const confirmBtn = document.getElementById('confirmSplitBtn');
+
+  remainingEl.textContent = remaining.toFixed(2);
+
+  if (Math.abs(remaining) < 0.1) { // Floating point tolerance
+    remainingEl.style.color = 'green';
+    confirmBtn.disabled = false;
+    remainingEl.textContent = "0.00 (Ready)";
+  } else {
+    remainingEl.style.color = 'red';
+    confirmBtn.disabled = true;
+  }
+}
+
+function confirmSplitPayment() {
+  const cash = parseFloat(document.getElementById('splitCash').value) || 0;
+  const card = parseFloat(document.getElementById('splitCard').value) || 0;
+  const mobile = parseFloat(document.getElementById('splitMobile').value) || 0;
+
+  const splits = [];
+  if (cash > 0) splits.push({ method: 'cash', amount: cash });
+  if (card > 0) splits.push({ method: 'card', amount: card });
+  if (mobile > 0) splits.push({ method: 'mobile', amount: mobile });
+
+  window.currentSplitPayments = splits;
+  processSale('split');
+  document.getElementById('splitPaymentModal').style.display = 'none';
+}

@@ -111,13 +111,24 @@
                 <!-- Categories will be loaded here -->
               </div>
 
-              <div class="card-header">
-                <span id="productsTitle" data-i18n="products_title">Products</span>
-                <div style="display:flex;gap:10px;align-items:center;">
-                  <input type="text" id="productSearch" placeholder="Search by name, code, or barcode..."
-                    data-i18n="search_placeholder" class="search-box" style="width:200px;">
-                  <button class="btn btn-secondary" onclick="scanBarcode()" id="scanBtn" data-i18n="scan_btn">📷
-                    Scan</button>
+              <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div class="tabs">
+                    <button class="btn btn-primary" id="tabProducts" onclick="switchPosTab('products')">
+                      <span data-i18n="products_title">Products</span>
+                    </button>
+                    <button class="btn btn-secondary" id="tabHeld" onclick="switchPosTab('held')">
+                      <span data-i18n="held_orders">Held Orders</span>
+                      <span id="heldCountBadge" class="badge"
+                        style="background:red;font-size:0.7em;display:none">0</span>
+                    </button>
+                  </div>
+                  <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="text" id="productSearch" placeholder="Search by name, code, or barcode..."
+                      data-i18n="search_placeholder" class="search-box" style="width:200px;">
+                    <button class="btn btn-secondary" onclick="scanBarcode()" id="scanBtn" data-i18n="scan_btn">📷
+                      Scan</button>
+                  </div>
                 </div>
               </div>
               <div class="card-body">
@@ -125,6 +136,9 @@
                   <div style="text-align:center;padding:40px;color:#666;">
                     <p id="loadingText" data-i18n="loading_products">Loading products...</p>
                   </div>
+                </div>
+                <div id="heldOrdersGrid" class="product-grid" style="display:none;">
+                  <!-- Held items rendered here -->
                 </div>
               </div>
             </div>
@@ -147,7 +161,11 @@
               <div><span id="discountLabel" data-i18n="discount">Discount:</span> <span id="cartDiscount">0.00
                   ج.م</span> <button onclick="openDiscountModal()" class="btn-sm"
                   style="font-size:0.8rem;padding:2px 5px;cursor:pointer;">✏️</button></div>
-              <div><span id="taxLabel" data-i18n="tax">Tax (0%):</span> <span id="cartTax">0.00 ج.م</span></div>
+              <div>
+                <input type="checkbox" id="taxCheckbox" onchange="updateCartSummary()">
+                <span id="taxLabel" data-i18n="tax">Tax (0%):</span>
+                <span id="cartTax">0.00 ج.م</span>
+              </div>
               <hr>
               <div class="cart-total" id="cartTotal">Total: 0.00 ج.م</div>
             </div>
@@ -164,6 +182,8 @@
                 data-i18n="pay_card">💳 Card</button>
               <button class="btn btn-success" onclick="processSale('mobile')" id="mobileBtn" disabled
                 data-i18n="pay_mobile">📱 Mobile</button>
+              <button class="btn btn-primary" onclick="openSplitPaymentModal()" id="splitBtn" disabled
+                data-i18n="pay_split">🔀 Split</button>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
@@ -279,6 +299,35 @@
       <br><br>
       <button onclick="saveDiscount()" data-i18n="discount_save">💾 Save</button>
       <button onclick="closeDiscountModal()" data-i18n="discount_cancel">✖️ Cancel</button>
+    </div>
+  </div>
+
+  <!-- Split Payment Modal -->
+  <div id="splitPaymentModal" class="modal" style="display:none;">
+    <div class="modal-content" style="width: 350px;">
+      <h3 data-i18n="split_payment_title">Split Payment</h3>
+      <h4 style="margin:10px 0;"><span data-i18n="total_to_pay">Total:</span> <span id="splitTotalAmount">0.00</span>
+      </h4>
+
+      <div style="display:grid; grid-template-columns: 80px 1fr; gap:10px; text-align:left; margin-bottom:15px;">
+        <label>💵 Cash</label>
+        <input type="number" id="splitCash" class="split-input" placeholder="0" oninput="updateSplitCalculations()">
+
+        <label>💳 Card</label>
+        <input type="number" id="splitCard" class="split-input" placeholder="0" oninput="updateSplitCalculations()">
+
+        <label>📱 Mobile</label>
+        <input type="number" id="splitMobile" class="split-input" placeholder="0" oninput="updateSplitCalculations()">
+      </div>
+
+      <p style="font-weight:bold; color:red; margin-bottom:15px;">
+        <span data-i18n="remaining_amount">Remaining:</span> <span id="splitRemaining">0.00</span>
+      </p>
+
+      <button onclick="confirmSplitPayment()" id="confirmSplitBtn" class="btn btn-success" disabled
+        data-i18n="confirm_payment">Check</button>
+      <button onclick="document.getElementById('splitPaymentModal').style.display='none'" class="btn btn-secondary"
+        data-i18n="cancel">Cancel</button>
     </div>
   </div>
 
