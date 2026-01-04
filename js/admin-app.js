@@ -78,7 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response.ok) {
         const savedSettings = await response.json();
         console.log('Settings Saved Successfully:', savedSettings);
-        alert(getTranslation('settings_saved') + `\nDB Status: Rate=${savedSettings.taxRate}, Name="${savedSettings.taxName}"`);
+        const version = savedSettings._backendVersion || 'OLD';
+        alert(getTranslation('settings_saved') + `\nDB Status: Rate=${savedSettings.taxRate}, Name="${savedSettings.taxName}"\nBackend Ver: ${version}`);
       } else {
         alert('Failed to save settings');
       }
