@@ -417,8 +417,6 @@ function addToCart(product) {
     }
     existingItem.qty++;
   } else {
-    existingItem.qty++;
-  } else {
     cart.push({ ...product, qty: 1 });
   }
 
@@ -843,7 +841,6 @@ async function printReceipt(receipt, providedSettings = null) {
 
     const shopName = getSetting('shopName', 'My Shop');
     const shopAddress = getSetting('shopAddress');
-    const shopLogo = getSetting('shopLogo');
     const shopLogo = getSetting('shopLogo');
     const receiptFooterMessage = getSetting('footerMessage');
     const taxRate = parseFloat(getSetting('taxRate', 0));
