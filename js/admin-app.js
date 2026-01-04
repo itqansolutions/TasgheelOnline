@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       taxName: taxNameInput.value.trim(),
       shopLogo: uploadedLogoBase64
     };
+    console.log('Sending Settings:', settings); // Debug Log
 
     try {
       const token = localStorage.getItem('token');
