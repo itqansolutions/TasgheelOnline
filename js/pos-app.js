@@ -8,6 +8,7 @@ let heldTransactions = JSON.parse(localStorage.getItem('heldTransactions')) || [
 let currentShift = null;
 let isReadOnly = false;
 let heldOrdersInterval = null;
+let transactionStartTime = null;
 window.cart = cart; // Debug access
 // Ensure API_URL is available
 // Ensure API_URL is available
@@ -416,8 +417,17 @@ function addToCart(product) {
     }
     existingItem.qty++;
   } else {
+    existingItem.qty++;
+  } else {
     cart.push({ ...product, qty: 1 });
   }
+
+  // Initialize start time if this is the first item
+  if (!transactionStartTime) {
+    transactionStartTime = Date.now();
+    console.log('Transaction started at:', new Date(transactionStartTime).toLocaleTimeString());
+  }
+
   console.log('Cart updated:', cart);
   updateCartSummary();
 }
@@ -523,6 +533,7 @@ function removeFromCart(index) {
 
 function clearCart() {
   cart = [];
+  transactionStartTime = null; // Reset time
   window.cartDiscount = null; // Clear discount when cart is cleared
   const taxCheckbox = document.getElementById('taxCheckbox');
   if (taxCheckbox) taxCheckbox.checked = false; // Reset tax checkbox
@@ -755,6 +766,11 @@ async function loadSettings() {
         localStorage.setItem('applyTax', settings.applyTax ? 'true' : 'false');
         const taxCheckbox = document.getElementById('taxCheckbox');
         if (taxCheckbox) taxCheckbox.checked = settings.applyTax;
+      } else if (localStorage.getItem('applyTax') === null) {
+        // Default to TRUE if not set
+        localStorage.setItem('applyTax', 'true');
+        const taxCheckbox = document.getElementById('taxCheckbox');
+        if (taxCheckbox) taxCheckbox.checked = true;
       }
     }
   } catch (error) {
@@ -828,10 +844,14 @@ async function printReceipt(receipt, providedSettings = null) {
     const shopName = getSetting('shopName', 'My Shop');
     const shopAddress = getSetting('shopAddress');
     const shopLogo = getSetting('shopLogo');
+    const shopLogo = getSetting('shopLogo');
     const receiptFooterMessage = getSetting('footerMessage');
     const taxRate = parseFloat(getSetting('taxRate', 0));
     const taxName = getSetting('taxName', 'Tax');
-    const applyTax = getSetting('applyTax', 'false') === 'true';
+    // Default applyTax to true if missing
+    let applyTaxVal = getSetting('applyTax');
+    if (applyTaxVal === '') applyTaxVal = 'true';
+    const applyTax = applyTaxVal === 'true';
 
 
     const lang = localStorage.getItem('pos_language') || 'en';
@@ -1096,6 +1116,7 @@ function holdTransaction() {
     id: Date.now(),
     name: orderName,
     timestamp: Date.now(),
+    startTime: transactionStartTime || Date.now(), // Save original start time
     cart: [...cart],
     salesman: document.getElementById('salesmanSelect').value
   };
@@ -1191,6 +1212,27 @@ function resumeHeldOrder(id) {
 
   const order = heldTransactions[orderIndex];
   cart = [...order.cart];
+  transactionStartTime = order.startTime || order.timestamp; // Restore start time
+
+  // Calculate elapsed time in hours
+  const now = Date.now();
+  const elapsedMs = now - transactionStartTime;
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+  // Update Quantity of FIRST item
+  if (cart.length > 0) {
+    const oldQty = cart[0].qty;
+    // Round to 2 decimals for cleaner receipt, or keep precise?
+    // Let's use 2 decimals for billing triggers usually
+    cart[0].qty = parseFloat(elapsedHours.toFixed(2));
+
+    // Ensure at least 0.01
+    if (cart[0].qty === 0) cart[0].qty = 0.01;
+
+    // Optional: Notify user
+    // alert(`Time elapsed: ${elapsedHours.toFixed(2)} hrs. Updated quantity for ${cart[0].name}.`);
+  }
+
   if (order.salesman) {
     document.getElementById('salesmanSelect').value = order.salesman;
   }
