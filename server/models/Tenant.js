@@ -18,7 +18,6 @@ const tenantSchema = new mongoose.Schema({
     taxRate: { type: Number, default: 0 },
     taxName: { type: String, default: "Tax" }
   }
-}
 });
 
 module.exports = mongoose.model('Tenant', tenantSchema);
