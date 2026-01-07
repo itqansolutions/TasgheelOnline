@@ -244,6 +244,9 @@ router.post('/sales', auth, async (req, res) => {
             cashier: req.user.username, // Set cashier from logged-in user
             salesman,
             total,
+            taxAmount: req.body.taxAmount || 0,
+            taxName: req.body.taxName,
+            taxRate: req.body.taxRate,
             items
         });
 

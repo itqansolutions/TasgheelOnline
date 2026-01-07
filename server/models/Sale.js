@@ -13,6 +13,9 @@ const saleSchema = new mongoose.Schema({
     cashier: { type: String, required: true },
     salesman: String,
     total: { type: Number, required: true },
+    taxAmount: { type: Number, default: 0 },
+    taxName: String,
+    taxRate: Number,
     items: [{
         code: String,
         name: String,
