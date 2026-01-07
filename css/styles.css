@@ -608,13 +608,13 @@ body {
 /* POS Layout */
 .pos-layout {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr 300px;
   gap: 20px;
   height: 100%;
 }
 
 .rtl .pos-layout {
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 300px 1fr;
 }
 
 .product-grid {

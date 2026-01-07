@@ -585,6 +585,8 @@ function removeFromCart(index) {
 function clearCart() {
   cart = [];
   transactionStartTime = null; // Reset time
+  window.currentHeldOrderId = null; // Clear held order tracking
+  window.currentHeldOrderName = null;
   window.cartDiscount = null; // Clear discount when cart is cleared
   const taxCheckbox = document.getElementById('taxCheckbox');
   if (taxCheckbox) taxCheckbox.checked = false; // Reset tax checkbox
@@ -1182,15 +1184,28 @@ function updateHeldCount() {
 function holdTransaction() {
   if (cart.length === 0) return alert("Cart is empty!");
 
-  const lang = localStorage.getItem('pos_language') || 'en';
-  const namePrompt = lang === 'ar' ? "أدخل اسماً لهذا الطلب (اختياري):" : "Enter a name for this order (optional):";
-  const orderName = prompt(namePrompt) || "";
+  let orderName = "";
+  let orderId = Date.now();
+  let originalTime = transactionStartTime || Date.now();
+
+  // CHECK IF THIS IS AN EXISTING HELD ORDER BEING RE-HELD
+  if (window.currentHeldOrderId) {
+    orderId = window.currentHeldOrderId;
+    orderName = window.currentHeldOrderName || "";
+    // If re-holding, remove the old version first (it will be added fresh below)
+    heldTransactions = heldTransactions.filter(o => o.id !== orderId);
+  } else {
+    // NEW HOLD
+    const lang = localStorage.getItem('pos_language') || 'en';
+    const namePrompt = lang === 'ar' ? "أدخل اسماً لهذا الطلب (اختياري):" : "Enter a name for this order (optional):";
+    orderName = prompt(namePrompt) || "";
+  }
 
   const heldOrder = {
-    id: Date.now(),
+    id: orderId,
     name: orderName,
-    timestamp: transactionStartTime || Date.now(), // Store original time for display
-    startTime: transactionStartTime || Date.now(), // Store original time for resume logic
+    timestamp: originalTime, // Store original time for display
+    startTime: originalTime, // Store original time for resume logic
     cart: [...cart],
     salesman: document.getElementById('salesmanSelect').value
   };
@@ -1198,7 +1213,7 @@ function holdTransaction() {
   heldTransactions.push(heldOrder);
   localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
 
-  clearCart();
+  clearCart(); // This will clear window.currentHeldOrderId via clearCart modifications
   updateHeldCount();
   renderHeldOrders();
   startHeldOrdersTimer();
@@ -1287,6 +1302,10 @@ function resumeHeldOrder(id) {
   const order = heldTransactions[orderIndex];
   cart = [...order.cart];
   transactionStartTime = order.startTime || order.timestamp; // Restore start time
+
+  // RESTORE HELD STATE FOR RE-HOLDING
+  window.currentHeldOrderId = order.id;
+  window.currentHeldOrderName = order.name;
 
   // Calculate elapsed time in hours
   const now = Date.now();
