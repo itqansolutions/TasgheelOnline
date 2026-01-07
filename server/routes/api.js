@@ -596,7 +596,7 @@ router.put('/settings', auth, async (req, res) => {
 // @access  Private
 router.get('/users', auth, async (req, res) => {
     try {
-        const users = await User.find({ tenantId: req.tenantId }).select('-password');
+        const users = await User.find({ tenantId: req.tenantId }).select('-passwordHash');
         res.json(users);
     } catch (err) {
         console.error(err.message);
@@ -620,18 +620,19 @@ router.post('/users', auth, async (req, res) => {
         user = new User({
             tenantId: req.tenantId,
             username,
-            password,
+            passwordHash: 'temp', // Will be overwritten
+            fullName: username, // Default to username since frontend doesn't provide it yet
             role
         });
 
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
+        user.passwordHash = await bcrypt.hash(password, salt);
 
         await user.save();
         res.json({ msg: 'User created' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error: ' + err.message });
     }
 });
 
