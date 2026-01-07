@@ -115,7 +115,7 @@ router.put('/settings', auth, async (req, res) => {
         const tenant = await Tenant.findById(req.tenantId);
         if (!tenant) return res.status(404).json({ msg: 'Tenant not found' });
 
-        const { shopName, shopAddress, shopLogo, footerMessage } = req.body;
+        const { shopName, shopAddress, shopLogo, footerMessage, taxRate, taxName } = req.body;
 
         // Initialize settings object if it doesn't exist
         if (!tenant.settings) tenant.settings = {};
@@ -124,6 +124,8 @@ router.put('/settings', auth, async (req, res) => {
         if (shopAddress) tenant.settings.shopAddress = shopAddress;
         if (shopLogo) tenant.settings.shopLogo = shopLogo;
         if (footerMessage) tenant.settings.footerMessage = footerMessage;
+        if (taxRate !== undefined) tenant.settings.taxRate = taxRate;
+        if (taxName) tenant.settings.taxName = taxName;
 
         await tenant.save();
         res.json(tenant.settings);
