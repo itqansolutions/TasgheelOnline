@@ -715,28 +715,48 @@ async function processSale(method) {
 
 }
 
-      </head >
-  <body>
-    <div class="container">
-      <h2>${shopName}</h2>
-      <h3>${t("Daily Summary", "ملخص اليومية")}</h3>
-      <p>${dateFormatted}</p>
-      <hr />
-      <div class="summary-item">
-        <span>${t("Total Orders", "عدد الطلبات")}</span>
-        <span>${data.totalOrders}</span>
-      </div>
-      <div class="summary-item">
-        <span>${t("Total Sales", "إجمالي المبيعات")}</span>
-        <span>${data.totalSales.toFixed(2)}</span>
-      </div>
-      <hr />
-      <p>${t("Printed at", "طبع في")}: ${new Date().toLocaleTimeString()}</p>
-    </div>
-    <script>window.onload = () => window.print();</script>
-  </body>
-      </html >
-  `;
+async function printDailySummary(data) {
+  try {
+    const shopName = localStorage.getItem('shopName') || 'My Shop';
+    const lang = localStorage.getItem('pos_language') || 'en';
+    const t = (en, ar) => (lang === 'ar' ? ar : en);
+    const dateFormatted = new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const html = `
+      <html>
+      <head>
+        <title>${t("Daily Summary", "ملخص اليوم")}</title>
+        <style>
+          body { font-family: Arial, sans-serif; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; text-align: center; }
+          .container { width: 72mm; margin: 0 auto; }
+          h2 { margin: 5px 0; }
+          .summary-item { display: flex; justify-content: space-between; margin: 5px 0; font-weight: bold; }
+          hr { border-top: 1px dashed #000; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2>${shopName}</h2>
+          <h3>${t("Daily Summary", "ملخص اليومية")}</h3>
+          <p>${dateFormatted}</p>
+          <hr/>
+          <div class="summary-item">
+            <span>${t("Total Orders", "عدد الطلبات")}</span>
+            <span>${data.totalOrders}</span>
+          </div>
+          <div class="summary-item">
+            <span>${t("Total Sales", "إجمالي المبيعات")}</span>
+            <span>${data.totalSales.toFixed(2)}</span>
+          </div>
+          <hr/>
+          <p>${t("Printed at", "طبع في")}: ${new Date().toLocaleTimeString()}</p>
+        </div>
+        <script>window.onload = () => window.print();<\/script>
+      </body>
+      </html>
+    `;
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(html);
@@ -751,37 +771,37 @@ async function processSale(method) {
 async function loadSettings() {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${ API_URL }/settings`, {
-headers: { 'x-auth-token': token }
+    const response = await fetch(`${API_URL}/settings`, {
+      headers: { 'x-auth-token': token }
     });
-if (response.ok) {
-  const settings = await response.json();
-  // Save settings to localStorage for easy access
-  if (settings.shopName) localStorage.setItem('shopName', settings.shopName);
-  if (settings.shopAddress) localStorage.setItem('shopAddress', settings.shopAddress);
-  if (settings.shopLogo) localStorage.setItem('shopLogo', settings.shopLogo);
-  if (settings.footerMessage) localStorage.setItem('footerMessage', settings.footerMessage);
-  if (settings.taxRate !== undefined) localStorage.setItem('taxRate', settings.taxRate);
-  if (settings.taxName) localStorage.setItem('taxName', settings.taxName);
-  if (settings.applyTax !== undefined) {
-    localStorage.setItem('applyTax', settings.applyTax ? 'true' : 'false');
-    const taxCheckbox = document.getElementById('taxCheckbox');
-    if (taxCheckbox) taxCheckbox.checked = settings.applyTax;
-  }
+    if (response.ok) {
+      const settings = await response.json();
+      // Save settings to localStorage for easy access
+      if (settings.shopName) localStorage.setItem('shopName', settings.shopName);
+      if (settings.shopAddress) localStorage.setItem('shopAddress', settings.shopAddress);
+      if (settings.shopLogo) localStorage.setItem('shopLogo', settings.shopLogo);
+      if (settings.footerMessage) localStorage.setItem('footerMessage', settings.footerMessage);
+      if (settings.taxRate !== undefined) localStorage.setItem('taxRate', settings.taxRate);
+      if (settings.taxName) localStorage.setItem('taxName', settings.taxName);
+      if (settings.applyTax !== undefined) {
+        localStorage.setItem('applyTax', settings.applyTax ? 'true' : 'false');
+        const taxCheckbox = document.getElementById('taxCheckbox');
+        if (taxCheckbox) taxCheckbox.checked = settings.applyTax;
+      }
 
-  if (settings.applyTax === undefined && localStorage.getItem('applyTax') === null) {
-    // Default to TRUE if not set
-    localStorage.setItem('applyTax', 'true');
-    const taxCheckbox = document.getElementById('taxCheckbox');
-    if (taxCheckbox) taxCheckbox.checked = true;
-  }
+      if (settings.applyTax === undefined && localStorage.getItem('applyTax') === null) {
+        // Default to TRUE if not set
+        localStorage.setItem('applyTax', 'true');
+        const taxCheckbox = document.getElementById('taxCheckbox');
+        if (taxCheckbox) taxCheckbox.checked = true;
+      }
 
-  // Refresh cart to apply new settings (tax rate, name, etc.)
-  updateCartSummary();
-}
+      // Refresh cart to apply new settings (tax rate, name, etc.)
+      updateCartSummary();
+    }
   } catch (error) {
-  console.error('Error loading settings:', error);
-}
+    console.error('Error loading settings:', error);
+  }
 }
 
 // ===================== INIT =====================
@@ -871,6 +891,12 @@ async function printReceipt(receipt, providedSettings = null) {
     let totalDiscount = receipt.discountAmount || 0;
     let subtotal = receipt.subtotal || receipt.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
     let taxAmount = receipt.taxAmount || 0;
+
+    // Fallback: If taxAmount is missing but we have a rate, calculate it
+    if (!taxAmount && taxRate > 0) {
+      const discountedSub = Math.max(0, subtotal - totalDiscount);
+      taxAmount = discountedSub * (taxRate / 100);
+    }
 
     const itemsHtml = receipt.items.map(item => {
       const originalTotal = item.price * item.qty;

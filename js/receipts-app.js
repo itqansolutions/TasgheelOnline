@@ -147,6 +147,12 @@ async function printReceipt(receiptId) {
     // If taxAmount is stored in receipt (New Sales), use it.
     let taxAmount = receipt.taxAmount || 0;
 
+    // Fallback: If taxAmount is missing but we have a rate, calculate it
+    if (!taxAmount && taxRate > 0) {
+      const discountedSub = Math.max(0, subtotal - totalDiscount);
+      taxAmount = discountedSub * (taxRate / 100);
+    }
+
     const itemsHtml = receipt.items.map(item => {
       const originalTotal = item.price * item.qty;
       let discountStr = "-";
