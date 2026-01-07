@@ -112,6 +112,9 @@ const translations = {
         recorded_stock: "Recorded",
         actual_stock: "Actual",
         difference: "Difference",
+        edit_product: "Edit Product",
+        update_product: "Update Product",
+        stock_quantity: "Stock Quantity",
 
         // Receipts
         receipts_title: "Receipts",
@@ -298,6 +301,9 @@ const translations = {
         recorded_stock: "المسجل",
         actual_stock: "الفعلي",
         difference: "الفرق",
+        edit_product: "تعديل المنتج",
+        update_product: "تحديث المنتج",
+        stock_quantity: "كمية المخزون",
 
         // Receipts
         receipts_title: "الفواتير",
