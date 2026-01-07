@@ -181,7 +181,7 @@ async function printReceipt(receiptId) {
 
     // Generate Tax Row if applicable
     let taxRowHtml = '';
-    if (applyTax && taxAmount > 0) {
+    if (taxAmount > 0) {
       taxRowHtml = `
             <tr style="font-weight:bold; background-color:#f9f9f9;">
                 <td>-</td>
