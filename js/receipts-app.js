@@ -269,14 +269,6 @@ async function printReceipt(receiptId) {
         <div class="receipt-container">
            ${receiptContent}
         </div>
-        
-        <div class="page-break"></div>
-
-        <div class="receipt-container">
-           ${receiptContent}
-        </div>
-
-        <script>window.onload = () => window.print();</script>
       </body>
       </html>
     `;

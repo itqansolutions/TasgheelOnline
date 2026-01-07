@@ -782,7 +782,6 @@ async function printDailySummary(data) {
           <hr/>
           <p>${t("Printed at", "طبع في")}: ${new Date().toLocaleTimeString()}</p>
         </div>
-        <script>window.onload = () => window.print();<\/script>
       </body>
       </html>
     `;
@@ -1042,14 +1041,7 @@ async function printReceipt(receipt, providedSettings = null) {
                  <div class="receipt-container">  
                     ${receiptContent}
                  </div>
-                 
-                 <div class="page-break"></div>
 
-                 <div class="receipt-container">  
-                    ${receiptContent}
-                 </div>
-
-                 <script>window.onload = () => window.print();</script>  
              </body>  
              </html>  
          `;
