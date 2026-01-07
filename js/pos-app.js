@@ -16,6 +16,35 @@ if (typeof API_URL === 'undefined') {
   window.API_URL = '/api';
 }
 
+// Helper to print content via iframe (no new tab)
+window.printContent = function (html) {
+  const iframeId = 'print-iframe';
+  let iframe = document.getElementById(iframeId);
+
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = iframeId;
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+  }
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  // Wait for content to load then print
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    iframe.contentWindow.print();
+  }, 500);
+}
+
 // ===================== INIT =====================
 // SHIFT MANAGEMENT
 
@@ -758,9 +787,7 @@ async function printDailySummary(data) {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(html);
-    printWindow.document.close();
+    window.printContent(html);
 
   } catch (error) {
     console.error('Error printing daily summary:', error);
@@ -1028,9 +1055,7 @@ async function printReceipt(receipt, providedSettings = null) {
          `;
 
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(html);
-    printWindow.document.close();
+    window.printContent(html);
 
   } catch (error) {
     console.error('Error printing receipt:', error);
