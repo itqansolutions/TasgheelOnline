@@ -414,6 +414,13 @@ body.rtl .search-box {
   border-color: #3498db;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 .demo-accounts {
   margin-top: 20px;
   font-size: 0.8rem;
@@ -773,6 +780,10 @@ body.rtl .search-box {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   border-radius: 8px;
   animation: modalFadeIn 0.3s;
+  z-index: 1001;
+  /* Ensure content is above overlay */
+  position: relative;
+  /* Ensure z-index applies */
 }
 
 @keyframes modalFadeIn {

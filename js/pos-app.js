@@ -499,12 +499,10 @@ function updateCartSummary() {
   const taxName = localStorage.getItem('taxName') || 'Tax';
   const taxLabel = document.getElementById('taxLabel');
 
-  // Default applyTax to true if not set
-  let applyTaxStored = localStorage.getItem('applyTax');
-  if (applyTaxStored === null) {
-    applyTaxStored = 'true';
-    localStorage.setItem('applyTax', 'true');
-  }
+  // Default applyTax to true if not set OR simply force it for the 'default checked' requirement
+  // User requested "by default checked", implying on every session start/reload it should be checked.
+  localStorage.setItem('applyTax', 'true');
+  let applyTaxStored = 'true';
 
   // FIXED: Correct ID 'taxCheckbox' matched with HTML
   const applyTaxCheckbox = document.getElementById('taxCheckbox');
@@ -515,15 +513,11 @@ function updateCartSummary() {
   }
 
   if (applyTaxCheckbox) {
-    // Only set checked state if it's not already being handled by user interaction (though re-render implies refresh)
-    // We trust localStorage state
-    applyTaxCheckbox.checked = applyTaxStored === 'true';
-
-    // Remove old listener to avoid duplicates if any (though this function runs repeatedly)
-    // Better to just rely on the inline onchange="updateCartSummary()" or simple logic here
-    // Since re-rendering usually rebuilds the DOM or we are just updating values...
-    // In this specific function, we are calculating.
-    // The event listener is better attached once or inline. HTML has inline.
+    applyTaxCheckbox.checked = true; // Always check on load
+    applyTaxCheckbox.addEventListener('change', (e) => {
+      localStorage.setItem('applyTax', e.target.checked);
+      updateCartSummary();
+    });
   }
 
   if (applyTaxCheckbox && applyTaxCheckbox.checked && taxRate > 0) {
@@ -1390,3 +1384,13 @@ function confirmSplitPayment() {
   processSale('split');
   document.getElementById('splitPaymentModal').style.display = 'none';
 }
+/ /   I n i t i a l i z e   U I   s t a t e   l o g i c  
+ d o c u m e n t . a d d E v e n t L i s t e n e r ( ' D O M C o n t e n t L o a d e d ' ,   ( )   = >   {  
+         / /   E n s u r e   d e f a u l t   s t a t e   i s   a p p l i e d  
+         t r y   {  
+                 u p d a t e C a r t S u m m a r y ( ) ;  
+         }   c a t c h   ( e )   {  
+                 c o n s o l e . w a r n ( " u p d a t e C a r t S u m m a r y   n o t   r e a d y   y e t " ,   e ) ;  
+         }  
+ } ) ;  
+ 
