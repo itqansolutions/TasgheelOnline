@@ -440,6 +440,10 @@ function updateCartSummary() {
   const cartTotal = document.getElementById("cartTotal");
   const cartEmptyText = document.getElementById("cartEmptyText");
 
+  // Load Tax Settings
+  const taxName = localStorage.getItem('taxName') || 'Tax';
+  const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
+
   if (!cartItemsContainer) return;
 
   cartItemsContainer.innerHTML = "";
@@ -452,9 +456,7 @@ function updateCartSummary() {
     if (cartTax) {
       cartTax.textContent = "0.00 ج.م";
       const taxLabel = document.getElementById('taxLabel');
-      const storedTaxName = localStorage.getItem('taxName') || 'Tax';
-      const taxRate = localStorage.getItem('taxRate') || 0;
-      if (taxLabel) taxLabel.textContent = `${storedTaxName} (${taxRate}%):`;
+      if (taxLabel) taxLabel.textContent = `${taxName} (${taxRate}%):`;
     }
     if (cartTotal) cartTotal.textContent = "Total: 0.00 ج.م";
     disableActionButtons(true);
@@ -495,8 +497,6 @@ function updateCartSummary() {
   if (discountedSubtotal < 0) discountedSubtotal = 0;
 
   // LOAD SETTINGS
-  const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
-  const taxName = localStorage.getItem('taxName') || 'Tax';
   const taxLabel = document.getElementById('taxLabel');
 
   // Default applyTax to true if not set OR simply force it for the 'default checked' requirement
@@ -1167,8 +1167,8 @@ function holdTransaction() {
   const heldOrder = {
     id: Date.now(),
     name: orderName,
-    timestamp: Date.now(),
-    startTime: transactionStartTime || Date.now(), // Save original start time
+    timestamp: transactionStartTime || Date.now(), // Store original time for display
+    startTime: transactionStartTime || Date.now(), // Store original time for resume logic
     cart: [...cart],
     salesman: document.getElementById('salesmanSelect').value
   };
