@@ -494,17 +494,37 @@ function updateCartSummary() {
   let discountedSubtotal = subtotal - discountAmount;
   if (discountedSubtotal < 0) discountedSubtotal = 0;
 
-  // Calculate Tax
+  // LOAD SETTINGS
   const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
-  const taxCheckbox = document.getElementById('taxCheckbox');
+  const taxName = localStorage.getItem('taxName') || 'Tax';
+  const taxRateEl = document.getElementById('tax-rate-display');
+  // Default applyTax to true if not set
+  let applyTaxStored = localStorage.getItem('applyTax');
+  if (applyTaxStored === null) {
+    applyTaxStored = 'true';
+    localStorage.setItem('applyTax', 'true');
+  }
+  const applyTaxCheckbox = document.getElementById('apply-tax');
   let taxAmount = 0;
 
-  if (taxCheckbox && taxCheckbox.checked && taxRate > 0) {
+  if (taxRateEl) {
+    taxRateEl.textContent = `${taxName} (${taxRate}%)`;
+  }
+
+  if (applyTaxCheckbox) {
+    applyTaxCheckbox.checked = applyTaxStored === 'true';
+    applyTaxCheckbox.addEventListener('change', (e) => {
+      localStorage.setItem('applyTax', e.target.checked);
+      updateCartSummary(); // Changed from renderCart() to updateCartSummary()
+    });
+  }
+
+  if (applyTaxCheckbox && applyTaxCheckbox.checked && taxRate > 0) {
     taxAmount = discountedSubtotal * (taxRate / 100);
     localStorage.setItem('applyTax', 'true');
-  } else if (taxCheckbox && !taxCheckbox.checked) {
+  } else if (applyTaxCheckbox && !applyTaxCheckbox.checked) {
     localStorage.setItem('applyTax', 'false');
-  } else if (taxCheckbox && taxCheckbox.checked && taxRate === 0) {
+  } else if (applyTaxCheckbox && applyTaxCheckbox.checked && taxRate === 0) {
     // Checkbox is checked but rate is 0. Keep it checked (applyTax=true) but amount is 0.
     localStorage.setItem('applyTax', 'true');
   }
@@ -908,6 +928,21 @@ async function printReceipt(receipt, providedSettings = null) {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
     });
 
+    // Generate Tax Row if applicable
+    let taxRowHtml = '';
+    if (applyTax && taxAmount > 0) {
+      taxRowHtml = `
+            <tr style="font-weight:bold; background-color:#f9f9f9;">
+                <td>-</td>
+                <td>${taxName} (${taxRate}%)</td>
+                <td>1</td>
+                <td>${taxAmount.toFixed(2)}</td>
+                <td>${taxAmount.toFixed(2)}</td>
+                <td>-</td>
+            </tr>
+        `;
+    }
+
     // Content inside the receipt container
     const receiptContent = `
         ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}  
@@ -928,18 +963,20 @@ async function printReceipt(receipt, providedSettings = null) {
                     <th>${t("Code", "كود")}</th>  
                     <th>${t("Name", "الاسم")}</th>  
                     <th>${t("Qty", "كمية")}</th>  
-                    <th>${t("Unit Price", "سعر الوحدة")}</th>  
+                    <th>${t("Unit Price", "سعر")}</th>  
                     <th>${t("Total", "الإجمالي")}</th>  
                     <th>${t("Discount", "الخصم")}</th>  
                 </tr>  
             </thead>  
-            <tbody>${itemsHtml}</tbody>  
+            <tbody>
+                ${itemsHtml}
+                ${taxRowHtml}
+            </tbody>  
         </table>  
         <div class="summary">  
             <p>${t("Subtotal", "المجموع الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
             <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
-            ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
-            <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+            <p style="font-size: 1.1em; border-top: 1px dashed #444; margin-top:5px; padding-top:5px;">${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
         </div>    
         <hr/>  
         ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}  
@@ -994,6 +1031,7 @@ async function printReceipt(receipt, providedSettings = null) {
              </body>  
              </html>  
          `;
+
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(html);

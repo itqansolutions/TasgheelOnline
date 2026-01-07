@@ -179,6 +179,21 @@ async function printReceipt(receiptId) {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
     });
 
+    // Generate Tax Row if applicable
+    let taxRowHtml = '';
+    if (applyTax && taxAmount > 0) {
+      taxRowHtml = `
+            <tr style="font-weight:bold; background-color:#f9f9f9;">
+                <td>-</td>
+                <td>${taxName} (${taxRate}%)</td>
+                <td>1</td>
+                <td>${taxAmount.toFixed(2)}</td>
+                <td>${taxAmount.toFixed(2)}</td>
+                <td>-</td>
+            </tr>
+        `;
+    }
+
     // Extract receipt content logic
     const receiptContent = `
         ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}
@@ -199,18 +214,20 @@ async function printReceipt(receiptId) {
             <th>${t("Code", "الكود")}</th>
             <th>${t("Name", "الاسم")}</th>
             <th>${t("Qty", "الكمية")}</th>
-            <th>${t("Unit Price", "سعر الوحدة")}</th>
+            <th>${t("Unit Price", "سعر")}</th>
             <th>${t("Total", "الإجمالي")}</th>
             <th>${t("Discount", "الخصم")}</th>
             </tr>
         </thead>
-        <tbody>${itemsHtml}</tbody>
+        <tbody>
+            ${itemsHtml}
+            ${taxRowHtml}
+        </tbody>
         </table>
         <div class="summary">
         <p>${t("Subtotal", "الإجمالي الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
         <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
-        ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
-        <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
+        <p style="font-size: 1.1em; border-top: 1px dashed #444; margin-top:5px; padding-top:5px;">${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
         </div>
         <hr/>
         ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}
