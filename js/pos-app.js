@@ -1378,19 +1378,214 @@ function confirmSplitPayment() {
   const splits = [];
   if (cash > 0) splits.push({ method: 'cash', amount: cash });
   if (card > 0) splits.push({ method: 'card', amount: card });
+
+  clearCart();
+  updateHeldCount();
+  renderHeldOrders();
+  startHeldOrdersTimer();
+}
+
+function startHeldOrdersTimer() {
+  if (heldOrdersInterval) clearInterval(heldOrdersInterval);
+  heldOrdersInterval = setInterval(() => {
+    const timerElements = document.querySelectorAll('.held-timer');
+    timerElements.forEach(el => {
+      const timestamp = parseInt(el.dataset.timestamp);
+      el.textContent = getHeldDuration(timestamp);
+    });
+  }, 60000); // Update every minute
+}
+
+function getHeldDuration(timestamp) {
+  const diff = Date.now() - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const heldFor = lang === 'ar' ? 'معلق منذ:' : 'Held for:';
+  return `${heldFor} ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+}
+
+function renderHeldOrders() {
+  const grid = document.getElementById('heldOrdersGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const t = {
+    resume: lang === 'ar' ? 'استكمال' : 'Resume',
+    discard: lang === 'ar' ? 'حذف' : 'Discard',
+    items: lang === 'ar' ? 'أصناف' : 'Items',
+    total: lang === 'ar' ? 'إجمالي' : 'Total'
+  };
+
+  if (heldTransactions.length === 0) {
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">
+            ${lang === 'ar' ? 'لا توجد طلبات معلقة' : 'No held orders active'}
+        </div>`;
+    return;
+  }
+
+  heldTransactions.forEach(order => {
+    const total = order.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const card = document.createElement('div');
+    card.className = 'product-card'; // Reuse product card style
+    card.style.cursor = 'default';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.justifyContent = 'space-between';
+
+    card.innerHTML = `
+            <div style="padding:10px;">
+                <h4 style="margin:0">${order.name ? order.name : '#' + String(order.id).slice(-4)}</h4>
+                ${order.name ? `<small style="color:#888">Module #${String(order.id).slice(-4)}</small>` : ''}
+                <p style="color:#555;font-size:0.9em;">${order.cart.length} ${t.items}</p>
+                <p style="font-weight:bold;margin-top:5px;">${total.toFixed(2)}</p>
+                <p class="held-timer" data-timestamp="${order.timestamp}" style="color:red;font-size:0.8em;margin-top:5px;">
+                    ${getHeldDuration(order.timestamp)}
+                </p>
+                ${order.salesman ? `<p style="font-size:0.8em;color:#666">👤 ${order.salesman}</p>` : ''}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;">
+                <button onclick="resumeHeldOrder(${order.id})" class="btn btn-success" style="font-size:0.8em">${t.resume}</button>
+                <button onclick="discardHeldOrder(${order.id})" class="btn btn-danger" style="font-size:0.8em">${t.discard}</button>
+            </div>
+        `;
+    grid.appendChild(card);
+  });
+}
+
+function resumeHeldOrder(id) {
+  if (cart.length > 0) {
+    const lang = localStorage.getItem('pos_language') || 'en';
+    const msg = lang === 'ar' ? 'السلة ليست فارغة. هل تريد استبدالها؟' : 'Cart is not empty. Replace it?';
+    if (!confirm(msg)) return;
+  }
+
+  const orderIndex = heldTransactions.findIndex(o => o.id === id);
+  if (orderIndex === -1) return;
+
+  const order = heldTransactions[orderIndex];
+  cart = [...order.cart];
+  transactionStartTime = order.startTime || order.timestamp; // Restore start time
+
+  // Calculate elapsed time in hours
+  const now = Date.now();
+  const elapsedMs = now - transactionStartTime;
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+
+  // Update Quantity of FIRST item
+  if (cart.length > 0) {
+    const oldQty = cart[0].qty;
+    // Round to 2 decimals for cleaner receipt, or keep precise?
+    // Let's use 2 decimals for billing triggers usually
+    cart[0].qty = parseFloat(elapsedHours.toFixed(2));
+
+    // Ensure at least 0.01
+    if (cart[0].qty === 0) cart[0].qty = 0.01;
+
+    // Optional: Notify user
+    // alert(`Time elapsed: ${elapsedHours.toFixed(2)} hrs. Updated quantity for ${cart[0].name}.`);
+  }
+
+  if (order.salesman) {
+    document.getElementById('salesmanSelect').value = order.salesman;
+  }
+
+  heldTransactions.splice(orderIndex, 1);
+  localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+
+  updateCartSummary();
+  updateHeldCount();
+  renderHeldOrders();
+  switchPosTab('products');
+}
+
+function discardHeldOrder(id) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  if (!confirm(lang === 'ar' ? 'تأكيد الحذف؟' : 'Confirm discard?')) return;
+
+  heldTransactions = heldTransactions.filter(o => o.id !== id);
+  localStorage.setItem('heldTransactions', JSON.stringify(heldTransactions));
+  updateHeldCount();
+  renderHeldOrders();
+}
+
+window.switchPosTab = switchPosTab;
+window.resumeHeldOrder = resumeHeldOrder;
+window.discardHeldOrder = discardHeldOrder;
+window.holdTransaction = holdTransaction;
+window.openDiscountModal = openDiscountModal;
+window.saveDiscount = saveDiscount;
+window.editCartItemQty = editCartItemQty;
+window.closeDiscountModal = closeDiscountModal;
+window.openSplitPaymentModal = openSplitPaymentModal;
+window.updateSplitCalculations = updateSplitCalculations;
+window.confirmSplitPayment = confirmSplitPayment;
+
+// ===================== SPLIT PAYMENT =====================
+function openSplitPaymentModal() {
+  if (cart.length === 0) return;
+
+  // Ensure calculation is up to date
+  const total = window.currentTransactionTotal || 0;
+
+  document.getElementById('splitPaymentModal').style.display = 'flex';
+  document.getElementById('splitTotalAmount').textContent = total.toFixed(2);
+
+  // Reset inputs
+  document.getElementById('splitCash').value = '';
+  document.getElementById('splitCard').value = '';
+  document.getElementById('splitMobile').value = '';
+
+  updateSplitCalculations();
+}
+
+function updateSplitCalculations() {
+  const total = window.currentTransactionTotal || 0;
+  const cash = parseFloat(document.getElementById('splitCash').value) || 0;
+  const card = parseFloat(document.getElementById('splitCard').value) || 0;
+  const mobile = parseFloat(document.getElementById('splitMobile').value) || 0;
+
+  const paid = cash + card + mobile;
+  const remaining = total - paid;
+
+  const remainingEl = document.getElementById('splitRemaining');
+  const confirmBtn = document.getElementById('confirmSplitBtn');
+
+  remainingEl.textContent = remaining.toFixed(2);
+
+  if (Math.abs(remaining) < 0.1) { // Floating point tolerance
+    remainingEl.style.color = 'green';
+    confirmBtn.disabled = false;
+    remainingEl.textContent = "0.00 (Ready)";
+  } else {
+    remainingEl.style.color = 'red';
+    confirmBtn.disabled = true;
+  }
+}
+
+function confirmSplitPayment() {
+  const cash = parseFloat(document.getElementById('splitCash').value) || 0;
+  const card = parseFloat(document.getElementById('splitCard').value) || 0;
+  const mobile = parseFloat(document.getElementById('splitMobile').value) || 0;
+
+  const splits = [];
+  if (cash > 0) splits.push({ method: 'cash', amount: cash });
+  if (card > 0) splits.push({ method: 'card', amount: card });
   if (mobile > 0) splits.push({ method: 'mobile', amount: mobile });
 
   window.currentSplitPayments = splits;
   processSale('split');
   document.getElementById('splitPaymentModal').style.display = 'none';
 }
-/ /   I n i t i a l i z e   U I   s t a t e   l o g i c  
- d o c u m e n t . a d d E v e n t L i s t e n e r ( ' D O M C o n t e n t L o a d e d ' ,   ( )   = >   {  
-         / /   E n s u r e   d e f a u l t   s t a t e   i s   a p p l i e d  
-         t r y   {  
-                 u p d a t e C a r t S u m m a r y ( ) ;  
-         }   c a t c h   ( e )   {  
-                 c o n s o l e . w a r n ( " u p d a t e C a r t S u m m a r y   n o t   r e a d y   y e t " ,   e ) ;  
-         }  
- } ) ;  
- 
+
+// Initialize UI state logic
+document.addEventListener('DOMContentLoaded', () => {
+  // Ensure default state is applied
+  try {
+    updateCartSummary();
+  } catch (e) {
+    console.warn("updateCartSummary not ready yet", e);
+  }
+});
