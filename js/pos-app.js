@@ -497,26 +497,33 @@ function updateCartSummary() {
   // LOAD SETTINGS
   const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
   const taxName = localStorage.getItem('taxName') || 'Tax';
-  const taxRateEl = document.getElementById('tax-rate-display');
+  const taxLabel = document.getElementById('taxLabel');
+
   // Default applyTax to true if not set
   let applyTaxStored = localStorage.getItem('applyTax');
   if (applyTaxStored === null) {
     applyTaxStored = 'true';
     localStorage.setItem('applyTax', 'true');
   }
-  const applyTaxCheckbox = document.getElementById('apply-tax');
+
+  // FIXED: Correct ID 'taxCheckbox' matched with HTML
+  const applyTaxCheckbox = document.getElementById('taxCheckbox');
   let taxAmount = 0;
 
-  if (taxRateEl) {
-    taxRateEl.textContent = `${taxName} (${taxRate}%)`;
+  if (taxLabel) {
+    taxLabel.textContent = `${taxName} (${taxRate}%)`;
   }
 
   if (applyTaxCheckbox) {
+    // Only set checked state if it's not already being handled by user interaction (though re-render implies refresh)
+    // We trust localStorage state
     applyTaxCheckbox.checked = applyTaxStored === 'true';
-    applyTaxCheckbox.addEventListener('change', (e) => {
-      localStorage.setItem('applyTax', e.target.checked);
-      updateCartSummary(); // Changed from renderCart() to updateCartSummary()
-    });
+
+    // Remove old listener to avoid duplicates if any (though this function runs repeatedly)
+    // Better to just rely on the inline onchange="updateCartSummary()" or simple logic here
+    // Since re-rendering usually rebuilds the DOM or we are just updating values...
+    // In this specific function, we are calculating.
+    // The event listener is better attached once or inline. HTML has inline.
   }
 
   if (applyTaxCheckbox && applyTaxCheckbox.checked && taxRate > 0) {
@@ -525,7 +532,6 @@ function updateCartSummary() {
   } else if (applyTaxCheckbox && !applyTaxCheckbox.checked) {
     localStorage.setItem('applyTax', 'false');
   } else if (applyTaxCheckbox && applyTaxCheckbox.checked && taxRate === 0) {
-    // Checkbox is checked but rate is 0. Keep it checked (applyTax=true) but amount is 0.
     localStorage.setItem('applyTax', 'true');
   }
 
@@ -539,9 +545,7 @@ function updateCartSummary() {
 
   if (cartTax) {
     cartTax.textContent = taxAmount.toFixed(2) + " ج.م";
-    const taxLabel = document.getElementById('taxLabel');
-    const storedTaxName = localStorage.getItem('taxName') || 'Tax';
-    if (taxLabel) taxLabel.textContent = `${storedTaxName} (${taxRate}%):`;
+    // Redundant label update removed, handled above
   }
   if (cartTotal) cartTotal.textContent = "Total: " + finalTotal.toFixed(2) + " ج.م";
 
