@@ -908,6 +908,48 @@ async function printReceipt(receipt, providedSettings = null) {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
     });
 
+    // Content inside the receipt container
+    const receiptContent = `
+        ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}  
+        <h2 class="center">${shopName}</h2>  
+        <p class="center">${shopAddress}</p>  
+        <hr/>  
+        <p>${t("Receipt No", "رقم الفاتورة")}: ${receipt.receiptId}</p>  
+        <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>  
+        <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>  
+        <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>  
+        <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.paymentMethod] || '-'}</p>  
+        ${receipt.paymentMethod === 'split' && receipt.splitPayments ?
+        receipt.splitPayments.map(p => `<p style="font-size:0.8em; margin-left:10px;">- ${paymentMap[p.method]}: ${p.amount.toFixed(2)}</p>`).join('')
+        : ''}
+        <table>    
+            <thead>  
+                <tr>  
+                    <th>${t("Code", "كود")}</th>  
+                    <th>${t("Name", "الاسم")}</th>  
+                    <th>${t("Qty", "كمية")}</th>  
+                    <th>${t("Unit Price", "سعر الوحدة")}</th>  
+                    <th>${t("Total", "الإجمالي")}</th>  
+                    <th>${t("Discount", "الخصم")}</th>  
+                </tr>  
+            </thead>  
+            <tbody>${itemsHtml}</tbody>  
+        </table>  
+        <div class="summary">  
+            <p>${t("Subtotal", "المجموع الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+            <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+            ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
+            <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
+        </div>    
+        <hr/>  
+        ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}  
+        <p class="footer">  
+            <strong>Tashgheel POS &copy; 2025</strong><br>  
+            📞 <a href="tel:+201126522373">01126522373</a> / <a href="tel:+201155253886">01155253886</a><br>  
+            <span id="footerText">${t("Designed and developed by Itqan", "تم التطوير بواسطة Itqan")}</span>  
+        </p>  
+    `;
+
     const html = `  
              <html>  
              <head>  
@@ -929,51 +971,25 @@ async function printReceipt(receipt, providedSettings = null) {
                      th:nth-child(6), td:nth-child(6) { width: 18%; }  
                      .summary { margin: 10px 8px 0; font-size: 12px; font-weight: bold; }  
                      .footer { text-align: center; margin: 12px 0 0; font-size: 10.5px; border-top: 1px dashed #ccc; padding-top: 6px; font-weight: bold; }  
-                     @media print { @page { size: 72mm auto; margin: 0; } body { margin: 0; padding: 0; } a { color: black; text-decoration: none; } }  
+                     
+                     @media print { 
+                        @page { size: 72mm auto; margin: 0; } 
+                        body { margin: 0; padding: 0; } 
+                        .page-break { page-break-after: always; display: block; height: 1px; }
+                     }  
                  </style>  
              </head>  
              <body>  
                  <div class="receipt-container">  
-                     ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}  
-                     <h2 class="center">${shopName}</h2>  
-                     <p class="center">${shopAddress}</p>  
-                     <hr/>  
-                     <p>${t("Receipt No", "رقم الفاتورة")}: ${receipt.receiptId}</p>  
-                     <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>  
-                     <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>  
-                     <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>  
-                     <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.paymentMethod] || '-'}</p>  
-                     ${receipt.paymentMethod === 'split' && receipt.splitPayments ?
-        receipt.splitPayments.map(p => `<p style="font-size:0.8em; margin-left:10px;">- ${paymentMap[p.method]}: ${p.amount.toFixed(2)}</p>`).join('')
-        : ''}
-                     <table>    
-                         <thead>  
-                             <tr>  
-                                 <th>${t("Code", "كود")}</th>  
-                                 <th>${t("Name", "الاسم")}</th>  
-                                 <th>${t("Qty", "كمية")}</th>  
-                                 <th>${t("Unit Price", "سعر الوحدة")}</th>  
-                                 <th>${t("Total", "الإجمالي")}</th>  
-                                 <th>${t("Discount", "الخصم")}</th>  
-                             </tr>  
-                         </thead>  
-                         <tbody>${itemsHtml}</tbody>  
-                     </table>  
-                     <div class="summary">  
-                         <p>${t("Subtotal", "المجموع الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
-                         <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
-                         ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
-                         <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>  
-                     </div>    
-                     <hr/>  
-                     ${receiptFooterMessage ? `<p class="footer" style="font-size:13px; font-weight: bold;">${receiptFooterMessage}</p>` : ''}  
-                     <p class="footer">  
-                         <strong>Tashgheel POS &copy; 2025</strong><br>  
-                         K    
-   <a href="tel:+201126522373">01126522373</a> / <a href="tel:+201155253886">01155253886</a><br>  
-                         <span id="footerText">${t("Designed and developed by Itqan", "تم التطوير بواسطة Itqan")}</span>  
-                     </p>  
-                 </div>  
+                    ${receiptContent}
+                 </div>
+                 
+                 <div class="page-break"></div>
+
+                 <div class="receipt-container">  
+                    ${receiptContent}
+                 </div>
+
                  <script>window.onload = () => window.print();</script>  
              </body>  
              </html>  
