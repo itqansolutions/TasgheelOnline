@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadCategories();
 
   document.getElementById("product-form").addEventListener("submit", handleAddProduct);
+  document.getElementById("edit-product-form").addEventListener("submit", handleUpdateProduct);
   document.getElementById("category-form-modal").addEventListener("submit", handleAddCategory);
 
   // Expose functions globally
@@ -52,6 +53,7 @@ async function loadProducts() {
       return;
     }
     const products = await response.json();
+    window.allProducts = products; // Store globally for edit lookup
 
     const tbody = document.getElementById("product-table-body");
     tbody.innerHTML = "";
@@ -171,7 +173,108 @@ async function deleteProduct(id) {
 }
 
 function editProduct(id) {
-  alert("Edit feature coming soon (Phase 3)");
+  // Find product in current loaded list (or fetch if needed, but we have them)
+  // We need to access the products list. It's inside loadProducts scope. 
+  // Let's assume we can fetch it again or store it globally. 
+  // Ideally, loadProducts should store in a global variable.
+  // I will update loadProducts to store in window.allProducts for simplicity here.
+
+  const product = window.allProducts?.find(p => p._id === id);
+  if (!product) return alert("Product not found");
+
+  document.getElementById("edit-product-id").value = product._id;
+  document.getElementById("edit-product-name").value = product.name;
+  document.getElementById("edit-product-barcode").value = product.barcode || "";
+  document.getElementById("edit-product-price").value = product.price;
+  document.getElementById("edit-product-cost").value = product.cost || 0;
+  document.getElementById("edit-product-stock").value = product.stock || 0;
+
+  // Category Select
+  const catSelect = document.getElementById("edit-product-category");
+  // Ensure options are there (clone from add form or reload)
+  const mainCatSelect = document.getElementById("product-category");
+  catSelect.innerHTML = mainCatSelect.innerHTML;
+  catSelect.value = product.category || "";
+
+  // Unlimited Logic
+  const isUnlimited = product.trackStock === false;
+  document.getElementById("edit-product-unlimited").checked = isUnlimited;
+  toggleEditStockFields();
+
+  document.getElementById("editProductModal").style.display = "flex";
+}
+
+function closeEditProductModal() {
+  document.getElementById("editProductModal").style.display = "none";
+}
+
+function toggleEditStockFields() {
+  const isUnlimited = document.getElementById("edit-product-unlimited").checked;
+  const stockContainer = document.getElementById("edit-stock-container");
+  const costContainer = document.getElementById("edit-cost-container");
+
+  if (isUnlimited) {
+    stockContainer.style.display = 'none';
+    costContainer.style.display = 'none';
+  } else {
+    stockContainer.style.display = 'block';
+    costContainer.style.display = 'block';
+  }
+}
+
+async function handleUpdateProduct(e) {
+  e.preventDefault();
+
+  const id = document.getElementById("edit-product-id").value;
+  const name = document.getElementById("edit-product-name").value.trim();
+  const barcode = document.getElementById("edit-product-barcode").value.trim();
+  const category = document.getElementById("edit-product-category").value;
+  const price = parseFloat(document.getElementById("edit-product-price").value);
+  const isUnlimited = document.getElementById("edit-product-unlimited").checked;
+
+  let cost = 0;
+  let stock = 0;
+
+  if (!isUnlimited) {
+    cost = parseFloat(document.getElementById("edit-product-cost").value) || 0;
+    stock = parseInt(document.getElementById("edit-product-stock").value) || 0;
+  }
+
+  if (!name || isNaN(price)) return alert("Please fill required fields");
+
+  const updates = {
+    name,
+    barcode,
+    category,
+    price,
+    cost,
+    stock,
+    trackStock: !isUnlimited
+  };
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (response.ok) {
+      alert("Product updated successfully");
+      closeEditProductModal();
+      loadProducts();
+    } else {
+      const err = await response.json();
+      alert("Failed to update product: " + err.msg);
+    }
+  } catch (error) {
+    console.error("Error updating product:", error);
+    alert("Server error");
+  }
 }
 
 // --- CATEGORIES ---

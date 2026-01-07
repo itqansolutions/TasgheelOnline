@@ -1,6 +1,6 @@
 {
     "name": "tashgheel-pos",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Tashgheel Online POS",
     "main": "server/index.js",
     "scripts": {

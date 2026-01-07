@@ -93,39 +93,59 @@ function translateStatus(status) {
 async function printReceipt(receiptId) {
   try {
     const token = localStorage.getItem('token');
-    // Fetch the specific sale
-    // We can use the /api/sales/:id endpoint I added
-    // But wait, the receiptId passed here is likely the _id from the loop above: onclick="printReceipt('${r._id}')"
-    const response = await fetch(`${API_URL}/sales/${receiptId}`, {
-      headers: { 'x-auth-token': token }
-    });
 
-    if (!response.ok) {
-      alert('Failed to load receipt for printing');
-      return;
+    // Fetch the specific sale if receiptId is provided (as ID string)
+    let receipt;
+    // Check if we already have the full receipt object (unlikely in this context, usually called with ID)
+    if (typeof receiptId === 'object' && receiptId !== null) {
+      receipt = receiptId;
+    } else {
+      const response = await fetch(`${API_URL}/sales/${receiptId}`, {
+        headers: { 'x-auth-token': token }
+      });
+
+      if (!response.ok) {
+        alert('Failed to load receipt for printing');
+        return;
+      }
+      receipt = await response.json();
     }
-
-    const receipt = await response.json();
-
-    // We need products to show names if they are not in the receipt items (legacy)
-    // But my new receipt structure stores names.
-    // Let's assume receipt.items has names.
 
     const shopName = localStorage.getItem('shopName') || 'My Shop';
     const shopAddress = localStorage.getItem('shopAddress') || '';
     const shopLogo = localStorage.getItem('shopLogo') || '';
     const receiptFooterMessage = localStorage.getItem('footerMessage') || '';
 
+    // Get Tax Settings from LocalStorage (same as POS)
+    const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
+    const taxName = localStorage.getItem('taxName') || 'Tax';
+    // Default applyTax to true if missing, consistent with POS
+    let applyTaxVal = localStorage.getItem('applyTax');
+    if (applyTaxVal === null || applyTaxVal === '') applyTaxVal = 'true';
+    const applyTax = applyTaxVal === 'true';
+
     const lang = localStorage.getItem('pos_language') || 'en';
-    const t = (en, ar) => (lang === 'ar' ? ar : 'en');
+    const t = (en, ar) => (lang === 'ar' ? ar : en); // Fixed: return en if not ar
     const paymentMap = {
       cash: t("Cash", "نقدي"),
       card: t("Card", "بطاقة"),
-      mobile: t("Mobile", "موبايل")
+      mobile: t("Mobile", "موبايل"),
+      split: t("Split", "تقسيم")
     };
 
-    let totalDiscount = 0;
-    let subtotal = 0;
+    // Calculate totals - check if receipt has stored values, otherwise re-calculate
+    let totalDiscount = receipt.discountAmount || 0;
+    // Fallback for subtotal if not stored (legacy support)
+    let subtotal = receipt.subtotal;
+    if (subtotal === undefined) {
+      subtotal = receipt.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    }
+
+    // Tax Amount - use stored if available, otherwise 0 (assuming legacy receipts might not have separate tax stored)
+    // However, if we want to "retroactively" show tax on reprints based on current settings if missing, we could calculate it, 
+    // but better to rely on what was stored if possible. 
+    // If taxAmount is stored in receipt (New Sales), use it.
+    let taxAmount = receipt.taxAmount || 0;
 
     const itemsHtml = receipt.items.map(item => {
       const originalTotal = item.price * item.qty;
@@ -140,9 +160,8 @@ async function printReceipt(receiptId) {
         discountStr = `${discountAmountPerUnit.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}`;
       }
 
-      const itemDiscountTotal = discountAmountPerUnit * item.qty;
-      totalDiscount += itemDiscountTotal;
-      subtotal += originalTotal;
+      // Note: We don't need to accumulate subtotal/discount here if we used the receipt properties, 
+      // but if we are calculating fallback subtotal above, we do it there.
 
       return `
         <tr>
@@ -194,7 +213,10 @@ async function printReceipt(receiptId) {
           <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>
           <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>
           <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>
-          <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.method] || '-'}</p>
+          <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.method] || receipt.method || '-'}</p>
+          ${receipt.method === 'split' && receipt.splitPayments ?
+        receipt.splitPayments.map(p => `<p style="font-size:0.8em; margin-left:10px;">- ${paymentMap[p.method] || p.method}: ${p.amount.toFixed(2)}</p>`).join('')
+        : ''}
           <table>
             <thead>
               <tr>
@@ -211,6 +233,7 @@ async function printReceipt(receiptId) {
           <div class="summary">
             <p>${t("Subtotal", "الإجمالي الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
             <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
+            ${applyTax && taxAmount > 0 ? `<p>${taxName} (${taxRate}%): ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>` : ''}
             <p>${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
           </div>
           <hr/>

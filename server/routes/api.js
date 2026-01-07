@@ -174,14 +174,15 @@ router.put('/products/:id', auth, async (req, res) => {
         if (!product) return res.status(404).json({ msg: 'Product not found' });
 
         // Update fields
-        const { name, barcode, price, cost, stock, category, minStock } = req.body;
+        const { name, barcode, price, cost, stock, category, minStock, trackStock } = req.body;
         if (name) product.name = name;
-        if (barcode) product.barcode = barcode;
-        if (price) product.price = price;
-        if (cost) product.cost = cost;
+        if (barcode !== undefined) product.barcode = barcode; // Allow clearing barcode
+        if (price !== undefined) product.price = price;
+        if (cost !== undefined) product.cost = cost;
         if (stock !== undefined) product.stock = stock;
         if (category) product.category = category;
         if (minStock !== undefined) product.minStock = minStock;
+        if (trackStock !== undefined) product.trackStock = trackStock;
 
         await product.save();
         res.json(product);
@@ -575,8 +576,8 @@ router.put('/settings', auth, async (req, res) => {
         await tenant.save();
 
         // Debug response with version
-        console.log('Saved Settings (v2):', tenant.settings);
-        res.json({ ...tenant.settings, _backendVersion: 'v2' });
+        console.log('Saved Settings (v3):', tenant.settings);
+        res.json({ ...tenant.settings, _backendVersion: 'v3' });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
