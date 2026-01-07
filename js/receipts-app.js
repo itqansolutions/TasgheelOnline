@@ -179,19 +179,11 @@ async function printReceipt(receiptId) {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
     });
 
-    // Generate Tax Row if applicable
-    let taxRowHtml = '';
+    // Generate Tax Line for Summary if applicable
+    let taxSummaryHtml = '';
     if (taxAmount > 0) {
-      taxRowHtml = `
-            <tr style="font-weight:bold; background-color:#f9f9f9;">
-                <td>-</td>
-                <td>${taxName} (${taxRate}%)</td>
-                <td>1</td>
-                <td>${taxAmount.toFixed(2)}</td>
-                <td>${taxAmount.toFixed(2)}</td>
-                <td>-</td>
-            </tr>
-        `;
+      const taxLabel = `${taxName} (${taxRate}%)`;
+      taxSummaryHtml = `<p>${taxLabel}: ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>`;
     }
 
     // Extract receipt content logic
@@ -221,12 +213,12 @@ async function printReceipt(receiptId) {
         </thead>
         <tbody>
             ${itemsHtml}
-            ${taxRowHtml}
         </tbody>
         </table>
         <div class="summary">
         <p>${t("Subtotal", "الإجمالي الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
         <p>${t("Total Discount", "إجمالي الخصم")}: ${totalDiscount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
+        ${taxSummaryHtml}
         <p style="font-size: 1.1em; border-top: 1px dashed #444; margin-top:5px; padding-top:5px;">${t("Total", "الإجمالي النهائي")}: ${receipt.total.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
         </div>
         <hr/>
