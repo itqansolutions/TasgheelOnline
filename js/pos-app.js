@@ -449,7 +449,14 @@ function addToCart(product) {
   }
 
   if (!existingItem) {
-    cart.push({ ...product, qty: 1 });
+    cart.push({
+      ...product,
+      qty: 1,
+      // Timer Properties
+      accumulatedTime: 0, // In ms
+      lastStartTime: null, // timestamp when started
+      isRunning: false
+    });
   }
 
   // Initialize start time if this is the first item
@@ -503,7 +510,18 @@ function updateCartSummary() {
     div.innerHTML = `
       <div>
         <strong>${item.name}</strong><br>
-        <small>${item.price.toFixed(2)} x <span onclick="editCartItemQty(${index})" style="cursor:pointer;border-bottom:1px dashed #333;font-weight:bold;" title="Click to edit quantity">${item.qty}</span></small>
+        <div style="display:flex;align-items:center;">
+           <small>${item.price.toFixed(2)} x <span onclick="editCartItemQty(${index})" style="cursor:pointer;border-bottom:1px dashed #333;font-weight:bold;" title="Click to edit quantity">${item.qty.toFixed(2)}</span></small>
+           
+           <div class="timer-controls">
+             <button class="timer-btn ${item.isRunning ? 'stop' : 'start'}" onclick="toggleItemTimer(${index})">
+               ${item.isRunning ? '⏹ Stop' : '▶ Start'}
+             </button>
+             <span class="timer-display" id="timer-${index}">
+               ${formatDuration(item.accumulatedTime + (item.isRunning ? (Date.now() - item.lastStartTime) : 0))}
+             </span>
+           </div>
+        </div>
       </div>
       <div>
         <span>${(item.price * item.qty).toFixed(2)}</span>
@@ -1502,24 +1520,40 @@ function resumeHeldOrder(id) {
   cart = [...order.cart];
   transactionStartTime = order.startTime || order.timestamp; // Restore start time
 
-  // Calculate elapsed time in hours
-  const now = Date.now();
-  const elapsedMs = now - transactionStartTime;
-  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+  // Calculate elapsed time (Legacy Logic REMOVED)
+  // We now rely on the 'accumulatedTime' and 'lastStartTime' preserved in the item objects.
+  // However, we need to handle if an item was RUNNING when held.
+  // If it was running, we need to decide: 
+  // 1. Did it continue running while held? (User Request: "Stop counting ON receipt hold" -> implied PAUSE?)
+  // User Prompt: "before putting the receipt in hold i need in the line of the items to click button like start on the PS room... and remove the counting on the first item only now"
+  // Actually, usually POS systems logic:
+  // If I hold a table, they might still be playing.
+  // But the user said: "before putting the receipt in hold i need... to click button like start... then if he requested coffe... and the he exited... stop the counting... and remove the counting on the first item only now"
+  // It seems the user wants manual control. 
+  // CRITICAL: If the user HOLDS the receipt, does the timer PAUSE or CONTINUE?
+  // "stop counting on PS and start Counting in Billard" Implies manual stop/start.
+  // If I hold the receipt, the logical assumption for a "Room" is that time continues until I checkout.
+  // BUT, to keep it simple and consistent with "Stop/Start" buttons:
+  // We will preserve the state. If it was isRunning=true, it effectively "paused" calculation in UI, but we need to account for the GAP?
+  // OR, does isRunning=true mean it WAS running, so when we resume, we should add the held duration?
 
-  // Update Quantity of FIRST item
-  if (cart.length > 0) {
-    const oldQty = cart[0].qty;
-    // Round to 2 decimals for cleaner receipt, or keep precise?
-    // Let's use 2 decimals for billing triggers usually
-    cart[0].qty = parseFloat(elapsedHours.toFixed(2));
+  // CURRENT DECISION: 
+  // User wants explicit Start/Stop. 
+  // If I Hold, I likely am serving another customer. The guy in the room IS STILL PLAYING.
+  // So when I resume, the timer should reflect that he never stopped.
+  // So: If isRunning=true, we adjust lastStartTime to account for the time elapsed while held?
+  // No, actually:
+  // timestamp = 10:00. Start = 10:00.
+  // Hold at 10:05. (Elapsed 5m).
+  // Resume at 10:15.
+  // If I do nothing, `Date.now() - lastStartTime` = 10:15 - 10:00 = 15m.
+  // This is CORRECT for a continuous service (PS Room).
+  // So we don't need to do anything special! The math `Date.now() - lastStartTime` automatically covers the gap.
+  // The only issue is if the user WANTED to pause it. But they have a Stop button for that.
+  // If they left it RUNNING when they held it, it means it's still running.
 
-    // Ensure at least 0.01
-    if (cart[0].qty === 0) cart[0].qty = 0.01;
+  // So we just remove the legacy "update first item qty" block.
 
-    // Optional: Notify user
-    // alert(`Time elapsed: ${elapsedHours.toFixed(2)} hrs. Updated quantity for ${cart[0].name}.`);
-  }
 
   if (order.salesman) {
     document.getElementById('salesmanSelect').value = order.salesman;
@@ -1555,6 +1589,7 @@ window.closeDiscountModal = closeDiscountModal;
 window.openSplitPaymentModal = openSplitPaymentModal;
 window.updateSplitCalculations = updateSplitCalculations;
 window.confirmSplitPayment = confirmSplitPayment;
+window.toggleItemTimer = toggleItemTimer;
 
 // ===================== SPLIT PAYMENT =====================
 function openSplitPaymentModal() {
@@ -1612,6 +1647,63 @@ function confirmSplitPayment() {
   processSale('split');
   document.getElementById('splitPaymentModal').style.display = 'none';
 }
+
+
+// ===================== TIMER LOGIC =====================
+
+function toggleItemTimer(index) {
+  const item = cart[index];
+  if (!item) return;
+
+  if (item.isRunning) {
+    // STOP
+    const now = Date.now();
+    const elapsed = now - item.lastStartTime;
+    item.accumulatedTime = (item.accumulatedTime || 0) + elapsed;
+    item.isRunning = false;
+    item.lastStartTime = null;
+
+    // Update Quantity based on hours
+    // accumulatedTime is in ms. 1 hour = 3600000 ms
+    const hours = item.accumulatedTime / 3600000;
+    // Update qty. Use at least 2 decimals.
+    item.qty = parseFloat(hours.toFixed(4)); // Store with precision
+    if (item.qty === 0) item.qty = 0.01; // Minimum charge if stopped immediately? Optional.
+
+  } else {
+    // START
+    item.isRunning = true;
+    item.lastStartTime = Date.now();
+    if (item.accumulatedTime === undefined) item.accumulatedTime = 0;
+  }
+
+  updateCartSummary();
+}
+
+function updateLiveTimers() {
+  cart.forEach((item, index) => {
+    if (item.isRunning) {
+      const el = document.getElementById(`timer-${index}`);
+      if (el) {
+        const currentElapsed = (Date.now() - item.lastStartTime);
+        const total = (item.accumulatedTime || 0) + currentElapsed;
+        el.textContent = formatDuration(total);
+      }
+    }
+  });
+}
+
+function formatDuration(ms) {
+  if (!ms) ms = 0;
+  const totalSeconds = Math.floor(ms / 1000);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+// Start the live update interval
+setInterval(updateLiveTimers, 1000);
 
 // Initialize UI state logic
 document.addEventListener('DOMContentLoaded', () => {
