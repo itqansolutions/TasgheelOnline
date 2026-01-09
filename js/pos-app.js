@@ -196,6 +196,11 @@ window.closeShift = async function () {
       return;
     }
 
+    if (heldTransactions.length > 0) {
+      alert("Cannot close shift: You have held orders active. Please process or discard them first.");
+      return;
+    }
+
     const response = await fetch(`${API_URL}/shifts/summary`, {
       headers: { 'x-auth-token': token }
     });
