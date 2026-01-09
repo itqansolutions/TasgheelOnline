@@ -886,20 +886,15 @@ router.get('/shifts/summary', auth, async (req, res) => {
 
         // 2. Expenses (Time based for now, strictly between shift start and now)
         // Ideally we'd link expenses to shiftId too, but per requirement "strictly between timestamps"
+        // Fix: Expense date is String (YYYY-MM-DD), Shift startTime is Date.
+        // We use the date string of the shift start.
+        const shiftDateStr = shift.startTime.toISOString().split('T')[0];
+
         const expenses = await Expense.find({
             tenantId: req.tenantId,
-            date: { $gte: shift.startTime },
-            // Optional: filter by user if expenses are user-specific? Usually expenses are general.
-            // But let's assume general for the shop for now or user-specific if requested.
-            // Requirement says "Expenses (if applicable)". Let's include all shop expenses for this duration? 
-            // Or only those added by the cashier? safer to include all or just cashier's. 
-            // Let's stick to cashier's to balance THEIR drawer.
-            // Actually often expenses are taken from the drawer, so they should be user-specific or drawer-specific.
-            // Let's assume expenses recorded by this user affect this drawer.
-            // But Expense model doesn't strictly have 'createdBy'. It has 'date'. 
-            // Let's assume expenses are global valid deductions for now, or just ignore if not linked.
-            // Wait, standard POS: Expense = Cash Out.
+            date: { $gte: shiftDateStr }
         });
+
 
         let expensesTotal = expenses.reduce((acc, exp) => acc + exp.amount, 0);
 
@@ -967,9 +962,10 @@ router.post('/shifts/close', auth, async (req, res) => {
             }
         });
 
+        const shiftDateStr = shift.startTime.toISOString().split('T')[0];
         const expenses = await Expense.find({
             tenantId: req.tenantId,
-            date: { $gte: shift.startTime }
+            date: { $gte: shiftDateStr }
         });
         const expensesTotal = expenses.reduce((acc, exp) => acc + exp.amount, 0);
 
