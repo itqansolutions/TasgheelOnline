@@ -161,7 +161,7 @@ async function submitOpenShift() {
 
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL} /shifts/open`, {
+    const response = await fetch(`${API_URL}/shifts/open`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -890,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Language
   const lang = localStorage.getItem('pos_language') || 'en';
-  updatePOSLanguage(lang);
+  if (window.applyTranslations) window.applyTranslations();
 });
 
 async function printReceipt(receipt, providedSettings = null) {
@@ -1156,6 +1156,17 @@ window.processSale = processSale;
 window.closeShift = closeShift;
 window.submitOpenShift = submitOpenShift;
 window.submitCloseShift = submitCloseShift;
+function scanBarcode() {
+  const searchTerm = prompt("Scan or enter barcode:");
+  if (searchTerm) {
+    const input = document.getElementById("productSearch");
+    if (input) {
+      input.value = searchTerm;
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+}
+
 window.scanBarcode = scanBarcode;
 window.clearCart = clearCart;
 // ===================== HELD ORDERS LOGIC =====================
@@ -1330,19 +1341,8 @@ function resumeHeldOrder(id) {
   const elapsedMs = now - transactionStartTime;
   const elapsedHours = elapsedMs / (1000 * 60 * 60);
 
-  // Update Quantity of FIRST item
-  if (cart.length > 0) {
-    const oldQty = cart[0].qty;
-    // Round to 2 decimals for cleaner receipt, or keep precise?
-    // Let's use 2 decimals for billing triggers usually
-    cart[0].qty = parseFloat(elapsedHours.toFixed(2));
-
-    // Ensure at least 0.01
-    if (cart[0].qty === 0) cart[0].qty = 0.01;
-
-    // Optional: Notify user
-    // alert(`Time elapsed: ${elapsedHours.toFixed(2)} hrs. Updated quantity for ${cart[0].name}.`);
-  }
+  // Legacy "Update Quantity of FIRST item" logic REMOVED as per user request (manual timers now used)
+  // Logic relies on persisted 'accumulatedTime' in item objects.
 
   if (order.salesman) {
     document.getElementById('salesmanSelect').value = order.salesman;
