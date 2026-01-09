@@ -8,6 +8,8 @@ const shiftSchema = new mongoose.Schema({
     startCash: { type: Number, required: true },
     endCash: Number, // Expected cash
     actualCash: Number, // Counted cash
+    actualCard: Number,
+    actualMobile: Number,
 
     // Snapshot fields
     totalSales: { type: Number, default: 0 },

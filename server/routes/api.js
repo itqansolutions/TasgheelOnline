@@ -942,7 +942,7 @@ router.post('/shifts/close', auth, async (req, res) => {
             return res.status(400).json({ msg: 'No open shift found' });
         }
 
-        const { actualCash } = req.body;
+        const { actualCash, actualCard, actualMobile } = req.body;
 
         // Perform calculation again to seal the data
         const sales = await Sale.find({ shiftId: shift._id, tenantId: req.tenantId });
@@ -978,6 +978,8 @@ router.post('/shifts/close', auth, async (req, res) => {
         shift.status = 'closed';
         shift.endTime = Date.now();
         shift.actualCash = actualCash;
+        shift.actualCard = actualCard;
+        shift.actualMobile = actualMobile;
         shift.endCash = expectedCash; // Expected
 
         // Save snapshots

@@ -207,6 +207,8 @@ window.closeShift = async function () {
 
     if (response.ok) {
       const data = await response.json();
+      window.lastShiftSummary = data; // Store for printing
+
 
       const setVal = (id, val) => {
         const el = document.getElementById(id);
@@ -233,8 +235,10 @@ window.closeShift = async function () {
 };
 
 window.submitCloseShift = async function () {
-  const actualCashInput = document.getElementById('actualCashInput');
-  const actualCash = parseFloat(actualCashInput ? actualCashInput.value : 0);
+  const actualCash = parseFloat(document.getElementById('actualCashInput')?.value || 0);
+  const actualCard = parseFloat(document.getElementById('actualCardInput')?.value || 0);
+  const actualMobile = parseFloat(document.getElementById('actualMobileInput')?.value || 0);
+
   if (isNaN(actualCash)) return alert('Please enter actual cash amount');
 
   if (!confirm('Are you sure you want to close the shift?')) return;
@@ -247,20 +251,136 @@ window.submitCloseShift = async function () {
         'Content-Type': 'application/json',
         'x-auth-token': token
       },
-      body: JSON.stringify({ actualCash })
+      body: JSON.stringify({ actualCash, actualCard, actualMobile })
     });
 
     if (response.ok) {
-      alert('Shift closed successfully!');
-      sessionStorage.removeItem('shiftResumed');
-      location.reload(); // Reload to show Open Shift modal again
+      // Generate and Print Report
+      if (window.lastShiftSummary) {
+        const summary = window.lastShiftSummary;
+        const shopName = localStorage.getItem('shopName') || 'My Shop';
+        const cashier = JSON.parse(localStorage.getItem('currentUser'))?.username || 'User';
+        const now = new Date();
+
+        // Prepare data for report
+        const reportData = {
+          shopName,
+          startTime: new Date().toLocaleDateString() + " (Start)", // ideally we should get this from summary properties if available, or just print current "End"
+          endTime: new Date().toLocaleString(),
+          cashier,
+          startCash: summary.startCash,
+
+          sysCash: summary.cashSales,
+          sysCard: summary.cardSales,
+          sysMobile: summary.mobileSales,
+
+          actCash: actualCash,
+          actCard: actualCard,
+          actMobile: actualMobile,
+
+          returns: summary.totalRefunds || 0,
+          expenses: summary.expensesTotal || 0,
+
+          expectedCash: summary.expectedCash,
+          diffCash: actualCash - summary.expectedCash,
+
+          // Optional: we can calc diff for card/mobile too if we want "expected card" = sysCard
+          diffCard: actualCard - summary.cardSales,
+          diffMobile: actualMobile - summary.mobileSales
+        };
+
+        const html = generateShiftReportHTML(reportData);
+        window.printContent(html);
+
+        // Wait for print to likely execute before reloading
+        setTimeout(() => {
+          alert('Shift closed successfully!');
+          sessionStorage.removeItem('shiftResumed');
+          location.reload();
+        }, 1500);
+      } else {
+        // Fallback if summary missing
+        alert('Shift closed successfully!');
+        sessionStorage.removeItem('shiftResumed');
+        location.reload();
+      }
+
     } else {
       alert('Failed to close shift');
+      location.reload(); // still reload to be safe? No, let user retry or see error.
     }
   } catch (error) {
     console.error('Error closing shift:', error);
+    alert("Error closing shift");
   }
 };
+
+function generateShiftReportHTML(data) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const t = (en, ar) => (lang === 'ar' ? ar : en);
+
+  const style = `
+    body { font-family: 'Courier New', monospace; font-size: 12px; width: 72mm; margin: 0; padding: 5px; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; }
+    .header { text-align: center; margin-bottom: 10px; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .line { border-top: 1px dashed #000; margin: 5px 0; }
+    .bold { font-weight: bold; }
+  `;
+
+  return `
+    <html>
+      <head><style>${style}</style></head>
+      <body>
+        <div class="header">
+          <h2 style="margin:0">${data.shopName}</h2>
+          <h3 style="margin:5px 0">${t("SHIFT CLOSE REPORT", "تقرير إغلاق وردية")}</h3>
+          <p style="margin:0">${data.endTime}</p>
+          <p style="margin:0">${t("Cashier:", "الكاشير:")} ${data.cashier}</p>
+        </div>
+        
+        <div class="line"></div>
+        
+        <div class="row"><span>${t("Start Cash", "بداية الدرج")}</span> <span>${data.startCash.toFixed(2)}</span></div>
+        
+        <div class="line"></div>
+        <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
+        
+        <div class="row"><span>${t("Cash Sales", "مبيعات الكاش")}</span> <span>${data.sysCash.toFixed(2)}</span></div>
+        <div class="row"><span>${t("Card Sales", "مبيعات البطاقة")}</span> <span>${data.sysCard.toFixed(2)}</span></div>
+        <div class="row"><span>${t("Mobile Sales", "مبيعات المحافظ")}</span> <span>${data.sysMobile.toFixed(2)}</span></div>
+        
+        <div class="row"><span>${t("Returns", "المرتجعات")}</span> <span>(${data.returns.toFixed(2)})</span></div>
+        <div class="row"><span>${t("Expenses", "المصاريف")}</span> <span>(${data.expenses.toFixed(2)})</span></div>
+        
+        <div class="line"></div>
+         <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("ACTUAL TOTALS", "الإجماليات الفعلية")}</div>
+         
+        <div class="row bold"><span>${t("Act. Cash", "الكاش الفعلي")}</span> <span>${data.actCash.toFixed(2)}</span></div>
+        <div class="row"><span>${t("Act. Card", "البطاقة الفعلية")}</span> <span>${data.actCard.toFixed(2)}</span></div>
+        <div class="row"><span>${t("Act. Mobile", "المحافظ الفعلية")}</span> <span>${data.actMobile.toFixed(2)}</span></div>
+
+        <div class="line"></div>
+        <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("DIFFERENCES", "الفروقات")}</div>
+        
+        <div class="row">
+            <span>${t("Cash Diff", "فرق الكاش")}</span> 
+            <span style="${data.diffCash < 0 ? 'color:red' : 'color:black'}">${data.diffCash.toFixed(2)}</span>
+        </div>
+         <div class="row">
+            <span>${t("Card Diff", "فرق البطاقة")}</span> 
+             <span style="${data.diffCard < 0 ? 'color:red' : 'color:black'}">${data.diffCard.toFixed(2)}</span>
+        </div>
+         <div class="row">
+            <span>${t("Mobile Diff", "فرق المحافظ")}</span> 
+             <span style="${data.diffMobile < 0 ? 'color:red' : 'color:black'}">${data.diffMobile.toFixed(2)}</span>
+        </div>
+
+        <div class="line"></div>
+        <p style="text-align:center;">${t("Signature", "التوقيع")}: ________________</p>
+      </body>
+    </html>
+  `;
+}
 
 async function checkTrialStatus() {
   try {
