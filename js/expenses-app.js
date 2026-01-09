@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const amount = parseFloat(document.getElementById('expenseAmount').value);
     const method = document.getElementById('expenseMethod').value;
 
-    if (!date || !seller || !desc || isNaN(amount) || amount <= 0) {
+    if (!date || !desc || isNaN(amount) || amount <= 0) {
       alert(t("Please fill all fields correctly", "يرجى ملء جميع الحقول بشكل صحيح"));
       return;
     }
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tr.innerHTML = `
         <td>${idx + 1}</td>
         <td>${e.date}</td>
-        <td>${e.seller}</td>
+        <td>${e.seller || ''}</td>
         <td>${e.description}</td>
         <td>${e.amount.toFixed(2)}</td>
         <td>${t(methodLabel(e.method, 'en'), methodLabel(e.method, 'ar'))}</td>
