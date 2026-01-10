@@ -613,9 +613,7 @@ body {
   height: 100%;
 }
 
-.rtl .pos-layout {
-  grid-template-columns: 300px 1fr;
-}
+
 
 .product-grid {
   display: grid;
