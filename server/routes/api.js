@@ -795,6 +795,33 @@ router.get('/shifts/current', auth, async (req, res) => {
     }
 });
 
+// @route   GET /api/shifts/:id
+// @desc    Get shift by ID
+// @access  Private
+router.get('/shifts/:id', auth, async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) return res.status(404).json({ msg: 'Shift not found' });
+
+        // Check tenant
+        if (shift.tenantId.toString() !== req.tenantId) {
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
+        // Calculate dynamic fields if needed, but for closed shifts, we have snapshots.
+        // If it's closed, we use stored values.
+        // We also need shop name, etc. but that's in settings. 
+        // The frontend will fetch settings separately if needed or we can populate?
+        // Let's just return the shift object.
+
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Shift not found' });
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   POST /api/shifts/open
 // @desc    Open a new shift
 // @access  Private

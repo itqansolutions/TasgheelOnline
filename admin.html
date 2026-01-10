@@ -71,6 +71,18 @@
         </div>
 
         <div class="card">
+          <div class="card-header">License Information</div>
+          <div class="card-body">
+            <div id="license-loading">Loading license details...</div>
+            <div id="license-details" style="display:none;">
+              <p><strong>Status:</strong> <span id="license-status"></span></p>
+              <p><strong>Valid Until:</strong> <span id="license-date"></span></p>
+              <p><strong>Days Remaining:</strong> <span id="license-days"></span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card-header" data-i18n="user_management">User Management</div>
           <div class="card-body">
             <form id="user-form" class="form-grid">
@@ -203,17 +215,168 @@
 
         logs.forEach(log => {
           const row = document.createElement('tr');
+          // Add Reprint Button for CLOSED_SHIFT
+          const isCloseShift = log.action === 'CLOSE_SHIFT' && log.details && log.details.shiftId;
+          const reprintBtn = isCloseShift
+            ? `<button onclick="reprintShift('${log.details.shiftId}')" class="btn-sm btn-secondary" style="margin-left:10px;padding:2px 5px;font-size:0.8em;">🖨️ Reprint</button>`
+            : '';
+
           row.innerHTML = `
                       <td>${new Date(log.timestamp).toLocaleString()}</td>
                       <td>${log.user}</td>
                       <td>${log.action}</td>
-                      <td><pre style="font-size:0.8em;">${JSON.stringify(log.details, null, 2)}</pre></td>
+                      <td>
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                          <pre style="font-size:0.8em;margin:0;">${JSON.stringify(log.details, null, 2)}</pre>
+                          ${reprintBtn}
+                        </div>
+                      </td>
                   `;
           tbody.appendChild(row);
         });
       } catch (error) {
         console.error('Error loading logs:', error);
       }
+    }
+
+    // === REPRINT LOGIC ===
+    async function reprintShift(shiftId) {
+      if (!confirm('Reprint closing report for this shift?')) return;
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/shifts/${shiftId}`, {
+          headers: { 'x-auth-token': token }
+        });
+
+        if (response.ok) {
+          const shift = await response.json();
+          // Fetch Settings for Shop Name
+          const settingsRes = await fetch(`${API_URL}/settings`, { headers: { 'x-auth-token': token } });
+          const settings = (await settingsRes.json()) || {};
+
+          const lang = localStorage.getItem('pos_language') || 'en';
+          const t = (en, ar) => (lang === 'ar' ? ar : en);
+          const endTimeFormatted = new Date(shift.endTime).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US');
+
+          // Prepare Data for Report
+          const data = {
+            shopName: settings.shopName || "My Shop",
+            endTime: endTimeFormatted,
+            cashier: shift.cashier,
+            startCash: shift.startCash,
+            sysCash: shift.cashSales,
+            sysCard: shift.cardSales,
+            sysMobile: shift.mobileSales,
+            returns: shift.returnsTotal,
+            expenses: shift.expensesTotal,
+            actCash: shift.actualCash || 0,
+            actCard: shift.actualCard || 0,
+            actMobile: shift.actualMobile || 0,
+            diffCash: shift.actualCash - (shift.endCash || (shift.startCash + shift.cashSales - shift.expensesTotal - shift.returnsTotal)),
+            diffCard: (shift.actualCard || 0) - shift.cardSales,
+            diffMobile: (shift.actualMobile || 0) - shift.mobileSales
+          };
+
+          // Generate & Print
+          const html = generateShiftReportHTML(data);
+          printContent(html);
+
+        } else {
+          alert("Failed to load shift details");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error reprinting shift");
+      }
+    }
+
+    function generateShiftReportHTML(data) {
+      const lang = localStorage.getItem('pos_language') || 'en';
+      const t = (en, ar) => (lang === 'ar' ? ar : en);
+
+      const style = `
+        body { font-family: 'Courier New', monospace; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; text-align: center; font-size: 12px; }
+        .header { margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
+        .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 2px 0; }
+      `;
+
+      return `
+      <html>
+        <head><style>${style}</style></head>
+        <body>
+          <div class="header">
+            <h2 style="margin:0">${data.shopName}</h2>
+            <h3 style="margin:5px 0">${t("SHIFT CLOSE REPORT", "تقرير إغلاق وردية")}</h3>
+            <p style="margin:0">** ${t("COPY", "نسخة")} **</p>
+            <p style="margin:0">${data.endTime}</p>
+            <p style="margin:0">${t("Cashier:", "الكاشير:")} ${data.cashier}</p>
+          </div>
+          
+          <div class="line"></div>
+          
+          <table style="width:100%;">
+            <tr>
+              <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Start Cash", "بداية الدرج")}</td>
+              <td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.startCash.toFixed(2)}</td>
+            </tr>
+          </table>
+          
+          <div class="line"></div>
+          <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
+          
+          <table style="width:100%;">
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Sales", "مبيعات الكاش")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCash.toFixed(2)}</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Sales", "مبيعات البطاقة")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCard.toFixed(2)}</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Sales", "مبيعات المحافظ")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysMobile.toFixed(2)}</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Returns", "المرتجعات")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.returns.toFixed(2)})</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Expenses", "المصاريف")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.expenses.toFixed(2)})</td></tr>
+          </table>
+          
+          <div class="line"></div>
+           <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("ACTUAL TOTALS", "الإجماليات الفعلية")}</div>
+           
+           <table style="width:100%; font-weight: bold;">
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Cash", "الكاش الفعلي")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actCash.toFixed(2)}</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Card", "البطاقة الفعلية")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actCard.toFixed(2)}</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Mobile", "المحافظ الفعلية")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actMobile.toFixed(2)}</td></tr>
+          </table>
+
+          <div class="line"></div>
+          <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("DIFFERENCES", "الفروقات")}</div>
+          
+          <table style="width:100%;">
+            <tr>
+              <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Diff", "فرق الكاش")}</td>
+              <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffCash < 0 ? 'color:red' : 'color:black'}">${(data.diffCash || 0).toFixed(2)}</td>
+            </tr>
+             <tr>
+              <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Diff", "فرق البطاقة")}</td>
+              <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffCard < 0 ? 'color:red' : 'color:black'}">${(data.diffCard || 0).toFixed(2)}</td>
+            </tr>
+             <tr>
+              <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Diff", "فرق المحافظ")}</td>
+              <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffMobile < 0 ? 'color:red' : 'color:black'}">${(data.diffMobile || 0).toFixed(2)}</td>
+            </tr>
+           </table>
+
+          <div class="line"></div>
+          <p style="text-align:center;">${t("Signature", "التوقيع")}: ________________</p>
+        </body>
+      </html>
+      `;
+    }
+
+    function printContent(html) {
+      const printWindow = window.open('', '', 'width=300,height=600');
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
     }
 
     document.addEventListener('DOMContentLoaded', () => {

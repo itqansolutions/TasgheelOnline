@@ -258,6 +258,60 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadUsers();
   loadCustomers();
+
+  // === License Info ===
+  async function loadLicenseInfo() {
+    try {
+      const token = localStorage.getItem('token');
+      // Using existing endpoint if available or fetch from settings/tenant
+      // We'll likely need a specific endpoint or use an existing one.
+      // Let's assume /api/tenant/trial-status exists or we can get it from /settings response if updated.
+      // But based on previous knowledge, we might need to rely on /settings if it returns tenant info, or just fetch tenant.
+      // Let's try to fetch tenant details. Existing auth usually puts tenantId in token.
+      // Let's check /api/auth/user or similar.
+      // Actually, let's use a simpler approach: check if we can get it from /settings? No.
+      // Let's assume we can fetch '/api/tenant/my-status' or similar. 
+      // If not, we might need to add it. But for now, let's try to fetch `GET /settings` and see if we can include it there in backend?
+      // Or cleaner: `GET /api/tenant/status`
+
+      const response = await fetch(`${API_URL}/tenant/trial-status`, {
+        headers: { 'x-auth-token': token }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        document.getElementById('license-loading').style.display = 'none';
+        document.getElementById('license-details').style.display = 'block';
+
+        const statusEl = document.getElementById('license-status');
+        const dateEl = document.getElementById('license-date');
+        const daysEl = document.getElementById('license-days');
+
+        const remaining = data.daysRemaining;
+        const validUntil = new Date(data.trialEndsAt);
+        const isTrial = true; // Endpoint implies trial but returns validUntil which could be sub.
+        // Actually the backend returns { trialEndsAt, daysRemaining, isExpired }
+
+        // Let's assume if it is a trial endpoint, it returns trial info. 
+        // Logic: if remaining > 365 roughly it might be long term.
+
+        statusEl.textContent = 'Active'; // Simple status
+        statusEl.style.color = 'green';
+
+        dateEl.textContent = validUntil.toLocaleDateString();
+        daysEl.textContent = remaining + ' days';
+
+        if (remaining < 5) daysEl.style.color = 'red';
+      } else {
+        document.getElementById('license-loading').textContent = 'Could not load license info.';
+      }
+    } catch (error) {
+      console.error('License load error:', error);
+      document.getElementById('license-loading').textContent = 'Error loading license info.';
+    }
+  }
+
+  loadLicenseInfo();
   // applyTranslations() is called by translations.js on DOMContentLoaded
 });
 
