@@ -340,40 +340,50 @@ function generateShiftReportHTML(data) {
         
         <div class="line"></div>
         
-        <div class="row"><span>${t("Start Cash", "بداية الدرج")}</span> <span>${data.startCash.toFixed(2)}</span></div>
+        <table style="width:100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Start Cash", "بداية الدرج")}</td>
+            <td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.startCash.toFixed(2)}</td>
+          </tr>
+        </table>
         
         <div class="line"></div>
         <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
         
-        <div class="row"><span>${t("Cash Sales", "مبيعات الكاش")}</span> <span>${data.sysCash.toFixed(2)}</span></div>
-        <div class="row"><span>${t("Card Sales", "مبيعات البطاقة")}</span> <span>${data.sysCard.toFixed(2)}</span></div>
-        <div class="row"><span>${t("Mobile Sales", "مبيعات المحافظ")}</span> <span>${data.sysMobile.toFixed(2)}</span></div>
-        
-        <div class="row"><span>${t("Returns", "المرتجعات")}</span> <span>(${data.returns.toFixed(2)})</span></div>
-        <div class="row"><span>${t("Expenses", "المصاريف")}</span> <span>(${data.expenses.toFixed(2)})</span></div>
+        <table style="width:100%; border-collapse: collapse;">
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Sales", "مبيعات الكاش")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCash.toFixed(2)}</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Sales", "مبيعات البطاقة")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCard.toFixed(2)}</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Sales", "مبيعات المحافظ")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysMobile.toFixed(2)}</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Returns", "المرتجعات")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.returns.toFixed(2)})</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Expenses", "المصاريف")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.expenses.toFixed(2)})</td></tr>
+        </table>
         
         <div class="line"></div>
          <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("ACTUAL TOTALS", "الإجماليات الفعلية")}</div>
          
-        <div class="row bold"><span>${t("Act. Cash", "الكاش الفعلي")}</span> <span>${data.actCash.toFixed(2)}</span></div>
-        <div class="row"><span>${t("Act. Card", "البطاقة الفعلية")}</span> <span>${data.actCard.toFixed(2)}</span></div>
-        <div class="row"><span>${t("Act. Mobile", "المحافظ الفعلية")}</span> <span>${data.actMobile.toFixed(2)}</span></div>
+         <table style="width:100%; border-collapse: collapse; font-weight: bold;">
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Cash", "الكاش الفعلي")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actCash.toFixed(2)}</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Card", "البطاقة الفعلية")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actCard.toFixed(2)}</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Act. Mobile", "المحافظ الفعلية")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.actMobile.toFixed(2)}</td></tr>
+        </table>
 
         <div class="line"></div>
         <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("DIFFERENCES", "الفروقات")}</div>
         
-        <div class="row">
-            <span>${t("Cash Diff", "فرق الكاش")}</span> 
-            <span style="${data.diffCash < 0 ? 'color:red' : 'color:black'}">${data.diffCash.toFixed(2)}</span>
-        </div>
-         <div class="row">
-            <span>${t("Card Diff", "فرق البطاقة")}</span> 
-             <span style="${data.diffCard < 0 ? 'color:red' : 'color:black'}">${data.diffCard.toFixed(2)}</span>
-        </div>
-         <div class="row">
-            <span>${t("Mobile Diff", "فرق المحافظ")}</span> 
-             <span style="${data.diffMobile < 0 ? 'color:red' : 'color:black'}">${data.diffMobile.toFixed(2)}</span>
-        </div>
+        <table style="width:100%; border-collapse: collapse;">
+          <tr>
+            <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Diff", "فرق الكاش")}</td>
+            <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffCash < 0 ? 'color:red' : 'color:black'}">${data.diffCash.toFixed(2)}</td>
+          </tr>
+           <tr>
+            <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Diff", "فرق البطاقة")}</td>
+            <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffCard < 0 ? 'color:red' : 'color:black'}">${data.diffCard.toFixed(2)}</td>
+          </tr>
+           <tr>
+            <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Diff", "فرق المحافظ")}</td>
+            <td style="text-align:${lang === 'ar' ? 'left' : 'right'}; ${data.diffMobile < 0 ? 'color:red' : 'color:black'}">${data.diffMobile.toFixed(2)}</td>
+          </tr>
+         </table>
 
         <div class="line"></div>
         <p style="text-align:center;">${t("Signature", "التوقيع")}: ________________</p>
@@ -865,26 +875,55 @@ async function processSale(method) {
     });
 
     if (response.ok) {
-      const data = await response.json();
-      // Handle both old (sale only) and new ({sale, settings}) formats
-      const sale = data.sale || data;
-      const settings = data.settings || null;
+      const result = await response.json();
+      // Print receipt logic...
+      const receiptHtml = generateReceiptHTML(result.sale, result.settings);
+      printContent(receiptHtml);
 
-      printReceipt(sale, settings);
       clearCart();
-      window.cartDiscount = null;
-      window.currentTransactionTax = 0;
-      window.currentTransactionTotal = 0;
-      window.currentSplitPayments = null; // Reset split
-      loadProducts();
-      // alert('Sale completed successfully!'); 
+      alert(t("Sale processed successfully!", "تمت العملية بنجاح!"));
     } else {
+      // Check for 401 Unauthorized (Session Expired)
+      if (response.status === 401) {
+        if (cart.length > 0) {
+          // AUTO-HOLD LOGIC
+          const autoHoldName = `Auto-Save ${new Date().toLocaleTimeString()}`;
+          const heldOrder = {
+            id: Date.now(),
+            name: autoHoldName,
+            timestamp: Date.now(),
+            startTime: transactionStartTime || Date.now(),
+            cart: [...cart],
+            salesman: document.getElementById('salesmanSelect')?.value || ''
+          };
+
+          // Get existing held orders
+          let localHeld = [];
+          try {
+            localHeld = JSON.parse(localStorage.getItem('heldTransactions')) || [];
+          } catch (e) { localHeld = []; }
+
+          localHeld.push(heldOrder);
+          localStorage.setItem('heldTransactions', JSON.stringify(localHeld));
+
+          alert(t(
+            "Session expired! Your order has been auto-saved as '" + autoHoldName + "'. check Held Orders after login.",
+            "انتهت الجلسة! تم حفظ الطلب تلقائيًا باسم '" + autoHoldName + "'. تحقق من الطلبات المعلقة بعد تسجيل الدخول."
+          ));
+        } else {
+          alert(t("Session expired. Please login again.", "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى."));
+        }
+
+        window.location.href = 'index.html'; // Redirect to login
+        return;
+      }
+
       const errData = await response.json();
-      alert(`Failed to process sale: ${errData.msg || 'Unknown error'}`);
+      alert(`${t("Failed to process sale", "فشل العملية")}: ${errData.msg || 'Error'}`);
     }
   } catch (error) {
     console.error('Error processing sale:', error);
-    alert('Error processing sale: ' + error.message);
+    alert(t("Error processing sale", "حدث خطأ أثناء المعالجة"));
   }
 
 }
