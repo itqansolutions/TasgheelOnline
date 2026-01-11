@@ -610,14 +610,42 @@ body {
 }
 
 /* POS Layout */
+/* POS Layout */
 .pos-layout {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  /* Fixed Cart Width */
+  display: flex;
+  /* Changed from Grid to Flex for better side-by-side enforcement */
+  flex-wrap: nowrap;
+  /* Prevent stacking */
   gap: 20px;
   height: 100%;
   min-width: 800px;
-  /* Ensure layout doesn't break on zoom */
+  /* Force minimum width to trigger scrollbar on zoom */
+  align-items: flex-start;
+  /* Align top */
+}
+
+/* Product Section Wrapper (First child of .pos-layout) */
+.pos-layout>div:first-child {
+  flex: 1;
+  /* Take remaining space */
+  min-width: 0;
+  /* Prevent flex overflow issues */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cart Section (Second child of .pos-layout or .cart) */
+.cart {
+  width: 340px;
+  flex-shrink: 0;
+  /* NEVER shrink below 340px */
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  height: fit-content;
+  max-height: 100%;
+  /* Allow internal scrolling if needed */
+  overflow-y: auto;
 }
 
 
@@ -654,13 +682,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Cart */
-.cart {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  height: fit-content;
-}
+/* Legacy Cart style removal/overwrite above handles it */
 
 .cart-item {
   display: flex;
