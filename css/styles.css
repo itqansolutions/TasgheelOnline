@@ -614,20 +614,7 @@ body {
   height: 100%;
 }
 
-@media (max-width: 900px) {
-  .pos-layout {
-    grid-template-columns: 1fr 280px;
-    /* Slightly smaller on medium screens */
-  }
-}
 
-@media (max-width: 768px) {
-  .pos-layout {
-    grid-template-columns: 1fr;
-    /* Stack on mobile */
-    overflow-y: auto;
-  }
-}
 
 
 
