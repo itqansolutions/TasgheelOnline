@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" dir="rtl">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="favicon.png">
-  <title>Tashgeel POS System - Login</title>
+  <title data-i18n-key="app_title">Tashgeel POS System - Login</title>
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/translations.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,6 +17,13 @@
       justify-content: center;
       align-items: center;
       margin: 0;
+      flex-direction: column;
+    }
+
+    .language-switcher {
+      position: absolute;
+      top: 20px;
+      right: 20px;
     }
 
     .login-container {
@@ -91,31 +99,37 @@
 </head>
 
 <body>
+  <div class="language-switcher">
+    <button class="lang-btn" onclick="setLanguage('en')">English</button>
+    <button class="lang-btn" onclick="setLanguage('ar')">العربية</button>
+  </div>
+
   <div class="login-container">
-    <h1>Tashgheel POS</h1>
-    <p class="subtitle">تسجيل الدخول</p>
+    <h1 data-i18n-key="app_title">Tashgheel POS</h1>
+    <p class="subtitle" data-i18n-key="login_subtitle">تسجيل الدخول</p>
 
     <form id="loginForm">
       <div class="form-group">
-        <label>البريد الإلكتروني للنشاط</label>
+        <label data-i18n-key="business_email">البريد الإلكتروني للنشاط</label>
         <input type="email" id="businessEmail" required placeholder="example@business.com">
       </div>
       <div class="form-group">
-        <label>اسم المستخدم</label>
+        <label data-i18n-key="username">اسم المستخدم</label>
         <input type="text" id="username" required placeholder="admin">
       </div>
       <div class="form-group">
-        <label>كلمة المرور</label>
+        <label data-i18n-key="password">كلمة المرور</label>
         <input type="password" id="password" required>
       </div>
-      <button type="submit" class="btn-login">دخول</button>
+      <button type="submit" class="btn-login" data-i18n-key="login_btn">دخول</button>
       <div id="loginError" class="error"></div>
     </form>
 
-    <a href="register.html" class="register-link">ليس لديك حساب؟ سجل الآن (تجربة مجانية)</a>
+    <a href="register.html" class="register-link" data-i18n-key="no_account">ليس لديك حساب؟ سجل الآن (تجربة مجانية)</a>
 
     <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-      <a href="super-admin.html" style="color: #333; text-decoration: none; font-size: 0.9rem;">🔐 Super Admin Login</a>
+      <a href="super-admin.html" style="color: #333; text-decoration: none; font-size: 0.9rem;"
+        data-i18n-key="super_admin_login">🔐 Super Admin Login</a>
     </div>
   </div>
 
@@ -128,13 +142,13 @@
       const password = document.getElementById('password').value.trim();
       const errorDiv = document.getElementById('loginError');
 
-      errorDiv.textContent = 'جاري الاتصال...';
+      errorDiv.textContent = getTranslation('connecting');
 
       const result = await login(username, password, businessEmail);
       if (result.success) {
         window.location.href = 'pos.html';
       } else {
-        errorDiv.textContent = `❌ ${result.msg || 'بيانات الدخول غير صحيحة'}`;
+        errorDiv.textContent = `❌ ${result.msg || getTranslation('invalid_credentials')}`;
       }
     });
 

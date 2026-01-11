@@ -2,14 +2,7 @@
 
 const API_URL = '/api';
 
-// === تغيير اللغة (لازم يكون برا DOMContentLoaded) ===
-document.querySelectorAll('.lang-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const lang = btn.dataset.lang;
-    localStorage.setItem('pos_language', lang);
-    location.reload(); // إعادة تحميل الصفحة بعد تغيير اللغة
-  });
-});
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const lang = localStorage.getItem('pos_language') || 'en';

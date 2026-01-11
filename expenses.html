@@ -7,6 +7,7 @@
   <title data-i18n-key="expenses" data-i18n-ar="المصاريف">Expenses</title>
   <link rel="stylesheet" href="css/expenses.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/translations.js"></script>
   <script defer src="js/expenses-app.js"></script>
 </head>
 
@@ -101,52 +102,8 @@
 <!-- أضف في نهاية الصفحة قبل </body> -->
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const lang = localStorage.getItem('pos_language') || 'en';
-    setLanguage(lang);
-  });
-
-  function setLanguage(lang) {
-    document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-    const t = {
-      expenses: { en: "Expenses", ar: "المصاريف" },
-      date: { en: "Date", ar: "التاريخ" },
-      seller: { en: "Seller", ar: "البائع" },
-      description: { en: "Description", ar: "الوصف" },
-      amount: { en: "Amount", ar: "المبلغ" },
-      method: { en: "Method", ar: "طريقة الدفع" },
-      cash: { en: "Cash", ar: "نقدي" },
-      card: { en: "Card", ar: "بطاقة" },
-      mobile: { en: "Mobile", ar: "موبايل" },
-      add_expense: { en: "➕ Add Expense", ar: "➕ إضافة مصروف" },
-      filter_date: { en: "Date", ar: "تاريخ الفلترة" },
-      filter_seller: { en: "Seller", ar: "بائع الفلترة" },
-      filter: { en: "🔍 Filter", ar: "🔍 فلترة" },
-      reset: { en: "🔄 Reset", ar: "🔄 إعادة تعيين" },
-      actions: { en: "Actions", ar: "الإجراءات" },
-      nav_pos: { en: "🛒 Point of Sale", ar: "🛒 نقطة البيع" },
-      nav_products: { en: "📦 Products", ar: "📦 المنتجات" },
-      nav_receipts: { en: "🧾 Receipts", ar: "🧾 الفواتير" },
-      nav_reports: { en: "📈 Reports", ar: "📈 التقارير" },
-      nav_salesmen: { en: "🧑‍💼 Salesmen", ar: "🧑‍💼 البائعون" },
-      nav_expenses: { en: "📋 Expenses", ar: "📋 المصاريف" },
-      nav_admin: { en: "⚙️ Admin Panel", ar: "⚙️ لوحة التحكم" },
-      nav_backup: { en: "💾 Backup", ar: "💾 النسخ الاحتياطي" },
-
-      // العنوان الرئيسي:
-      Expenses: { en: "📋 Expenses", ar: "📋 المصاريف" },
-    };
-
-    document.querySelectorAll('[data-i18n-key]').forEach(el => {
-      const key = el.getAttribute('data-i18n-key');
-      if (t[key]) {
-        const icon = el.getAttribute('data-icon') || '';
-
-        el.innerHTML = icon + ' ' + t[key][lang];
-      }
-    });
-  }
+  // expenses-app.js handles functionality
+  // translations.js handles language
 </script>
 
 </html>

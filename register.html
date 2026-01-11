@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" dir="rtl">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png">
-    <title>Register - Tashgheel POS</title>
+    <title data-i18n-key="register_title">Register - Tashgheel POS</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="js/translations.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,6 +17,13 @@
             justify-content: center;
             align-items: center;
             margin: 0;
+            flex-direction: column;
+        }
+
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
         }
 
         .register-container {
@@ -79,32 +87,38 @@
 </head>
 
 <body>
+    <div class="language-switcher">
+        <button class="lang-btn" onclick="setLanguage('en')">English</button>
+        <button class="lang-btn" onclick="setLanguage('ar')">العربية</button>
+    </div>
+
     <div class="register-container">
-        <h2>تسجيل حساب جديد</h2>
+        <h2 data-i18n-key="register_title">تسجيل حساب جديد</h2>
         <form id="registerForm">
             <div class="form-group">
-                <label>اسم النشاط التجاري</label>
+                <label data-i18n-key="business_name">اسم النشاط التجاري</label>
                 <input type="text" id="businessName" required>
             </div>
             <div class="form-group">
-                <label>البريد الإلكتروني للنشاط</label>
+                <label data-i18n-key="business_email">البريد الإلكتروني للنشاط</label>
                 <input type="email" id="email" required>
             </div>
             <div class="form-group">
-                <label>رقم الهاتف</label>
+                <label data-i18n-key="phone">رقم الهاتف</label>
                 <input type="tel" id="phone" required>
             </div>
             <div class="form-group">
-                <label>اسم المستخدم (للمدير)</label>
+                <label data-i18n-key="username_manager">اسم المستخدم (للمدير)</label>
                 <input type="text" id="username" required>
             </div>
             <div class="form-group">
-                <label>كلمة المرور</label>
+                <label data-i18n-key="password">كلمة المرور</label>
                 <input type="password" id="password" required>
             </div>
-            <button type="submit" class="btn-register">بدء الفترة التجريبية (3 أيام)</button>
+            <button type="submit" class="btn-register" data-i18n-key="start_trial_btn">بدء الفترة التجريبية (3
+                أيام)</button>
         </form>
-        <a href="index.html" class="login-link">لديك حساب بالفعل؟ تسجيل الدخول</a>
+        <a href="index.html" class="login-link" data-i18n-key="have_account">لديك حساب بالفعل؟ تسجيل الدخول</a>
     </div>
 
     <script>
@@ -131,14 +145,14 @@
                 if (response.ok) {
                     localStorage.setItem('token', result.token);
                     localStorage.setItem('currentUser', JSON.stringify(result.user));
-                    alert('تم التسجيل بنجاح! جاري التوجيه...');
+                    alert(getTranslation('register_success'));
                     window.location.href = 'pos.html';
                 } else {
-                    alert(result.msg || 'حدث خطأ أثناء التسجيل');
+                    alert(result.msg || getTranslation('register_error'));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('فشل الاتصال بالخادم');
+                alert(getTranslation('connection_error'));
             }
         });
     </script>
