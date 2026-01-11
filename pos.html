@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="favicon.png">
   <title>POS - Tashgheel</title>
-  <link rel="stylesheet" href="css/styles.css?v=2.0">
+  <link rel="stylesheet" href="css/styles.css?v=3.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     .modal {
@@ -133,9 +133,10 @@
 
       <section class="content-area">
         <div class="pos-layout"
-          style="display: flex !important; flex-wrap: nowrap !important; align-items: flex-start !important; min-width: 800px;">
+          style="display: flex !important; flex-wrap: nowrap !important; align-items: flex-start !important; width: 100% !important; overflow: hidden !important;">
           <!-- Products Section -->
-          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+          <div
+            style="flex: 0 0 80% !important; width: 80% !important; min-width: 0; display: flex; flex-direction: column;">
             <div class="card">
               <!-- Categories Section -->
               <div id="categoryContainer"
@@ -187,7 +188,7 @@
 
         <!-- Cart Section -->
         <div class="cart"
-          style="width: 340px !important; flex-shrink: 0 !important; height: auto !important; max-height: 100vh; overflow-y: auto;">
+          style="flex: 0 0 20% !important; width: 20% !important; height: auto !important; max-height: 100vh; overflow-y: auto; background: white; border-left: 1px solid #ddd;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
             <h3 id="cartTitle" data-i18n="cart_title">🛒 Cart</h3>
             <span id="cartCounter" class="badge">0</span>
