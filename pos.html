@@ -163,74 +163,81 @@
                   </div>
                 </div>
               </div>
-              <div class="card-body">
-                <div class="product-grid" id="productGrid">
-                  <div style="text-align:center;padding:40px;color:#666;">
-                    <p id="loadingText" data-i18n="loading_products">Loading products...</p>
-                  </div>
-                </div>
-                <div id="heldOrdersGrid" class="product-grid" style="display:none;">
-                  <!-- Held items rendered here -->
-                </div>
+              <!-- Grid Slider -->
+              <div style="padding: 0 20px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size:0.8em; color:#666;">View:</span>
+                <input type="range" id="gridZoom" min="100" max="300" value="200" style="width: 100px;"
+                  title="Adjust Grid Size">
               </div>
             </div>
-          </div>
-
-          <!-- Cart Section -->
-          <div class="cart">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-              <h3 id="cartTitle" data-i18n="cart_title">🛒 Cart</h3>
-              <span id="cartCounter" class="badge">0</span>
-            </div>
-
-            <p id="cartEmptyText" style="text-align:center;color:#666;" data-i18n="cart_empty">Cart is empty</p>
-            <div id="cartItems">
-            </div>
-
-            <div class="cart-summary">
-              <div><span id="subtotalLabel" data-i18n="subtotal">Subtotal:</span> <span id="cartSubtotal">0.00
-                  ج.م</span></div>
-              <div><span id="discountLabel" data-i18n="discount">Discount:</span> <span id="cartDiscount">0.00
-                  ج.م</span> <button onclick="openDiscountModal()" class="btn-sm"
-                  style="font-size:0.8rem;padding:2px 5px;cursor:pointer;">✏️</button></div>
-              <div>
-                <input type="checkbox" id="taxCheckbox" onchange="updateCartSummary()">
-                <span id="taxLabel" data-i18n="tax">Tax (0%):</span>
-                <span id="cartTax">0.00 ج.م</span>
+            <div class="card-body">
+              <div class="product-grid" id="productGrid">
+                <div style="text-align:center;padding:40px;color:#666;">
+                  <p id="loadingText" data-i18n="loading_products">Loading products...</p>
+                </div>
               </div>
-              <hr>
-              <div class="cart-total" id="cartTotal">Total: 0.00 ج.م</div>
+              <div id="heldOrdersGrid" class="product-grid" style="display:none;">
+                <!-- Held items rendered here -->
+              </div>
             </div>
-
-            <div style="margin-bottom:10px;">
-              <label for="salesmanSelect">👤 <span id="salesmanLabel" data-i18n="salesman">Salesman:</span></label>
-              <select id="salesmanSelect" style="width:100%;padding:6px;margin-top:5px;"></select>
-            </div>
-
-            <div class="payment-methods">
-              <button class="btn btn-success" onclick="processSale('cash')" id="cashBtn" disabled
-                data-i18n="pay_cash">💵 Cash</button>
-              <button class="btn btn-success" onclick="processSale('card')" id="cardBtn" disabled
-                data-i18n="pay_card">💳 Card</button>
-              <button class="btn btn-success" onclick="processSale('mobile')" id="mobileBtn" disabled
-                data-i18n="pay_mobile">📱 Mobile</button>
-              <button class="btn btn-primary" onclick="openSplitPaymentModal()" id="splitBtn" disabled
-                data-i18n="pay_split">🔀 Split</button>
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-              <button class="btn btn-warning" onclick="holdTransaction()" id="holdBtn" disabled data-i18n="hold_btn">⏸️
-                Hold</button>
-              <button class="btn btn-secondary" onclick="clearCart()" id="clearCartBtn" disabled
-                data-i18n="clear_btn">🗑️ Clear</button>
-            </div>
-
-            <button class="btn btn-danger" onclick="closeShift()" style="margin-top:10px;width:100%;">🛑 <span
-                id="closeShiftBtn" data-i18n="close_shift">Close Shift</span></button>
           </div>
         </div>
-      </section>
-    </main>
+
+        <!-- Cart Section -->
+        <div class="cart">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 id="cartTitle" data-i18n="cart_title">🛒 Cart</h3>
+            <span id="cartCounter" class="badge">0</span>
+          </div>
+
+          <p id="cartEmptyText" style="text-align:center;color:#666;" data-i18n="cart_empty">Cart is empty</p>
+          <div id="cartItems">
+          </div>
+
+          <div class="cart-summary">
+            <div><span id="subtotalLabel" data-i18n="subtotal">Subtotal:</span> <span id="cartSubtotal">0.00
+                ج.م</span></div>
+            <div><span id="discountLabel" data-i18n="discount">Discount:</span> <span id="cartDiscount">0.00
+                ج.م</span> <button onclick="openDiscountModal()" class="btn-sm"
+                style="font-size:0.8rem;padding:2px 5px;cursor:pointer;">✏️</button></div>
+            <div>
+              <input type="checkbox" id="taxCheckbox" onchange="updateCartSummary()">
+              <span id="taxLabel" data-i18n="tax">Tax (0%):</span>
+              <span id="cartTax">0.00 ج.م</span>
+            </div>
+            <hr>
+            <div class="cart-total" id="cartTotal">Total: 0.00 ج.م</div>
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label for="salesmanSelect">👤 <span id="salesmanLabel" data-i18n="salesman">Salesman:</span></label>
+            <select id="salesmanSelect" style="width:100%;padding:6px;margin-top:5px;"></select>
+          </div>
+
+          <div class="payment-methods">
+            <button class="btn btn-success" onclick="processSale('cash')" id="cashBtn" disabled data-i18n="pay_cash">💵
+              Cash</button>
+            <button class="btn btn-success" onclick="processSale('card')" id="cardBtn" disabled data-i18n="pay_card">💳
+              Card</button>
+            <button class="btn btn-success" onclick="processSale('mobile')" id="mobileBtn" disabled
+              data-i18n="pay_mobile">📱 Mobile</button>
+            <button class="btn btn-primary" onclick="openSplitPaymentModal()" id="splitBtn" disabled
+              data-i18n="pay_split">🔀 Split</button>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+            <button class="btn btn-warning" onclick="holdTransaction()" id="holdBtn" disabled data-i18n="hold_btn">⏸️
+              Hold</button>
+            <button class="btn btn-secondary" onclick="clearCart()" id="clearCartBtn" disabled data-i18n="clear_btn">🗑️
+              Clear</button>
+          </div>
+
+          <button class="btn btn-danger" onclick="closeShift()" style="margin-top:10px;width:100%;">🛑 <span
+              id="closeShiftBtn" data-i18n="close_shift">Close Shift</span></button>
+        </div>
+  </div>
+  </section>
+  </main>
   </div>
 
   <!-- Open Shift Modal -->

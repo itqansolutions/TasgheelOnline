@@ -608,16 +608,33 @@ body {
 /* POS Layout */
 .pos-layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 320px;
+  /* Fixed Cart Width */
   gap: 20px;
   height: 100%;
+}
+
+@media (max-width: 900px) {
+  .pos-layout {
+    grid-template-columns: 1fr 280px;
+    /* Slightly smaller on medium screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-layout {
+    grid-template-columns: 1fr;
+    /* Stack on mobile */
+    overflow-y: auto;
+  }
 }
 
 
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  /* Use variable for dynamic resizing */
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-width, 200px), 1fr));
   gap: 15px;
   max-height: 500px;
   overflow-y: auto;

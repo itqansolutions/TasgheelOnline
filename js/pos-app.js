@@ -818,6 +818,10 @@ async function processSale(method) {
   }
   if (cart.length === 0) return;
 
+  // Fix: Define translation helper function
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const t = (en, ar) => (lang === 'ar' ? ar : en);
+
   const salesmanSelect = document.getElementById("salesmanSelect");
   const salesmanName = salesmanSelect ? salesmanSelect.value : "";
 
@@ -876,9 +880,10 @@ async function processSale(method) {
 
     if (response.ok) {
       const result = await response.json();
-      // Print receipt logic...
-      const receiptHtml = generateReceiptHTML(result.sale, result.settings);
-      printContent(receiptHtml);
+
+      // Fix: Use printReceipt instead of undefined generateReceiptHTML
+      // Check if we have settings in result, pass them
+      await printReceipt(result.sale, result.settings);
 
       clearCart();
       alert(t("Sale processed successfully!", "تمت العملية بنجاح!"));
@@ -1037,6 +1042,12 @@ document.addEventListener('DOMContentLoaded', () => {
       (p.barcode && p.barcode.includes(term))
     );
     renderProducts(filteredProducts);
+  });
+
+  // Grid Zoom Slider
+  document.getElementById('gridZoom')?.addEventListener('input', (e) => {
+    const val = e.target.value;
+    document.documentElement.style.setProperty('--card-width', `${val}px`);
   });
 
 
