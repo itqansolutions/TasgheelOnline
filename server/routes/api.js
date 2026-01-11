@@ -795,79 +795,6 @@ router.get('/shifts/current', auth, async (req, res) => {
     }
 });
 
-// @route   GET /api/shifts/:id
-// @desc    Get shift by ID
-// @access  Private
-router.get('/shifts/:id', auth, async (req, res) => {
-    try {
-        const shift = await Shift.findById(req.params.id);
-        if (!shift) return res.status(404).json({ msg: 'Shift not found' });
-
-        // Check tenant
-        if (shift.tenantId.toString() !== req.tenantId) {
-            return res.status(401).json({ msg: 'Not authorized' });
-        }
-
-        // Calculate dynamic fields if needed, but for closed shifts, we have snapshots.
-        // If it's closed, we use stored values.
-        // We also need shop name, etc. but that's in settings. 
-        // The frontend will fetch settings separately if needed or we can populate?
-        // Let's just return the shift object.
-
-        res.json(shift);
-    } catch (err) {
-        console.error(err.message);
-        if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Shift not found' });
-        res.status(500).send('Server Error');
-    }
-});
-
-// @route   POST /api/shifts/open
-// @desc    Open a new shift
-// @access  Private
-router.post('/shifts/open', auth, async (req, res) => {
-    try {
-        const existingShift = await Shift.findOne({
-            tenantId: req.tenantId,
-            cashier: req.user.username,
-            status: 'open'
-        });
-
-        if (existingShift) {
-            return res.status(400).json({ msg: 'Shift already open' });
-        }
-
-        const { startCash } = req.body;
-
-        // Fetch user to get username (since it might not be in token)
-        const user = await User.findById(req.user.id);
-        if (!user) return res.status(404).json({ msg: 'User not found' });
-
-        const newShift = new Shift({
-            tenantId: req.tenantId,
-            cashier: user.username,
-            startCash,
-            status: 'open'
-        });
-
-        await newShift.save();
-
-        // Log action
-        const log = new AuditLog({
-            tenantId: req.tenantId,
-            user: req.user.username,
-            action: 'OPEN_SHIFT',
-            details: { shiftId: newShift._id, startCash }
-        });
-        await log.save();
-
-        res.json(newShift);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
 // @route   GET /shifts/summary
 // @desc    Get summary for current open shift (for closing preview)
 // @access  Private
@@ -945,6 +872,81 @@ router.get('/shifts/summary', auth, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
+// @route   GET /api/shifts/:id
+// @desc    Get shift by ID
+// @access  Private
+router.get('/shifts/:id', auth, async (req, res) => {
+    try {
+        const shift = await Shift.findById(req.params.id);
+        if (!shift) return res.status(404).json({ msg: 'Shift not found' });
+
+        // Check tenant
+        if (shift.tenantId.toString() !== req.tenantId) {
+            return res.status(401).json({ msg: 'Not authorized' });
+        }
+
+        // Calculate dynamic fields if needed, but for closed shifts, we have snapshots.
+        // If it's closed, we use stored values.
+        // We also need shop name, etc. but that's in settings. 
+        // The frontend will fetch settings separately if needed or we can populate?
+        // Let's just return the shift object.
+
+        res.json(shift);
+    } catch (err) {
+        console.error(err.message);
+        if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Shift not found' });
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/shifts/open
+// @desc    Open a new shift
+// @access  Private
+router.post('/shifts/open', auth, async (req, res) => {
+    try {
+        const existingShift = await Shift.findOne({
+            tenantId: req.tenantId,
+            cashier: req.user.username,
+            status: 'open'
+        });
+
+        if (existingShift) {
+            return res.status(400).json({ msg: 'Shift already open' });
+        }
+
+        const { startCash } = req.body;
+
+        // Fetch user to get username (since it might not be in token)
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const newShift = new Shift({
+            tenantId: req.tenantId,
+            cashier: user.username,
+            startCash,
+            status: 'open'
+        });
+
+        await newShift.save();
+
+        // Log action
+        const log = new AuditLog({
+            tenantId: req.tenantId,
+            user: req.user.username,
+            action: 'OPEN_SHIFT',
+            details: { shiftId: newShift._id, startCash }
+        });
+        await log.save();
+
+        res.json(newShift);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+
 
 // @route   POST /api/shifts/close
 // @desc    Close current shift
