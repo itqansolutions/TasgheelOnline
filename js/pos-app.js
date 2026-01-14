@@ -150,9 +150,10 @@ function disablePOS() {
 }
 
 function enablePOS() {
-  document.querySelectorAll('.btn').forEach(btn => btn.disabled = false);
-  document.getElementById('productSearch').disabled = false;
-  updateCartSummary(); // Re-evaluate cart buttons
+  document.querySelectorAll('.btn').forEach(btn => { if (btn) btn.disabled = false; });
+  const search = document.getElementById('productSearch');
+  if (search) search.disabled = false;
+  if (typeof updateCartSummary === 'function') updateCartSummary();
 }
 
 async function submitOpenShift() {

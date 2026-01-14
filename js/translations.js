@@ -1,6 +1,24 @@
 // Shared translations for all pages
 const translations = {
     en: {
+        // Missing keys
+        finished: "Finished",
+        partial_return: "Partial Return",
+        full_return: "Full Return",
+        cancelled: "Cancelled",
+        id: "ID",
+        payment: "Payment",
+        total_after_discount: "Total After Discount",
+        status: "Status",
+        return_reason: "Return Reason",
+        partial_return_modal: "Partial Return",
+        select: "Select",
+        item: "Item",
+        qty_sold: "Qty Sold",
+        qty_return: "Qty Return",
+        confirm: "Confirm",
+        cancel: "Cancel",
+
         // Navigation
         nav_pos: "🛒 Point of Sale",
         nav_products: "📦 Products",
