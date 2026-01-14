@@ -1,14 +1,11 @@
 // receipts-app.js (Refactored for API)
 
 const API_URL = '/api';
+let currentReturnReceipt = null;
 
 async function loadReceipts() {
   try {
     const token = localStorage.getItem('token');
-    // We need an endpoint to get all sales/receipts.
-    // I'll assume GET /api/sales exists or I need to create it.
-    // I haven't created GET /api/sales yet. I should do that.
-    // For now, I'll add the fetch call assuming the endpoint will be there.
     const response = await fetch(`${API_URL}/sales`, {
       headers: { 'x-auth-token': token }
     });
@@ -49,14 +46,14 @@ async function renderReceiptsTable() {
       <td>${r.receiptId || '-'}</td>
       <td>${formatDate(r.date)}</td>
       <td>${r.cashier || '-'}</td>
-      <td>${r.method || '-'}</td>
+      <td>${translatePaymentMethod(r.method || r.paymentMethod)}</td>
       <td>${calculateReceiptNetTotal(r).toFixed(2)} ج.م</td>
       <td>${translateStatus(r.status || 'finished')}</td>
-      <td>${r.returnReason || '-'}</td>
+      <td>${getReturnReason(r)}</td>
       <td>
         <div style="display:flex; flex-wrap: wrap; gap:5px; justify-content:center;">
           <button class="btn btn-secondary btn-action" title="Print" onclick="printReceipt('${r._id}')">🖨️</button>
-          <button class="btn btn-warning btn-action" title="Return" onclick="window.location.href='returns.html?receiptId=${r.receiptId}'">↩️</button>
+          <button class="btn btn-warning btn-action" title="Return" onclick="openReturnModal('${r._id}')">↩️</button>
           <button class="btn btn-danger btn-action" title="Cancel" onclick="cancelSale('${r._id}')">❌</button>
         </div>
       </td>
@@ -65,17 +62,20 @@ async function renderReceiptsTable() {
   });
 }
 
+function getReturnReason(r) {
+  if (r.returns && r.returns.length > 0) {
+    return r.returns.map(ret => ret.items.map(i => i.reason || '').join(', ')).join('; ') || '-';
+  }
+  return r.returnReason || '-';
+}
+
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleString();
 }
 
 function calculateReceiptNetTotal(receipt) {
-  return receipt.items.reduce((sum, item) => {
-    const discount = item.discount?.type === 'percent' ? (item.price * item.discount.value / 100) : item.discount?.value || 0;
-    const net = item.price - discount;
-    return sum + item.qty * net;
-  }, 0);
+  return receipt.total || 0;
 }
 
 function translateStatus(status) {
@@ -90,20 +90,27 @@ function translateStatus(status) {
   return map[status]?.[lang] || status;
 }
 
+function translatePaymentMethod(method) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const map = {
+    cash: { en: 'Cash', ar: 'نقدي' },
+    card: { en: 'Card', ar: 'بطاقة' },
+    mobile: { en: 'Mobile', ar: 'موبايل' },
+    split: { en: 'Split', ar: 'تقسيم' }
+  };
+  return map[method]?.[lang] || method || '-';
+}
+
 async function printReceipt(receiptId) {
   try {
     const token = localStorage.getItem('token');
-
-    // Fetch the specific sale if receiptId is provided (as ID string)
     let receipt;
-    // Check if we already have the full receipt object (unlikely in this context, usually called with ID)
     if (typeof receiptId === 'object' && receiptId !== null) {
       receipt = receiptId;
     } else {
       const response = await fetch(`${API_URL}/sales/${receiptId}`, {
         headers: { 'x-auth-token': token }
       });
-
       if (!response.ok) {
         alert('Failed to load receipt for printing');
         return;
@@ -115,17 +122,11 @@ async function printReceipt(receiptId) {
     const shopAddress = localStorage.getItem('shopAddress') || '';
     const shopLogo = localStorage.getItem('shopLogo') || '';
     const receiptFooterMessage = localStorage.getItem('footerMessage') || '';
-
-    // Get Tax Settings from LocalStorage (same as POS)
     const taxRate = parseFloat(localStorage.getItem('taxRate') || 0);
     const taxName = localStorage.getItem('taxName') || 'Tax';
-    // Default applyTax to true if missing, consistent with POS
-    let applyTaxVal = localStorage.getItem('applyTax');
-    if (applyTaxVal === null || applyTaxVal === '') applyTaxVal = 'true';
-    const applyTax = applyTaxVal === 'true';
 
     const lang = localStorage.getItem('pos_language') || 'en';
-    const t = (en, ar) => (lang === 'ar' ? ar : en); // Fixed: return en if not ar
+    const t = (en, ar) => (lang === 'ar' ? ar : en);
     const paymentMap = {
       cash: t("Cash", "نقدي"),
       card: t("Card", "بطاقة"),
@@ -133,41 +134,19 @@ async function printReceipt(receiptId) {
       split: t("Split", "تقسيم")
     };
 
-    // Calculate totals - check if receipt has stored values, otherwise re-calculate
     let totalDiscount = receipt.discountAmount || 0;
-    // Fallback for subtotal if not stored (legacy support)
-    let subtotal = receipt.subtotal;
-    if (subtotal === undefined) {
-      subtotal = receipt.items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    }
-
-    // Tax Amount - use stored if available, otherwise 0 (assuming legacy receipts might not have separate tax stored)
-    // However, if we want to "retroactively" show tax on reprints based on current settings if missing, we could calculate it, 
-    // but better to rely on what was stored if possible. 
-    // If taxAmount is stored in receipt (New Sales), use it.
+    let subtotal = receipt.subtotal || 0;
     let taxAmount = receipt.taxAmount || 0;
-
-    // Fallback: If taxAmount is missing but we have a rate, calculate it
-    if (!taxAmount && taxRate > 0) {
-      const discountedSub = Math.max(0, subtotal - totalDiscount);
-      taxAmount = discountedSub * (taxRate / 100);
-    }
 
     const itemsHtml = receipt.items.map(item => {
       const originalTotal = item.price * item.qty;
       let discountStr = "-";
-      let discountAmountPerUnit = 0;
 
       if (item.discount?.type === "percent") {
-        discountAmountPerUnit = item.price * (item.discount.value / 100);
         discountStr = `${item.discount.value}%`;
       } else if (item.discount?.type === "value") {
-        discountAmountPerUnit = item.discount.value;
-        discountStr = `${discountAmountPerUnit.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}`;
+        discountStr = `${item.discount.value.toFixed(2)}`;
       }
-
-      // Note: We don't need to accumulate subtotal/discount here if we used the receipt properties, 
-      // but if we are calculating fallback subtotal above, we do it there.
 
       return `
         <tr>
@@ -185,14 +164,12 @@ async function printReceipt(receiptId) {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true
     });
 
-    // Generate Tax Line for Summary if applicable
     let taxSummaryHtml = '';
     if (taxAmount > 0) {
       const taxLabel = `${taxName} (${taxRate}%)`;
       taxSummaryHtml = `<p>${taxLabel}: ${taxAmount.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>`;
     }
 
-    // Extract receipt content logic
     const receiptContent = `
         ${shopLogo ? `<img src="${shopLogo}" class="logo">` : ''}
         <h2 class="center">${shopName}</h2>
@@ -202,8 +179,8 @@ async function printReceipt(receiptId) {
         <p>${t("Cashier", "الكاشير")}: ${receipt.cashier}</p>
         <p>${t("Salesman", "البائع")}: ${receipt.salesman || '-'}</p>
         <p>${t("Date", "التاريخ")}: ${dateFormatted}</p>
-        <p>${t("Payment Method", "طريقة الدفع")}: ${paymentMap[receipt.method] || receipt.method || '-'}</p>
-        ${receipt.method === 'split' && receipt.splitPayments ?
+        <p>${t("Payment Method", "طريقة الدفع")}: ${translatePaymentMethod(receipt.method || receipt.paymentMethod)}</p>
+        ${(receipt.method === 'split' || receipt.paymentMethod === 'split') && receipt.splitPayments ?
         receipt.splitPayments.map(p => `<p style="font-size:0.8em; margin-left:10px;">- ${paymentMap[p.method] || p.method}: ${p.amount.toFixed(2)}</p>`).join('')
         : ''}
         <table>
@@ -217,9 +194,7 @@ async function printReceipt(receiptId) {
             <th>${t("Discount", "الخصم")}</th>
             </tr>
         </thead>
-        <tbody>
-            ${itemsHtml}
-        </tbody>
+        <tbody>${itemsHtml}</tbody>
         </table>
         <div class="summary">
         <p>${t("Subtotal", "الإجمالي الفرعي")}: ${subtotal.toFixed(2)} ${lang === 'ar' ? 'ج.م' : 'EGP'}</p>
@@ -266,9 +241,7 @@ async function printReceipt(receiptId) {
         </style>
       </head>
       <body>
-        <div class="receipt-container">
-           ${receiptContent}
-        </div>
+        <div class="receipt-container">${receiptContent}</div>
       </body>
       </html>
     `;
@@ -318,6 +291,178 @@ function updateReceiptsLanguage(lang) {
   }
 }
 
+// ================= RETURN LOGIC =================
+async function openReturnModal(receiptId) {
+  const token = localStorage.getItem('token');
+  try {
+    const response = await fetch(`${API_URL}/sales/${receiptId}`, {
+      headers: { 'x-auth-token': token }
+    });
+    if (!response.ok) return alert("Failed to fetch receipt data");
+    currentReturnReceipt = await response.json();
+  } catch (e) {
+    console.error(e);
+    return alert("Error loading receipt");
+  }
+
+  const modal = document.getElementById('returnModal');
+  const tbody = document.getElementById('returnItemsTableBody');
+  tbody.innerHTML = '';
+
+  currentReturnReceipt.items.forEach((item, index) => {
+    const soldQty = item.qty;
+    const returnedQty = item.returnedQty || 0;
+    const remainingQty = soldQty - returnedQty;
+
+    if (remainingQty <= 0) return;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+            <td><input type="checkbox" class="return-check" data-index="${index}" onchange="toggleReturnInput(${index})"></td>
+            <td>${item.name} <small>(${item.code || '-'})</small></td>
+            <td>${remainingQty}</td>
+            <td><input type="number" class="return-input" id="return-qty-${index}" min="1" max="${remainingQty}" value="1" disabled style="width: 60px;"></td>
+        `;
+    tbody.appendChild(tr);
+  });
+
+  if (tbody.children.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">All items in this receipt have been returned.</td></tr>';
+    document.querySelector('#returnModal .btn-success').disabled = true;
+  } else {
+    document.querySelector('#returnModal .btn-success').disabled = false;
+  }
+
+  modal.style.display = 'block';
+}
+
+function toggleReturnInput(index) {
+  const checkbox = document.querySelector(`.return-check[data-index="${index}"]`);
+  const input = document.getElementById(`return-qty-${index}`);
+  if (checkbox && input) {
+    input.disabled = !checkbox.checked;
+    if (!checkbox.checked) input.value = 1;
+  }
+}
+
+function closeReturnModal() {
+  document.getElementById('returnModal').style.display = 'none';
+  currentReturnReceipt = null;
+  document.getElementById('returnReason').value = '';
+}
+
+async function confirmPartialReturn() {
+  if (!currentReturnReceipt) return;
+
+  const checks = document.querySelectorAll('.return-check:checked');
+  if (checks.length === 0) return alert("Please select at least one item to return.");
+
+  const itemsToReturn = [];
+  const reason = document.getElementById('returnReason').value.trim();
+
+  for (const chk of checks) {
+    const index = chk.dataset.index;
+    const item = currentReturnReceipt.items[index];
+    const qtyInput = document.getElementById(`return-qty-${index}`);
+    const qty = parseFloat(qtyInput.value);
+
+    if (qty <= 0) return alert(`Invalid quantity for ${item.name}`);
+    if (qty > (item.qty - (item.returnedQty || 0))) return alert(`Qty exceeds remaining stock for ${item.name}`);
+
+    itemsToReturn.push({
+      code: item.code || item._id, // Send code or ID to backend
+      qty: qty,
+      reason: reason
+    });
+  }
+
+  if (!confirm("Confirm return of selected items?")) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/sales/${currentReturnReceipt._id || currentReturnReceipt.receiptId}/return`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ items: itemsToReturn, reason })
+    });
+
+    if (response.ok) {
+      alert("Items returned successfully");
+      closeReturnModal();
+      renderReceiptsTable();
+    } else {
+      const err = await response.json();
+      alert("Return failed: " + (err.msg || "Unknown error"));
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error processing return");
+  }
+}
+
+async function cancelSale(receiptId) {
+  const lang = localStorage.getItem('pos_language') || 'en';
+  const confirmMsg = lang === 'ar' ?
+    "هل أنت متأكد من إلغاء هذا المستند بالكامل؟ سيتم إرجاع جميع الأصناف للمخزون." :
+    "Are you sure you want to CANCEL this entire sale? All items will be returned to stock.";
+
+  if (!confirm(confirmMsg)) return;
+
+  // Fetch receipt to get all items
+  try {
+    const token = localStorage.getItem('token');
+    let receipt;
+    const res = await fetch(`${API_URL}/sales/${receiptId}`, { headers: { 'x-auth-token': token } });
+    if (!res.ok) return alert("Failed to fetch sale details");
+    receipt = await res.json();
+
+    // Prepare items array for full return
+    // Only return what hasn't been returned yet
+    const itemsToReturn = [];
+    receipt.items.forEach(item => {
+      const remaining = item.qty - (item.returnedQty || 0);
+      if (remaining > 0) {
+        itemsToReturn.push({
+          code: item.code || item._id,
+          qty: remaining
+        });
+      }
+    });
+
+    if (itemsToReturn.length === 0) {
+      return alert("This sale is already fully returned.");
+    }
+
+    const response = await fetch(`${API_URL}/sales/${receipt._id}/return`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({
+        items: itemsToReturn,
+        reason: "Full Cancellation"
+      })
+    });
+
+    if (response.ok) {
+      alert(lang === 'ar' ? "تم الإلغاء بنجاح" : "Sale cancelled successfully");
+      renderReceiptsTable();
+    } else {
+      const err = await response.json();
+      alert("Cancellation failed: " + (err.msg || "Unknown error"));
+    }
+
+  } catch (e) {
+    console.error(e);
+    alert("Error during cancellation");
+  }
+}
+
+
 // ============== INIT ==============
 window.addEventListener('DOMContentLoaded', () => {
   renderReceiptsTable();
@@ -334,4 +479,3 @@ window.addEventListener('DOMContentLoaded', () => {
   const lang = localStorage.getItem('pos_language') || 'en';
   updateReceiptsLanguage(lang);
 });
-

@@ -867,6 +867,9 @@ async function processSale(method) {
     date: new Date()
   };
 
+  const payButton = document.getElementById('payButton');
+  if (payButton) payButton.disabled = true;
+
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(`${API_URL}/sales`, {
@@ -929,6 +932,8 @@ async function processSale(method) {
   } catch (error) {
     console.error('Error processing sale:', error);
     alert(t("Error processing sale", "حدث خطأ أثناء المعالجة"));
+  } finally {
+    if (payButton) payButton.disabled = false;
   }
 
 }
@@ -1596,7 +1601,7 @@ function updateSplitCalculations() {
   }
 }
 
-function confirmSplitPayment() {
+async function confirmSplitPayment() {
   const cash = parseFloat(document.getElementById('splitCash').value) || 0;
   const card = parseFloat(document.getElementById('splitCard').value) || 0;
   const mobile = parseFloat(document.getElementById('splitMobile').value) || 0;
@@ -1604,11 +1609,23 @@ function confirmSplitPayment() {
   const splits = [];
   if (cash > 0) splits.push({ method: 'cash', amount: cash });
   if (card > 0) splits.push({ method: 'card', amount: card });
+  if (mobile > 0) splits.push({ method: 'mobile', amount: mobile });
 
-  clearCart();
-  updateHeldCount();
-  renderHeldOrders();
-  startHeldOrdersTimer();
+  if (splits.length === 0) return alert("No payments entered");
+
+  const confirmBtn = document.getElementById('confirmSplitBtn');
+  if (confirmBtn) confirmBtn.disabled = true;
+
+  window.currentSplitPayments = splits;
+
+  try {
+    await processSale('split');
+    document.getElementById('splitPaymentModal').style.display = 'none';
+  } catch (e) {
+    console.error(e);
+  } finally {
+    if (confirmBtn) confirmBtn.disabled = false;
+  }
 }
 
 function startHeldOrdersTimer() {

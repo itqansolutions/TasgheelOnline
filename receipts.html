@@ -92,7 +92,19 @@
   <div id="returnModal" class="modal" style="display: none;">
     <div class="modal-content">
       <h3 data-i18n="partial_return_modal">Partial Return</h3>
-      <form id="returnForm"></form>
+      <div style="max-height: 300px; overflow-y: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th data-i18n="select">Select</th>
+              <th data-i18n="item">Item</th>
+              <th data-i18n="qty_sold">Sold Qty</th>
+              <th data-i18n="qty_return">Return Qty</th>
+            </tr>
+          </thead>
+          <tbody id="returnItemsTableBody"></tbody>
+        </table>
+      </div>
       <textarea id="returnReason" placeholder="Reason..." data-i18n-placeholder="return_reason_placeholder"></textarea>
       <div style="margin-top: 10px; text-align: right;">
         <button type="button" onclick="confirmPartialReturn()" class="btn btn-success" data-i18n="confirm">✅

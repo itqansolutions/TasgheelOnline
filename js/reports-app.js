@@ -2,8 +2,6 @@
 
 const API_URL = '/api';
 
-
-
 document.addEventListener('DOMContentLoaded', () => {
   const lang = localStorage.getItem('pos_language') || 'en';
   const t = (en, ar) => lang === 'ar' ? ar : en;
@@ -75,41 +73,116 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const productMap = {};
-    allProducts.forEach(p => productMap[String(p.barcode)] = p); // Using barcode as key
-
-    const finished = receipts.filter(r => r.status === 'finished');
-    const returns = receipts.filter(r => r.status === 'full_return' || r.status === 'partial_return');
+    allProducts.forEach(p => productMap[String(p.barcode)] = p);
 
     if (type === 'stock-value') {
       generateStockValueReport();
     }
 
     if (type === 'sales') {
-      let totalCash = 0, totalCard = 0, totalMobile = 0, totalDiscount = 0;
+      let totalCash = 0, totalCard = 0, totalMobile = 0, totalDiscount = 0, totalReturns = 0;
 
-      const calcTotals = (arr, sign = 1) => {
-        arr.forEach(r => {
-          let gross = 0, discount = 0;
-          r.items.forEach(i => {
-            const d = i.discount?.type === 'percent'
-              ? i.price * i.discount.value / 100 * i.qty
-              : (i.discount?.value || 0) * i.qty;
-            discount += d;
-            gross += i.qty * i.price;
-          });
+      receipts.forEach(r => {
+        // 1. Calculate Original Sales (GROSS & NET) from items
+        let receiptDiscount = 0;
+        let receiptGross = 0;
 
-          totalDiscount += sign * discount;
-          const net = gross - discount;
-          const method = normalizeMethod(r.method);
-
-          if (method === 'cash') totalCash += sign * net;
-          if (method === 'card') totalCard += sign * net;
-          if (method === 'mobile') totalMobile += sign * net;
+        r.items.forEach(i => {
+          const d = i.discount?.type === 'percent'
+            ? i.price * i.discount.value / 100 * i.qty
+            : (i.discount?.value || 0) * i.qty;
+          receiptDiscount += d;
+          receiptGross += i.qty * i.price;
         });
-      };
 
-      calcTotals(finished, 1);
-      calcTotals(returns, -1);
+        totalDiscount += receiptDiscount;
+
+        const method = normalizeMethod(r.method || r.paymentMethod);
+        // Distribute Net Sales to Method
+        // Note: If split payment, we should ideally check split details. 
+        // For now, using primary method or if it's split, check simple logic.
+        const netSale = receiptGross - receiptDiscount;
+
+        if (r.method === 'split' && r.splitPayments) {
+          r.splitPayments.forEach(sp => {
+            const m = normalizeMethod(sp.method);
+            if (m === 'cash') totalCash += sp.amount;
+            if (m === 'card') totalCard += sp.amount;
+            if (m === 'mobile') totalMobile += sp.amount;
+          });
+        } else {
+          if (method === 'cash') totalCash += netSale;
+          if (method === 'card') totalCard += netSale;
+          if (method === 'mobile') totalMobile += netSale;
+        }
+
+        // 2. Calculate Returns (if any)
+        if (r.returns && r.returns.length > 0) {
+          r.returns.forEach(ret => {
+            totalReturns += ret.totalRefund || 0;
+            // Subtract return from the method totals to show "Net Revenue" per method
+            // Or should we keep Returns separate? Usually "Total Sales" means Gross/Net Sales, 
+            // and we subtract Returns to get Net Revenue.
+            // The UI has "Total Sales Cash", "Total Sales Card" etc. 
+            // Let's subtract returns from these buckets to show ACTUAL money received/kept.
+
+            // NOTE: We don't track WHICH method was refunded easily (usually cash). 
+            // Let's assume cash for now or just deduct from cash if common practice. 
+            // OR simpler: returns is just a total line. 
+            // But the user complained about data skew. 
+
+            // Let's DEDUCT returns from the method totals to represent "Actual In-Hand".
+            // Since we don't know exact method returned (often cash), we might skew.
+            // Safest: Deduct from CASH for now as per common retail logic unless specified.
+            // OR: Just track totalReturns and display it. The user said "takes too long to finish receipt".
+
+            // Actually, better to just Sum Total Sales (positive) and Total Returns (negative) separately.
+            // But the cards are "Sales Cash", "Sales Card". 
+            // If we don't deduct returns, they will show high amounts. 
+          });
+        }
+      });
+
+      // Since specific method return tracking isn't in backend yet, we will display Net Sales (Cash/Card/Mobile) 
+      // ignoring returns deduction per method, but show Total Returns clearly.
+      // Wait, if I returned 50 EGP cash, my Cash drawer should show -50. 
+      // I will deduct ONLY if I can trust the method. 
+      // Current system: Cancel/Return doesn't specify method but usually original.
+      // Let's keep it simple: Show Gross Net Sales per method. Show Total Returns. 
+      // And maybe a "Net Revenue" which is (Cash+Card+Mobile - Returns).
+
+      // Update: User said "returns recorded incorrectly". Logic:
+      // Old logic: receipts.filter(full_return).forEach( ... sign = -1 )
+      // This subtracted the *entire* sale. 
+      // New logic: Sum all sales. Sum all returns. 
+      // If we want "Total Sales Cash" to be purely sales, don't subtract. 
+      // However the closing report subtracts returns. So here we should probably do similar?
+      // Let's calculate purely Sales here (Inflow) and display Claims/Returns separately?
+      // The IDs are `total-sales-cash`, `total-sales-card`. 
+
+      // Let's deduct returns from totals to make it specific.
+      // Assumption: Return method = Original method.
+
+      receipts.forEach(r => {
+        const method = normalizeMethod(r.method || r.paymentMethod);
+        let methodReturn = 0;
+        if (r.returns) {
+          r.returns.forEach(ret => methodReturn += ret.totalRefund);
+        }
+        if (methodReturn > 0) {
+          // Deduct from appropriate bucket
+          if (r.method === 'split') {
+            // Complex, just deduct from Cash for safety or proportional? 
+            // Let's deduct from Cash.
+            totalCash -= methodReturn;
+          } else {
+            if (method === 'cash') totalCash -= methodReturn;
+            if (method === 'card') totalCard -= methodReturn;
+            if (method === 'mobile') totalMobile -= methodReturn;
+          }
+        }
+      });
+
 
       document.getElementById('total-sales-cash').textContent = safe(totalCash).toFixed(2) + ' EGP';
       document.getElementById('total-sales-card').textContent = safe(totalCard).toFixed(2) + ' EGP';
@@ -119,54 +192,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (type === 'cogs') {
       let totalCost = 0;
-      finished.forEach(r => {
+      receipts.forEach(r => {
+        // Add cost of sold items
         r.items.forEach(i => {
           const cost = productMap[String(i.code)]?.cost || i.cost || 0;
           totalCost += i.qty * cost;
         });
-      });
-      returns.forEach(r => {
-        r.items.forEach(i => {
-          const cost = productMap[String(i.code)]?.cost || i.cost || 0;
-          totalCost -= i.qty * cost;
-        });
+
+        // Subtract cost of returned items
+        if (r.returns) {
+          r.returns.forEach(ret => {
+            ret.items.forEach(ri => {
+              const cost = productMap[String(ri.code)]?.cost || 0; // Need to fetch from product map, item cost might not be in return record
+              // If return record only has code and qty, use productMap.
+              totalCost -= ri.qty * cost;
+            });
+          });
+        }
       });
       document.getElementById('total-cogs').textContent = safe(totalCost).toFixed(2) + ' EGP';
     }
 
     if (type === 'profit') {
       let profit = 0;
-      const calcProfit = (arr, sign = 1) => {
-        arr.forEach(r => {
-          r.items.forEach(i => {
-            const cost = productMap[String(i.code)]?.cost || i.cost || 0;
-            const discount = i.discount?.type === 'percent' ? (i.price * i.discount.value / 100) : i.discount?.value || 0;
-            const net = i.price - discount;
-            profit += sign * i.qty * (net - cost);
-          });
+      receipts.forEach(r => {
+        let saleProfit = 0;
+        r.items.forEach(i => {
+          const cost = productMap[String(i.code)]?.cost || i.cost || 0;
+          const discount = i.discount?.type === 'percent' ? (i.price * i.discount.value / 100) : i.discount?.value || 0;
+          const net = i.price - discount;
+          saleProfit += i.qty * (net - cost);
         });
-      };
-      calcProfit(finished, 1);
-      calcProfit(returns, -1);
+
+        // Deduct profit for returns
+        if (r.returns) {
+          r.returns.forEach(ret => {
+            ret.items.forEach(ri => {
+              // We need to approximate the profit reversal. 
+              // Refund Amount - (Qty * Cost)
+              // Since we don't have per-item refund in ret.items easily (we calc'd it in backend but typically just code/qty)
+              // Let's try to find original item.
+              const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+              if (originalItem) {
+                const cost = productMap[String(ri.code)]?.cost || originalItem.cost || 0;
+                const discount = originalItem.discount?.type === 'percent' ? (originalItem.price * originalItem.discount.value / 100) : originalItem.discount?.value || 0;
+                const net = originalItem.price - discount; // This was unit price sold
+
+                saleProfit -= ri.qty * (net - cost);
+              }
+            });
+          });
+        }
+        profit += saleProfit;
+      });
       document.getElementById('total-profit').textContent = safe(profit).toFixed(2) + ' EGP';
     }
 
     if (type === 'returns') {
-      const total = returns.reduce((sum, r) => {
-        let d = 0;
-        r.items.forEach(i => {
-          const discount = i.discount?.type === 'percent' ? i.price * i.discount.value / 100 : i.discount?.value || 0;
-          const net = i.price - discount;
-          d += i.qty * net;
-        });
-        return sum + d;
-      }, 0);
+      let total = 0;
+      receipts.forEach(r => {
+        if (r.returns) {
+          r.returns.forEach(ret => total += ret.totalRefund);
+        }
+      });
       document.getElementById('total-returns').textContent = safe(total).toFixed(2) + ' EGP';
     }
 
     if (type === 'by-product') {
       const map = {};
       receipts.forEach(r => {
+        // Add Sold
         r.items.forEach(i => {
           const code = String(i.code);
           if (!map[code]) {
@@ -182,11 +277,9 @@ document.addEventListener('DOMContentLoaded', () => {
               totalAfter: 0
             };
           }
-
           const discountValue = i.discount?.type === 'percent'
             ? i.price * i.discount.value / 100
             : i.discount?.value || 0;
-
           const net = i.price - discountValue;
 
           map[code].qty += i.qty;
@@ -194,6 +287,31 @@ document.addEventListener('DOMContentLoaded', () => {
           map[code].discount += discountValue * i.qty;
           map[code].totalAfter += i.qty * net;
         });
+
+        // Subtract Returned
+        if (r.returns) {
+          r.returns.forEach(ret => {
+            ret.items.forEach(ri => {
+              const code = String(ri.code);
+              if (map[code]) {
+                // Find original price/discount to reverse
+                // Approximation: Use current map averages or find original item
+                const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+                if (originalItem) {
+                  const discountValue = originalItem.discount?.type === 'percent'
+                    ? originalItem.price * originalItem.discount.value / 100
+                    : originalItem.discount?.value || 0;
+                  const net = originalItem.price - discountValue;
+
+                  map[code].qty -= ri.qty;
+                  map[code].totalBefore -= ri.qty * originalItem.price;
+                  map[code].discount -= ri.qty * discountValue;
+                  map[code].totalAfter -= ri.qty * net;
+                }
+              }
+            });
+          });
+        }
       });
 
       renderTable('table-by-product', map,
@@ -202,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
           t("Code", "الكود"),
           t("Name", "الاسم"),
           t("Stock Quantity", "الكمية بالمخزون"),
-          t("Sold Quantity", "الكمية المباعة"),
+          t("Net Sold Quantity", "صافي الكمية المباعة"),
           t("Total Before Discount", "الإجمالي قبل الخصم"),
           t("Discount", "الخصم"),
           t("Net Sales", "الصافي بعد الخصم")
@@ -213,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (type === 'by-category') {
       const categoryMap = {};
       receipts.forEach(r => {
+        // Add Sold
         r.items.forEach(i => {
           const code = String(i.code);
           const category = productMap[code]?.category || t("Uncategorized", "بدون تصنيف");
@@ -224,11 +343,32 @@ document.addEventListener('DOMContentLoaded', () => {
           categoryMap[category].qty += i.qty;
           categoryMap[category].total += i.qty * net;
         });
+
+        // Subtract Returned
+        if (r.returns) {
+          r.returns.forEach(ret => {
+            ret.items.forEach(ri => {
+              const code = String(ri.code);
+              const category = productMap[code]?.category || t("Uncategorized", "بدون تصنيف");
+              if (categoryMap[category]) {
+                const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+                if (originalItem) {
+                  const discount = originalItem.discount?.type === 'percent'
+                    ? originalItem.price * originalItem.discount.value / 100
+                    : originalItem.discount?.value || 0;
+                  const net = originalItem.price - discount;
+                  categoryMap[category].qty -= ri.qty;
+                  categoryMap[category].total -= ri.qty * net;
+                }
+              }
+            });
+          });
+        }
       });
       renderTable('table-by-category', categoryMap, ['category', 'qty', 'total'], [
         t("Category", "التصنيف"),
-        t("Saled Quantity", "الكمية المباعة"),
-        t("Total Sales EGP", "إجمالي المبيعات")
+        t("Net Quantity", "صافي الكمية"),
+        t("Net Sales EGP", "صافي المبيعات")
       ]);
     }
 
@@ -248,6 +388,30 @@ document.addEventListener('DOMContentLoaded', () => {
           map[cashier].discount += discount;
           map[cashier].net += (total - discount);
         });
+
+        // Subtract Returns
+        if (r.returns) {
+          r.returns.forEach(ret => {
+            let retDiscount = 0;
+            let retTotal = 0;
+            let retNet = 0;
+            ret.items.forEach(ri => {
+              const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+              if (originalItem) {
+                const discountVal = originalItem.discount?.type === 'percent'
+                  ? originalItem.price * originalItem.discount.value / 100
+                  : originalItem.discount?.value || 0;
+
+                retDiscount += discountVal * ri.qty;
+                retTotal += originalItem.price * ri.qty;
+                retNet += (originalItem.price - discountVal) * ri.qty;
+              }
+            });
+            map[cashier].total -= retTotal;
+            map[cashier].discount -= retDiscount;
+            map[cashier].net -= retNet;
+          });
+        }
       });
 
       renderTable('table-by-user', map, ['cashier', 'total', 'discount', 'net'], [

@@ -380,8 +380,15 @@ router.post('/sales/:id/return', auth, async (req, res) => {
             // Update sale item
             saleItem.returnedQty = (saleItem.returnedQty || 0) + returnItem.qty;
 
-            // Calculate refund (simplified, assuming proportional discount)
-            const itemPrice = saleItem.price; // This is unit price
+            // Calculate refund (account for discount)
+            let itemPrice = saleItem.price;
+            if (saleItem.discount) {
+                if (saleItem.discount.type === 'percent') {
+                    itemPrice = itemPrice - (itemPrice * saleItem.discount.value / 100);
+                } else if (saleItem.discount.type === 'value') {
+                    itemPrice = itemPrice - saleItem.discount.value;
+                }
+            }
             const refundAmount = itemPrice * returnItem.qty;
 
             returnRecord.items.push({
