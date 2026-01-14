@@ -395,7 +395,8 @@ router.post('/sales/:id/return', auth, async (req, res) => {
             returnRecord.items.push({
                 code: saleItem.code,
                 qty: returnItem.qty,
-                refundAmount
+                refundAmount,
+                reason: returnItem.reason || req.body.reason // Capture reason from item or body
             });
             returnRecord.totalRefund += refundAmount;
 
@@ -1065,6 +1066,7 @@ router.post('/sales/:id/cancel', auth, async (req, res) => {
         }
 
         sale.status = 'cancelled';
+        sale.returnReason = req.body.reason || "Cancelled";
         await sale.save();
 
         // Log action

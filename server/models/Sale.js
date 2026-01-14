@@ -34,11 +34,13 @@ const saleSchema = new mongoose.Schema({
         items: [{
             code: String,
             qty: Number,
-            refundAmount: Number
+            refundAmount: Number,
+            reason: String // Reason for this item return
         }],
         totalRefund: Number,
         cashier: String
-    }]
+    }],
+    returnReason: String // For full cancellations
 });
 
 saleSchema.index({ tenantId: 1, date: -1 });
