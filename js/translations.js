@@ -18,6 +18,7 @@ const translations = {
         qty_return: "Qty Return",
         confirm: "Confirm",
         cancel: "Cancel",
+        processing: "Processing...",
 
         // Navigation
         nav_pos: "🛒 Point of Sale",
@@ -272,8 +273,9 @@ const translations = {
         access_denied: "ممنوع الدخول",
         license_required: "هذا النظام يتطلب رخصة.",
         go_activation: "تفعيل",
-        save: "حفظ",
+        confirm: "تأكيد",
         cancel: "إلغاء",
+        processing: "جاري المعالجة...",
         close: "إغلاق",
         print: "طباعة",
         shift_detected: "تم اكتشاف وردية مفتوحة",

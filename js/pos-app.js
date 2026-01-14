@@ -868,6 +868,8 @@ async function processSale(method) {
     date: new Date()
   };
 
+  showLoading();
+
   const payButton = document.getElementById('payButton');
   if (payButton) payButton.disabled = true;
 
@@ -935,6 +937,7 @@ async function processSale(method) {
     alert(t("Error processing sale", "حدث خطأ أثناء المعالجة"));
   } finally {
     if (payButton) payButton.disabled = false;
+    hideLoading();
   }
 
 }
@@ -1907,3 +1910,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn("updateCartSummary not ready yet", e);
   }
 });
+
+function showLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
