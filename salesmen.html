@@ -34,7 +34,6 @@
           Salesmen</a>
         <a href="expenses.html" class="nav-item" data-i18n="nav_expenses" data-i18n-ar="المصاريف">📋 Expenses</a>
         <a href="admin.html" class="nav-item" data-i18n="nav_admin" data-i18n-ar="لوحة التحكم">⚙️ Admin Panel</a>
-        <a href="backup.html" class="nav-item" data-i18n="nav_backup" data-i18n-ar="النسخ الاحتياطي">💾 Backup</a>
       </nav>
 
       <div class="sidebar-footer">Ali Karam POS</div>
@@ -134,16 +133,6 @@
     <a href="tel:+201126522373">+201126522373 / +201155253886</a>
     <span id="footerText">Designed and developed by itqan</span>
   </footer>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const lang = localStorage.getItem('pos_language') || 'en';
-      document.body.classList.toggle('rtl', lang === 'ar');
-      document.documentElement.setAttribute("dir", lang === 'ar' ? 'rtl' : 'ltr');
-      document.documentElement.setAttribute("lang", lang);
-    });
-  </script>
-  <script src="js/translations.js"></script>
-
 </body>
 
 </html>

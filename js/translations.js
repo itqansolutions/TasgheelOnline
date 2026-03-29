@@ -1,5 +1,6 @@
 // Shared translations for all pages
-const translations = {
+if (typeof translations === 'undefined') {
+  window.translations = {
     en: {
         // Missing keys
         finished: "Finished",
@@ -511,6 +512,7 @@ const translations = {
         connection_error: "فشل الاتصال بالخادم",
     }
 };
+}
 
 function setLanguage(lang) {
     localStorage.setItem('pos_language', lang);

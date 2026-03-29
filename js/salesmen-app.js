@@ -1,6 +1,6 @@
 // salesmen-app.js
 
-const API_URL = '/api';
+// API_URL is defined in auth.js
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('salesman-form');
