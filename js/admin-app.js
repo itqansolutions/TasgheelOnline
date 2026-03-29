@@ -290,7 +290,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Sync localStorage if updating self
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (currentUser && currentUser._id === id && data.user) {
+        const matchesSelf = currentUser && (
+            (currentUser._id && currentUser._id === id) || 
+            (currentUser.username && data.user && currentUser.username === data.user.username)
+        );
+
+        if (matchesSelf && data.user) {
+            currentUser._id = data.user._id; // Update ID if missing
             currentUser.permissions = data.user.permissions;
             currentUser.role = data.user.role;
             currentUser.fullName = data.user.fullName;

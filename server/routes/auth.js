@@ -103,6 +103,7 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
             res.json({
                 token,
                 user: {
+                    _id: user._id,
                     username: user.username,
                     role: user.role,
                     fullName: user.fullName,
@@ -179,7 +180,7 @@ router.post('/login', async (req, res) => {
 
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
+            res.json({ token, user: { _id: user._id, username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
         });
 
     } catch (err) {
