@@ -101,7 +101,21 @@ window.logout = logout;
 window.confirmLogout = confirmLogout;
 window.getCurrentUser = getCurrentUser;
 window.hasPermission = hasPermission;
-window.isSessionValid = isSessionValid;
+
+function hasPermission(user, perm) {
+    if (!user) return false;
+    // Direct permission check
+    if (user.permissions && user.permissions[perm] !== undefined) {
+        return user.permissions[perm] === true;
+    }
+    // Specific defaults for nav_admin
+    if (perm === 'nav_admin') {
+        return user.role === 'admin';
+    }
+    // Default for other nav items is true
+    if (perm.startsWith('nav_')) return true;
+    return false;
+}
 
 // Handle Sidebar & Permissions UI
 function renderSidebar() {
@@ -110,17 +124,6 @@ function renderSidebar() {
 
     const user = getCurrentUser();
     if (!user) return;
-
-    const perms = {
-        nav_pos: true,
-        nav_products: true,
-        nav_receipts: true,
-        nav_reports: true,
-        nav_salesmen: true,
-        nav_expenses: true,
-        nav_admin: user.role === 'admin',
-        ...(user.permissions || {})
-    };
 
     const currentPath = window.location.pathname.split('/').pop() || 'pos.html';
 
@@ -136,7 +139,7 @@ function renderSidebar() {
 
     let navHtml = '';
     navItems.forEach(item => {
-        if (perms[item.id] !== false) {
+        if (hasPermission(user, item.id)) {
             const activeClass = (currentPath === item.href) ? 'active' : '';
             navHtml += `<a href="${item.href}" class="nav-item ${activeClass}" data-i18n="${item.id}">${item.icon} ${item.label}</a>`;
         }

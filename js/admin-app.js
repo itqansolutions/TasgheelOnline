@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Render perms checkboxes
       editPermsContainer.innerHTML = '';
       for (const [key, labelKey] of Object.entries(permKeys)) {
-        const isChecked = user.permissions && user.permissions[key] !== false;
+        const isChecked = hasPermission(user, key);
         const div = document.createElement('div');
         div.innerHTML = `<label><input type="checkbox" class="edit-perm-check" value="${key}" ${isChecked ? 'checked' : ''}> <span data-i18n="${labelKey}">${getTranslation(labelKey)}</span></label>`;
         editPermsContainer.appendChild(div);
