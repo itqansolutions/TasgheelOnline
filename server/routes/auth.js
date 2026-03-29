@@ -39,7 +39,17 @@ router.post('/register', async (req, res) => {
             username,
             passwordHash,
             fullName: 'System Administrator',
-            role: 'admin'
+            role: 'admin',
+            permissions: {
+                canCancelSales: true,
+                nav_pos: true,
+                nav_products: true,
+                nav_receipts: true,
+                nav_reports: true,
+                nav_salesmen: true,
+                nav_expenses: true,
+                nav_admin: true
+            }
         });
 
         await user.save();

@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
           logoPreview.style.display = 'block';
           uploadedLogoBase64 = settings.shopLogo;
         }
+        localStorage.setItem('shopName', settings.shopName || '');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -180,6 +181,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  async function loadLicenseInfo() {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/tenant/trial-status`, {
+        headers: { 'x-auth-token': token }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        document.getElementById('license-loading').style.display = 'none';
+        document.getElementById('license-details').style.display = 'block';
+        document.getElementById('license-status').textContent = data.isExpired ? 'Expired' : 'Active';
+        document.getElementById('license-date').textContent = new Date(data.trialEndsAt).toLocaleDateString();
+        document.getElementById('license-days').textContent = data.daysRemaining;
+      }
+    } catch (error) {
+      console.error('Error loading license:', error);
+    }
+  }
+
+  // Initial loads
+  loadSettings();
+  loadUsers();
   loadLicenseInfo();
 
   // === Edit User Logic ===
