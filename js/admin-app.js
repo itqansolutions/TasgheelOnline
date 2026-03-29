@@ -285,7 +285,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
         alert("User updated successfully");
+
+        // Sync localStorage if updating self
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (currentUser && currentUser._id === id && data.user) {
+            currentUser.permissions = data.user.permissions;
+            currentUser.role = data.user.role;
+            currentUser.fullName = data.user.fullName;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // Re-render sidebar if function available
+            if (typeof renderSidebar === 'function') renderSidebar();
+        }
+
         closeEditUserModal();
         loadUsers();
       } else {

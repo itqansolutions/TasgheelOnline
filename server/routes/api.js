@@ -631,7 +631,7 @@ router.put('/users/:id', auth, async (req, res) => {
         }
 
         await user.save();
-        res.json({ msg: 'User updated', user: { _id: user._id, username: user.username, role: user.role, permissions: user.permissions } });
+        res.json({ msg: 'User updated', user: { _id: user._id, username: user.username, role: user.role, permissions: user.permissions, fullName: user.fullName } });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ msg: 'Server Error: ' + err.message });
