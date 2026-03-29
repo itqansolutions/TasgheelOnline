@@ -111,14 +111,15 @@ function renderSidebar() {
     const user = getCurrentUser();
     if (!user) return;
 
-    const perms = user.permissions || {
+    const perms = {
         nav_pos: true,
         nav_products: true,
         nav_receipts: true,
         nav_reports: true,
         nav_salesmen: true,
         nav_expenses: true,
-        nav_admin: user.role === 'admin'
+        nav_admin: user.role === 'admin',
+        ...(user.permissions || {})
     };
 
     const currentPath = window.location.pathname.split('/').pop() || 'pos.html';

@@ -130,7 +130,7 @@ router.put('/products/:id', auth, async (req, res) => {
         if (!product) return res.status(404).json({ msg: 'Product not found' });
 
         // Update fields
-        const { name, barcode, price, cost, stock, category, minStock, trackStock } = req.body;
+        const { name, barcode, price, cost, stock, category, minStock, trackStock, isActive } = req.body;
         if (name) product.name = name;
         if (barcode !== undefined) product.barcode = barcode; // Allow clearing barcode
         if (price !== undefined) product.price = price;
