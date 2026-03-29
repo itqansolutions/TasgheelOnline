@@ -106,6 +106,20 @@
                   <option value="admin" data-i18n="admin">Admin</option>
                 </select>
               </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label style="font-weight: bold; margin-bottom: 10px; display: block;" data-i18n="permissions">Permissions:</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                  <label><input type="checkbox" class="perm-check" value="canCancelSales"> <span data-i18n="perm_cancel">Can Cancel/Return Sales</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_pos" checked> <span data-i18n="nav_pos">POS</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_products" checked> <span data-i18n="nav_products">Products</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_receipts" checked> <span data-i18n="nav_receipts">Receipts</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_reports"> <span data-i18n="nav_reports">Reports</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_salesmen"> <span data-i18n="nav_salesmen">Salesmen</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_expenses"> <span data-i18n="nav_expenses">Expenses</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_admin"> <span data-i18n="nav_admin">Admin Panel</span></label>
+                  <label><input type="checkbox" class="perm-check" value="nav_backup"> <span data-i18n="nav_backup">Backup</span></label>
+                </div>
+              </div>
               <div class="form-group">
                 <button class="btn btn-primary" type="submit" data-i18n="create_user">Create User</button>
               </div>
@@ -127,51 +141,35 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header" data-i18n="customer_management">Customer Management</div>
-          <div class="card-body">
-            <form id="customer-form" class="form-grid">
-              <div class="form-group">
-                <label for="customer-name" data-i18n="customer_name">Name:</label>
-                <input type="text" id="customer-name" required>
-              </div>
-              <div class="form-group">
-                <label for="customer-phone" data-i18n="customer_phone">Phone:</label>
-                <input type="text" id="customer-phone" required>
-              </div>
-              <div class="form-group">
-                <label for="customer-email" data-i18n="customer_email">Email:</label>
-                <input type="email" id="customer-email">
-              </div>
-              <div class="form-group">
-                <label for="customer-address" data-i18n="customer_address">Address:</label>
-                <input type="text" id="customer-address">
-              </div>
-              <div class="form-group">
-                <button class="btn btn-primary" type="submit" data-i18n="save_customer">Save Customer</button>
-              </div>
-            </form>
+<!-- CUSTOMER MANAGEMENT REMOVED -->
 
-            <table class="data-table mt-20">
-              <thead>
-                <tr>
-                  <th data-i18n="customer_name">Name</th>
-                  <th data-i18n="customer_phone">Phone</th>
-                  <th data-i18n="customer_email">Email</th>
-                  <th data-i18n="actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="customer-table-body">
-                <!-- Populated by JS -->
-              </tbody>
-            </table>
+        <div class="card">
+          <div class="card-header" data-i18n="shift_logs">Shift Logs</div>
+          <div class="card-body">
+            <div style="max-height:400px;overflow-y:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="start_time">Start</th>
+                    <th data-i18n="end_time">End</th>
+                    <th data-i18n="user">User</th>
+                    <th data-i18n="total_sales">Sales</th>
+                    <th data-i18n="status">Status</th>
+                    <th data-i18n="actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="shiftLogsBody"></tbody>
+              </table>
+            </div>
+            <button onclick="loadShiftLogs()" class="btn btn-primary mt-10" data-i18n="refresh_logs">🔄 Refresh
+              Logs</button>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header" data-i18n="audit_logs">Audit Logs</div>
+          <div class="card-header" data-i18n="audit_logs">Audit Logs (System)</div>
           <div class="card-body">
-            <div style="max-height:400px;overflow-y:auto;">
+            <div style="max-height:300px;overflow-y:auto;">
               <table class="data-table">
                 <thead>
                   <tr>
@@ -184,12 +182,53 @@
                 <tbody id="auditLogsBody"></tbody>
               </table>
             </div>
-            <button onclick="loadAuditLogs()" class="btn btn-primary mt-10" data-i18n="refresh_logs">🔄 Refresh
-              Logs</button>
+            <button onclick="loadAuditLogs()" class="btn btn-secondary mt-10" data-i18n="refresh_logs">🔄 Refresh</button>
           </div>
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div id="editUserModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <h2 data-i18n="edit_user">Edit User</h2>
+      <form id="edit-user-form">
+        <input type="hidden" id="edit-user-id">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="edit-username" data-i18n="username">Username:</label>
+            <input type="text" id="edit-username" readonly style="background:#eee;">
+          </div>
+          <div class="form-group">
+            <label for="edit-fullname" data-i18n="fullname">Full Name:</label>
+            <input type="text" id="edit-fullname" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-password" data-i18n="password">Password (leave blank to keep current):</label>
+            <input type="password" id="edit-password">
+          </div>
+          <div class="form-group">
+            <label for="edit-user-role" data-i18n="role">Role:</label>
+            <select id="edit-user-role">
+              <option value="cashier" data-i18n="cashier">Cashier</option>
+              <option value="manager" data-i18n="manager">Manager</option>
+              <option value="admin" data-i18n="admin">Admin</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label style="font-weight: bold; margin-bottom: 10px; display: block;" data-i18n="permissions">Permissions:</label>
+            <div id="edit-perms-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+        <div style="text-align: right; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeEditUserModal()" data-i18n="cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="save">Save Changes</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <footer class="footer">
@@ -202,6 +241,40 @@
   <script src="js/admin-app.js"></script>
   <script>
     // Add Audit Log loading logic here for simplicity, or move to admin-app.js
+    async function loadShiftLogs() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/shifts`, {
+          headers: { 'x-auth-token': token }
+        });
+        const shifts = await response.json();
+
+        const tbody = document.getElementById('shiftLogsBody');
+        tbody.innerHTML = '';
+
+        shifts.forEach(shift => {
+          const row = document.createElement('tr');
+          const startTime = new Date(shift.startTime).toLocaleString();
+          const endTime = shift.endTime ? new Date(shift.endTime).toLocaleString() : '-';
+          const status = shift.status === 'open' ? '🟢 Open' : '🔴 Closed';
+          
+          row.innerHTML = `
+                      <td>${startTime}</td>
+                      <td>${endTime}</td>
+                      <td>${shift.cashier}</td>
+                      <td>${(shift.totalSales || 0).toFixed(2)}</td>
+                      <td>${status}</td>
+                      <td>
+                        <button onclick="reprintShift('${shift._id}')" class="btn btn-secondary btn-sm" ${shift.status === 'open' ? 'disabled' : ''}>🖨️ Reprint</button>
+                      </td>
+                  `;
+          tbody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error loading shift logs:', error);
+      }
+    }
+
     async function loadAuditLogs() {
       try {
         const token = localStorage.getItem('token');
@@ -215,21 +288,12 @@
 
         logs.forEach(log => {
           const row = document.createElement('tr');
-          // Add Reprint Button for CLOSED_SHIFT
-          const isCloseShift = log.action === 'CLOSE_SHIFT' && log.details && log.details.shiftId;
-          const reprintBtn = isCloseShift
-            ? `<button onclick="reprintShift('${log.details.shiftId}')" class="btn-sm btn-secondary" style="margin-left:10px;padding:2px 5px;font-size:0.8em;">🖨️ Reprint</button>`
-            : '';
-
           row.innerHTML = `
                       <td>${new Date(log.timestamp).toLocaleString()}</td>
                       <td>${log.user}</td>
                       <td>${log.action}</td>
                       <td>
-                        <div style="display:flex;align-items:center;justify-content:space-between;">
-                          <pre style="font-size:0.8em;margin:0;">${JSON.stringify(log.details, null, 2)}</pre>
-                          ${reprintBtn}
-                        </div>
+                        <pre style="font-size:0.7em;margin:0;max-height:100px;overflow:auto;">${JSON.stringify(log.details)}</pre>
                       </td>
                   `;
           tbody.appendChild(row);
@@ -274,7 +338,9 @@
             actMobile: shift.actualMobile || 0,
             diffCash: shift.actualCash - (shift.endCash || (shift.startCash + shift.cashSales - shift.expensesTotal - shift.returnsTotal)),
             diffCard: (shift.actualCard || 0) - shift.cardSales,
-            diffMobile: (shift.actualMobile || 0) - shift.mobileSales
+            diffMobile: (shift.actualMobile || 0) - shift.mobileSales,
+            categorySales: shift.categorySales || {},
+            cancelledTotal: shift.cancelledTotal || 0
           };
 
           // Generate & Print
@@ -295,12 +361,36 @@
       const t = (en, ar) => (lang === 'ar' ? ar : en);
 
       const style = `
-        body { font-family: 'Courier New', monospace; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; text-align: center; font-size: 12px; }
+        @page { margin: 0; }
+        body { 
+          width: 80mm; 
+          margin: 0 auto; 
+          font-family: 'Courier New', monospace; 
+          direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; 
+          text-align: center; 
+          font-size: 13px; 
+          padding: 5mm;
+          box-sizing: border-box;
+        }
         .header { margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
         .line { border-bottom: 1px dashed #000; margin: 5px 0; }
         table { width: 100%; border-collapse: collapse; }
-        td { padding: 2px 0; }
+        td { padding: 3px 0; }
+        .bold { font-weight: bold; }
+        .section-title { text-decoration: underline; margin-top: 10px; margin-bottom: 5px; font-weight: bold; }
       `;
+
+      let categoryRows = '';
+      if (data.categorySales && Object.keys(data.categorySales).length > 0) {
+        for (const [cat, amt] of Object.entries(data.categorySales)) {
+          categoryRows += `
+            <tr>
+              <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${cat}</td>
+              <td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${amt.toFixed(2)}</td>
+            </tr>
+          `;
+        }
+      }
 
       return `
       <html>
@@ -324,13 +414,20 @@
           </table>
           
           <div class="line"></div>
-          <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
+          <div class="section-title">${t("SALES BY CATEGORY", "المبيعات حسب التصنيف")}</div>
+          <table>
+            ${categoryRows || `<tr><td colspan="2">${t("No data", "لا توجد بيانات")}</td></tr>`}
+          </table>
+
+          <div class="line"></div>
+          <div class="section-title">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
           
           <table style="width:100%;">
             <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Sales", "مبيعات الكاش")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCash.toFixed(2)}</td></tr>
             <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Sales", "مبيعات البطاقة")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCard.toFixed(2)}</td></tr>
             <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Sales", "مبيعات المحافظ")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysMobile.toFixed(2)}</td></tr>
             <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Returns", "المرتجعات")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.returns.toFixed(2)})</td></tr>
+            <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cancelled", "الملغي")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${(data.cancelledTotal || 0).toFixed(2)})</td></tr>
             <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Expenses", "المصاريف")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.expenses.toFixed(2)})</td></tr>
           </table>
           
@@ -385,6 +482,7 @@
         alert('Access denied');
         window.location.href = 'pos.html';
       }
+      loadShiftLogs();
       loadAuditLogs();
     });
   </script>

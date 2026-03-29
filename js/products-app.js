@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteProduct = deleteProduct;
   window.editProduct = editProduct;
   window.toggleStockFields = toggleStockFields;
+  window.toggleProductStatus = toggleProductStatus;
 });
 
 function toggleStockFields() {
@@ -73,6 +74,10 @@ async function loadProducts() {
 
       const stockDisplay = (p.trackStock === false) ? '<span style="font-size:1.2em;">∞</span>' : (p.stock || 0);
       const costDisplay = (p.trackStock === false) ? '-' : (p.cost?.toFixed(2) || "0.00");
+      
+      const isActive = p.isActive !== false; // Default true
+      const statusClass = isActive ? 'btn-success' : 'btn-danger';
+      const statusText = isActive ? (typeof getTranslation === 'function' ? getTranslation('active') : 'Active') : (typeof getTranslation === 'function' ? getTranslation('inactive') : 'Inactive');
 
       row.innerHTML = `
         <td>${p.code || "-"}</td>
@@ -82,6 +87,9 @@ async function loadProducts() {
         <td>${p.price?.toFixed(2) || "0.00"}</td>
         <td>${costDisplay}</td>
         <td>${stockDisplay}</td>
+        <td>
+          <button class="btn ${statusClass} btn-sm" onclick="toggleProductStatus('${p._id}', ${isActive})">${statusText}</button>
+        </td>
         <td>
           <button class="btn btn-secondary btn-action" onclick="editProduct('${p._id}')">✏️</button>
           <button class="btn btn-danger btn-action" onclick="deleteProduct('${p._id}')">🗑️</button>
@@ -201,7 +209,31 @@ function editProduct(id) {
   document.getElementById("edit-product-unlimited").checked = isUnlimited;
   toggleEditStockFields();
 
+  // Active Logic
+  document.getElementById("edit-product-active").checked = product.isActive !== false;
+
   document.getElementById("editProductModal").style.display = "flex";
+}
+
+async function toggleProductStatus(id, currentStatus) {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-auth-token': token
+      },
+      body: JSON.stringify({ isActive: !currentStatus })
+    });
+    if (response.ok) {
+      loadProducts();
+    } else {
+      alert("Failed to update status");
+    }
+  } catch (error) {
+    console.error("Error toggling status:", error);
+  }
 }
 
 function closeEditProductModal() {
@@ -249,7 +281,8 @@ async function handleUpdateProduct(e) {
     price,
     cost,
     stock,
-    trackStock: !isUnlimited
+    trackStock: !isUnlimited,
+    isActive: document.getElementById("edit-product-active").checked
   };
 
   try {

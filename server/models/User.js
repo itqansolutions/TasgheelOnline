@@ -7,6 +7,16 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['admin', 'manager', 'cashier'], default: 'cashier' },
     fullName: { type: String, required: true },
     active: { type: Boolean, default: true },
+    permissions: {
+        canCancelSales: { type: Boolean, default: false },
+        nav_pos: { type: Boolean, default: true },
+        nav_products: { type: Boolean, default: true },
+        nav_receipts: { type: Boolean, default: true },
+        nav_reports: { type: Boolean, default: true },
+        nav_salesmen: { type: Boolean, default: true },
+        nav_expenses: { type: Boolean, default: true },
+        nav_admin: { type: Boolean, default: false }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

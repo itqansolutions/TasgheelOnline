@@ -95,7 +95,8 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
                 user: {
                     username: user.username,
                     role: user.role,
-                    fullName: user.fullName
+                    fullName: user.fullName,
+                    permissions: user.permissions
                 }
             });
         });
@@ -168,7 +169,7 @@ router.post('/login', async (req, res) => {
 
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
             if (err) throw err;
-            res.json({ token, user: { username: user.username, role: user.role, fullName: user.fullName } });
+            res.json({ token, user: { username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
         });
 
     } catch (err) {

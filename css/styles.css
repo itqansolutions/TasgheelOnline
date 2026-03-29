@@ -1,4 +1,4 @@
-﻿/* Ali Karam POS System - Complete Styles */
+/* Ali Karam POS System - Complete Styles */
 /* Compatible with Windows 7+ browsers */
 
 /* Reset and Base Styles */
@@ -726,6 +726,11 @@ body {
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #eee;
+}
+
+body.rtl .data-table th,
+body.rtl .data-table td {
+  text-align: right;
 }
 
 .data-table th {

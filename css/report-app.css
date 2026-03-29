@@ -33,12 +33,20 @@ body {
   padding-bottom: 6px;
 }
 
+body.rtl .report-title {
+  flex-direction: row; /* Icons stay at the start of text */
+}
+
 /* Tabs */
 .tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 15px;
+}
+
+body.rtl .tabs {
+  justify-content: flex-start; /* flex-start in RTL is the RIGHT side */
 }
 
 .tab {
@@ -79,6 +87,20 @@ input[type="date"] {
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 14px;
+}
+
+/* RTL Specific Summaries */
+body.rtl .report-summary > div {
+  text-align: right;
+  display: flex;
+  flex-direction: row; /* Keep icon on right of text in RTL? No, usually start. */
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+body.rtl .report-table th,
+body.rtl .report-table td {
+  text-align: center;
 }
 
 /* Tables */

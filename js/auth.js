@@ -103,13 +103,73 @@ window.getCurrentUser = getCurrentUser;
 window.hasPermission = hasPermission;
 window.isSessionValid = isSessionValid;
 
+// Handle Sidebar & Permissions UI
+function renderSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
+
+    const user = getCurrentUser();
+    if (!user) return;
+
+    const perms = user.permissions || {
+        nav_pos: true,
+        nav_products: true,
+        nav_receipts: true,
+        nav_reports: true,
+        nav_salesmen: true,
+        nav_expenses: true,
+        nav_admin: user.role === 'admin'
+    };
+
+    const currentPath = window.location.pathname.split('/').pop() || 'pos.html';
+
+    const navItems = [
+        { id: 'nav_pos', href: 'pos.html', icon: '🛒', label: 'Point of Sale' },
+        { id: 'nav_products', href: 'products.html', icon: '📦', label: 'Products' },
+        { id: 'nav_receipts', href: 'receipts.html', icon: '🧾', label: 'Receipts' },
+        { id: 'nav_reports', href: 'reports.html', icon: '📈', label: 'Reports' },
+        { id: 'nav_salesmen', href: 'salesmen.html', icon: '🧑‍💼', label: 'Salesmen' },
+        { id: 'nav_expenses', href: 'expenses.html', icon: '📋', label: 'Expenses' },
+        { id: 'nav_admin', href: 'admin.html', icon: '⚙️', label: 'Admin Panel' }
+    ];
+
+    let navHtml = '';
+    navItems.forEach(item => {
+        if (perms[item.id] !== false) {
+            const activeClass = (currentPath === item.href) ? 'active' : '';
+            navHtml += `<a href="${item.href}" class="nav-item ${activeClass}" data-i18n="${item.id}">${item.icon} ${item.label}</a>`;
+        }
+    });
+
+    sidebar.innerHTML = `
+      <div class="sidebar-header">
+        <h2 id="posSystemTitle" data-i18n="app_title">🏪Tasgheel POS</h2>
+        <p id="licensedVersion" data-i18n="enhanced_edition">Enhanced Edition</p>
+      </div>
+      <nav>
+        ${navHtml}
+      </nav>
+      <div class="sidebar-footer">
+        <div style="font-size: 0.8rem; margin-bottom: 10px; opacity: 0.8;" id="footerBranding">Ali Karam POS</div>
+        <button class="btn btn-danger btn-block" onclick="confirmLogout()" id="logoutBtn" data-i18n="logout">Logout</button>
+      </div>
+    `;
+
+    // Re-apply translations if the function exists
+    if (typeof applyTranslations === 'function') {
+        applyTranslations();
+    }
+}
+
 // Redirect if not logged in (except on login/register pages)
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
     if (!path.includes('index.html') && !path.includes('register.html') && !path.includes('subscription.html')) {
         if (!isSessionValid()) {
             window.location.href = 'index.html';
+            return;
         }
+        renderSidebar();
     }
 });
 

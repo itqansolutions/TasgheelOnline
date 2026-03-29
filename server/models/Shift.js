@@ -18,6 +18,8 @@ const shiftSchema = new mongoose.Schema({
     mobileSales: { type: Number, default: 0 },
     returnsTotal: { type: Number, default: 0 },
     expensesTotal: { type: Number, default: 0 },
+    categorySales: { type: Map, of: Number, default: {} },
+    cancelledTotal: { type: Number, default: 0 },
 
     status: { type: String, enum: ['open', 'closed'], default: 'open' },
     transactions: [{

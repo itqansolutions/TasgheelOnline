@@ -12,6 +12,7 @@ const productSchema = new mongoose.Schema({
     trackStock: { type: Boolean, default: true },
     category: String,
     categoryEn: String,
+    isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
 

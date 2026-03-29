@@ -119,6 +119,7 @@
                   <th data-i18n="price">Price</th>
                   <th data-i18n="cost">Cost</th>
                   <th data-i18n="stock">Stock</th>
+                  <th data-i18n="status">Status</th>
                   <th data-i18n="actions">Actions</th>
                 </tr>
               </thead>
@@ -216,6 +217,14 @@
             style="background-color: #eee;">
           <small style="color: #888;">To adjust stock, use Audit Stock feature.</small>
         </div>
+        
+        <div class="form-group" style="grid-column: span 2; display: flex; align-items: center; gap: 10px;">
+          <label class="switch" style="margin-bottom: 0;">
+            <input type="checkbox" id="edit-product-active">
+            <span class="slider round"></span>
+          </label>
+          <label for="edit-product-active" style="font-weight: bold; margin-bottom: 0;" data-i18n="active">Active</label>
+        </div>
 
         <div class="form-group"
           style="grid-column: span 2; text-align: right; margin-top: 10px; border-top: 1px solid #eee; padding-top: 20px;">
@@ -252,7 +261,7 @@
 
   <script src="js/auth.js"></script>
   <script src="js/translations.js"></script>
-  <script src="js/products-app.js"></script>
+  <script defer src="js/products-app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const currentUser = JSON.parse(localStorage.getItem('currentUser'));

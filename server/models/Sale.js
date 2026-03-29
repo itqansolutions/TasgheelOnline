@@ -17,8 +17,10 @@ const saleSchema = new mongoose.Schema({
     taxName: String,
     taxRate: Number,
     items: [{
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
         code: String,
         name: String,
+        category: String,
         qty: Number,
         price: Number,
         discount: {

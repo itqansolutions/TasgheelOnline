@@ -108,8 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const row = document.createElement('tr');
           row.innerHTML = `
                 <td>${user.username}</td>
+                <td>${user.fullName || "-"}</td>
                 <td>${user.role}</td>
-                <td><button onclick="handleDeleteUser('${user._id}')" class="btn btn-danger">🗑️</button></td>
+                <td>
+                  <button onclick="editUser('${user._id}')" class="btn btn-secondary btn-sm">✏️</button>
+                  <button onclick="handleDeleteUser('${user._id}')" class="btn btn-danger btn-sm">🗑️</button>
+                </td>
               `;
           userTableBody.appendChild(row);
         });
@@ -142,6 +146,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const username = usernameInput.value.trim();
     const password = passwordInput.value.trim();
     const role = roleSelect.value;
+    const fullName = document.getElementById('new-fullname').value.trim();
+
+    // Collect permissions
+    const permissions = {};
+    document.querySelectorAll('#user-form .perm-check').forEach(cb => {
+      permissions[cb.value] = cb.checked;
+    });
 
     if (!username || !password) return alert('Fill all fields');
 
@@ -153,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'x-auth-token': token
         },
-        body: JSON.stringify({ username, password, role })
+        body: JSON.stringify({ username, password, role, fullName, permissions })
       });
 
       if (response.ok) {
@@ -169,150 +180,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // === Customer Management ===
-  const customerForm = document.getElementById('customer-form');
-  const customerNameInput = document.getElementById('customer-name');
-  const customerPhoneInput = document.getElementById('customer-phone');
-  const customerEmailInput = document.getElementById('customer-email');
-  const customerAddressInput = document.getElementById('customer-address');
-  const customerTableBody = document.getElementById('customer-table-body');
+  loadLicenseInfo();
 
-  async function loadCustomers() {
+  // === Edit User Logic ===
+  const editUserModal = document.getElementById('editUserModal');
+  const editUserForm = document.getElementById('edit-user-form');
+  const editIdInput = document.getElementById('edit-user-id');
+  const editUsernameInput = document.getElementById('edit-username');
+  const editFullnameInput = document.getElementById('edit-fullname');
+  const editPasswordInput = document.getElementById('edit-password');
+  const editRoleSelect = document.getElementById('edit-user-role');
+  const editPermsContainer = document.getElementById('edit-perms-container');
+
+  const permKeys = {
+    canCancelSales: "perm_cancel",
+    nav_pos: "nav_pos",
+    nav_products: "nav_products",
+    nav_receipts: "nav_receipts",
+    nav_reports: "nav_reports",
+    nav_salesmen: "nav_salesmen",
+    nav_expenses: "nav_expenses",
+    nav_admin: "nav_admin",
+    nav_backup: "nav_backup"
+  };
+
+  window.editUser = async function(id) {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        headers: { 'x-auth-token': token }
-      });
-      if (response.ok) {
-        const customers = await response.json();
-        customerTableBody.innerHTML = '';
-        customers.forEach((customer) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-                <td>${customer.name}</td>
-                <td>${customer.phone}</td>
-                <td>${customer.email || '-'}</td>
-                <td>
-                  <button onclick="handleDeleteCustomer('${customer._id}')" class="btn btn-danger">🗑️</button>
-                </td>
-              `;
-          customerTableBody.appendChild(row);
-        });
-      }
-    } catch (error) {
-      console.error('Error loading customers:', error);
-    }
-  }
+      const response = await fetch(`${API_URL}/users`, { headers: { 'x-auth-token': token } });
+      const users = await response.json();
+      const user = users.find(u => u._id === id);
+      if (!user) return alert("User not found");
 
-  window.handleDeleteCustomer = async function (id) {
-    if (!confirm("Are you sure you want to delete this customer?")) return;
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers/${id}`, {
-        method: 'DELETE',
-        headers: { 'x-auth-token': token }
-      });
-      if (response.ok) {
-        loadCustomers();
-      } else {
-        alert('Failed to delete customer');
+      editIdInput.value = user._id;
+      editUsernameInput.value = user.username;
+      editFullnameInput.value = user.fullName || "";
+      editRoleSelect.value = user.role;
+      editPasswordInput.value = ""; // Clear password field
+
+      // Render perms checkboxes
+      editPermsContainer.innerHTML = '';
+      for (const [key, labelKey] of Object.entries(permKeys)) {
+        const isChecked = user.permissions && user.permissions[key] !== false;
+        const div = document.createElement('div');
+        div.innerHTML = `<label><input type="checkbox" class="edit-perm-check" value="${key}" ${isChecked ? 'checked' : ''}> <span data-i18n="${labelKey}">${getTranslation(labelKey)}</span></label>`;
+        editPermsContainer.appendChild(div);
       }
+
+      editUserModal.style.display = 'flex';
+      if (typeof applyTranslations === 'function') applyTranslations();
     } catch (e) {
-      alert(e.message);
+      console.error(e);
     }
   };
 
-  customerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = customerNameInput.value.trim();
-    const phone = customerPhoneInput.value.trim();
-    const email = customerEmailInput.value.trim();
-    const address = customerAddressInput.value.trim();
+  window.closeEditUserModal = function() {
+    editUserModal.style.display = 'none';
+  };
 
-    if (!name || !phone) return alert('Name and Phone are required');
+  editUserForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = editIdInput.value;
+    const fullName = editFullnameInput.value.trim();
+    const password = editPasswordInput.value.trim();
+    const role = editRoleSelect.value;
+    
+    const permissions = {};
+    document.querySelectorAll('.edit-perm-check').forEach(cb => {
+      permissions[cb.value] = cb.checked;
+    });
+
+    const updates = { fullName, role, permissions };
+    if (password) updates.password = password;
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        },
-        body: JSON.stringify({ name, phone, email, address })
+      const response = await fetch(`${API_URL}/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
+        body: JSON.stringify(updates)
       });
 
       if (response.ok) {
-        alert('Customer saved successfully');
-        customerForm.reset();
-        loadCustomers();
+        alert("User updated successfully");
+        closeEditUserModal();
+        loadUsers();
       } else {
-        const data = await response.json();
-        alert(data.msg || 'Failed to save customer');
+        alert("Failed to update user");
       }
     } catch (e) {
       alert(e.message);
     }
   });
 
-  loadSettings();
-  loadUsers();
-  loadCustomers();
-
-  // === License Info ===
-  async function loadLicenseInfo() {
-    try {
-      const token = localStorage.getItem('token');
-      // Using existing endpoint if available or fetch from settings/tenant
-      // We'll likely need a specific endpoint or use an existing one.
-      // Let's assume /api/tenant/trial-status exists or we can get it from /settings response if updated.
-      // But based on previous knowledge, we might need to rely on /settings if it returns tenant info, or just fetch tenant.
-      // Let's try to fetch tenant details. Existing auth usually puts tenantId in token.
-      // Let's check /api/auth/user or similar.
-      // Actually, let's use a simpler approach: check if we can get it from /settings? No.
-      // Let's assume we can fetch '/api/tenant/my-status' or similar. 
-      // If not, we might need to add it. But for now, let's try to fetch `GET /settings` and see if we can include it there in backend?
-      // Or cleaner: `GET /api/tenant/status`
-
-      const response = await fetch(`${API_URL}/tenant/trial-status`, {
-        headers: { 'x-auth-token': token }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        document.getElementById('license-loading').style.display = 'none';
-        document.getElementById('license-details').style.display = 'block';
-
-        const statusEl = document.getElementById('license-status');
-        const dateEl = document.getElementById('license-date');
-        const daysEl = document.getElementById('license-days');
-
-        const remaining = data.daysRemaining;
-        const validUntil = new Date(data.trialEndsAt);
-        const isTrial = true; // Endpoint implies trial but returns validUntil which could be sub.
-        // Actually the backend returns { trialEndsAt, daysRemaining, isExpired }
-
-        // Let's assume if it is a trial endpoint, it returns trial info. 
-        // Logic: if remaining > 365 roughly it might be long term.
-
-        statusEl.textContent = 'Active'; // Simple status
-        statusEl.style.color = 'green';
-
-        dateEl.textContent = validUntil.toLocaleDateString();
-        daysEl.textContent = remaining + ' days';
-
-        if (remaining < 5) daysEl.style.color = 'red';
-      } else {
-        document.getElementById('license-loading').textContent = 'Could not load license info.';
-      }
-    } catch (error) {
-      console.error('License load error:', error);
-      document.getElementById('license-loading').textContent = 'Error loading license info.';
-    }
-  }
-
-  loadLicenseInfo();
-  // applyTranslations() is called by translations.js on DOMContentLoaded
+  // Remove Customer Loading
+  // loadCustomers(); 
 });
 
 // applyTranslations() is handled by translations.js

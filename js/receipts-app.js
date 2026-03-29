@@ -40,6 +40,9 @@ async function renderReceiptsTable() {
     return;
   }
 
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const canCancel = user.role === 'admin' || (user.permissions && user.permissions.canCancelSales);
+
   filtered.forEach((r) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -53,8 +56,10 @@ async function renderReceiptsTable() {
       <td>
         <div style="display:flex; flex-wrap: wrap; gap:5px; justify-content:center;">
           <button class="btn btn-secondary btn-action" title="Print" onclick="printReceipt('${r._id}')">🖨️</button>
-          <button class="btn btn-warning btn-action" title="Return" onclick="openReturnModal('${r._id}')">↩️</button>
-          <button class="btn btn-danger btn-action" title="Cancel" onclick="cancelSale('${r._id}')">❌</button>
+          ${canCancel ? `
+            <button class="btn btn-warning btn-action" title="Return" onclick="openReturnModal('${r._id}')">↩️</button>
+            <button class="btn btn-danger btn-action" title="Cancel" onclick="cancelSale('${r._id}')">❌</button>
+          ` : ''}
         </div>
       </td>
     `;
@@ -299,6 +304,11 @@ async function openReturnModal(receiptId) {
       headers: { 'x-auth-token': token }
     });
     if (!response.ok) return alert("Failed to fetch receipt data");
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (user.role !== 'admin' && !(user.permissions && user.permissions.canCancelSales)) {
+        return alert("Access Denied: You do not have permission to return sales.");
+    }
+
     currentReturnReceipt = await response.json();
   } catch (e) {
     console.error(e);
@@ -408,6 +418,11 @@ async function cancelSale(receiptId) {
   const confirmMsg = lang === 'ar' ?
     "هل أنت متأكد من إلغاء هذا المستند بالكامل؟ سيتم إرجاع جميع الأصناف للمخزون." :
     "Are you sure you want to CANCEL this entire sale? All items will be returned to stock.";
+
+  const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  if (user.role !== 'admin' && !(user.permissions && user.permissions.canCancelSales)) {
+      return alert("Access Denied: You do not have permission to cancel sales.");
+  }
 
   if (!confirm(confirmMsg)) return;
 

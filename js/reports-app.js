@@ -103,13 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // For now, using primary method or if it's split, check simple logic.
         const netSale = receiptGross - receiptDiscount;
 
-        if (r.method === 'split' && r.splitPayments) {
-          r.splitPayments.forEach(sp => {
-            const m = normalizeMethod(sp.method);
-            if (m === 'cash') totalCash += sp.amount;
-            if (m === 'card') totalCard += sp.amount;
-            if (m === 'mobile') totalMobile += sp.amount;
-          });
+        if (r.method === 'split') {
+          if (r.splitPayments && r.splitPayments.length > 0) {
+            r.splitPayments.forEach(sp => {
+              const m = normalizeMethod(sp.method);
+              if (m === 'cash') totalCash += sp.amount;
+              if (m === 'card') totalCard += sp.amount;
+              if (m === 'mobile') totalMobile += sp.amount;
+            });
+          } else {
+            totalCash += netSale;
+          }
         } else {
           if (method === 'cash') totalCash += netSale;
           if (method === 'card') totalCard += netSale;

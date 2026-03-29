@@ -15,54 +15,7 @@ const StockAdjustment = require('../models/StockAdjustment');
 const Shift = require('../models/Shift');
 const AuditLog = require('../models/AuditLog');
 
-// CUSTOMERS
-
-// @route   GET /api/customers
-// @desc    Get all customers
-// @access  Private
-router.get('/customers', auth, async (req, res) => {
-    try {
-        const customers = await Customer.find({ tenantId: req.tenantId });
-        res.json(customers);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-// @route   POST /api/customers
-// @desc    Add new customer
-// @access  Private
-router.post('/customers', auth, async (req, res) => {
-    try {
-        const newCustomer = new Customer({
-            tenantId: req.tenantId,
-            ...req.body
-        });
-        const customer = await newCustomer.save();
-        res.json(customer);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-// @route   DELETE /api/customers/:id
-// @desc    Delete customer
-// @access  Private
-router.delete('/customers/:id', auth, async (req, res) => {
-    try {
-        const customer = await Customer.findOne({ _id: req.params.id, tenantId: req.tenantId });
-        if (!customer) return res.status(404).json({ msg: 'Customer not found' });
-
-        await Customer.deleteOne({ _id: req.params.id });
-        res.json({ msg: 'Customer removed' });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
+// CUSTOMERS REMOVED
 // TENANT / TRIAL
 router.get('/tenant/trial-status', auth, async (req, res) => {
     try {
@@ -186,6 +139,7 @@ router.put('/products/:id', auth, async (req, res) => {
         if (category) product.category = category;
         if (minStock !== undefined) product.minStock = minStock;
         if (trackStock !== undefined) product.trackStock = trackStock;
+        if (isActive !== undefined) product.isActive = isActive;
 
         await product.save();
         res.json(product);
@@ -236,19 +190,29 @@ router.post('/sales', auth, async (req, res) => {
         const shiftCount = await Sale.countDocuments({ shiftId: shift._id });
         const receiptId = String(shiftCount + 1);
 
+        // Pre-populate category for each item for snapshots
+        const products = await Product.find({ _id: { $in: items.map(i => i.productId) }, tenantId: req.tenantId });
+        const prodMap = products.reduce((acc, p) => { acc[p._id.toString()] = p; return acc; }, {});
+
+        const snapshotItems = items.map(item => ({
+            ...item,
+            category: prodMap[item.productId]?.category || 'Other'
+        }));
+
         const newSale = new Sale({
             tenantId: req.tenantId,
             receiptId,
             shiftId: shift._id,
             date: new Date(),
-            method: paymentMethod, // Map paymentMethod to method
-            cashier: req.user.username, // Set cashier from logged-in user
+            method: paymentMethod, 
+            cashier: req.user.username, 
             salesman,
             total,
             taxAmount: req.body.taxAmount || 0,
             taxName: req.body.taxName,
             taxRate: req.body.taxRate,
-            items
+            items: snapshotItems,
+            splitPayments: req.body.splitPayments
         });
 
         const sale = await newSale.save();
@@ -618,7 +582,7 @@ router.get('/users', auth, async (req, res) => {
 // @access  Private
 router.post('/users', auth, async (req, res) => {
     try {
-        const { username, password, role } = req.body;
+        const { username, password, role, fullName, permissions } = req.body;
 
         // Check if user exists
         let user = await User.findOne({ username, tenantId: req.tenantId });
@@ -630,8 +594,9 @@ router.post('/users', auth, async (req, res) => {
             tenantId: req.tenantId,
             username,
             passwordHash: 'temp', // Will be overwritten
-            fullName: username, // Default to username since frontend doesn't provide it yet
-            role
+            fullName: fullName || username,
+            role,
+            permissions
         });
 
         const salt = await bcrypt.genSalt(10);
@@ -639,6 +604,34 @@ router.post('/users', auth, async (req, res) => {
 
         await user.save();
         res.json({ msg: 'User created' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ msg: 'Server Error: ' + err.message });
+    }
+});
+
+// @route   PUT /api/users/:id
+// @desc    Update user
+// @access  Private
+router.put('/users/:id', auth, async (req, res) => {
+    try {
+        const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
+        if (!user) return res.status(404).json({ msg: 'User not found' });
+
+        const { username, password, role, fullName, permissions } = req.body;
+
+        if (username) user.username = username;
+        if (role) user.role = role;
+        if (fullName) user.fullName = fullName;
+        if (permissions) user.permissions = permissions;
+
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            user.passwordHash = await bcrypt.hash(password, salt);
+        }
+
+        await user.save();
+        res.json({ msg: 'User updated', user: { _id: user._id, username: user.username, role: user.role, permissions: user.permissions } });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ msg: 'Server Error: ' + err.message });
@@ -829,17 +822,30 @@ router.get('/shifts/summary', auth, async (req, res) => {
         let mobileSales = 0;
         let totalSales = 0;
         let totalRefunds = 0;
+        let cancelledTotal = 0;
 
         sales.forEach(sale => {
-            if (sale.status !== 'cancelled') {
-                totalSales += sale.total;
-                if (sale.method === 'cash') cashSales += sale.total;
-                else if (sale.method === 'card') cardSales += sale.total;
-                else if (sale.method === 'mobile') mobileSales += sale.total;
+            if (sale.status === 'cancelled') {
+                cancelledTotal += sale.total;
+                return;
+            }
+            totalSales += sale.total;
+            // ... (payment methods)
+            if (sale.method === 'cash') cashSales += sale.total;
+            else if (sale.method === 'card') cardSales += sale.total;
+            else if (sale.method === 'mobile') mobileSales += sale.total;
+            else if (sale.method === 'split') {
+                if (sale.splitPayments && sale.splitPayments.length > 0) {
+                    sale.splitPayments.forEach(sp => {
+                        if (sp.method === 'cash') cashSales += sp.amount;
+                        else if (sp.method === 'card') cardSales += sp.amount;
+                        else if (sp.method === 'mobile') mobileSales += sp.amount;
+                    });
+                } else {
+                    cashSales += sale.total;
+                }
             }
 
-            // Returns attached to these sales (or we could track returns separately if needed)
-            // Currently returns are embedded in sales.
             if (sale.returns && sale.returns.length > 0) {
                 sale.returns.forEach(ret => {
                     totalRefunds += ret.totalRefund;
@@ -861,8 +867,30 @@ router.get('/shifts/summary', auth, async (req, res) => {
 
         let expensesTotal = expenses.reduce((acc, exp) => acc + exp.amount, 0);
 
+        // EXTRA: Calculate Category Sales for this shift
+        const categorySales = {};
+        sales.forEach(sale => {
+            if (sale.status === 'cancelled') return;
+            sale.items.forEach(item => {
+                const category = item.category || 'Other';
+                const netQty = item.qty - (item.returnedQty || 0);
+                if (netQty <= 0) return;
+
+                // Calculate item net price
+                let itemPrice = item.price;
+                if (item.discount) {
+                    if (item.discount.type === 'percent') {
+                        itemPrice = itemPrice - (itemPrice * item.discount.value / 100);
+                    } else if (item.discount.type === 'value') {
+                        itemPrice = itemPrice - item.discount.value;
+                    }
+                }
+                const amount = itemPrice * netQty;
+                categorySales[category] = (categorySales[category] || 0) + amount;
+            });
+        });
+
         // Expected Cash in Drawer = Start + Cash Sales - Cash Returns (assuming returns are cash) - Expenses
-        // Note: Returns might be to card. But usually POS returns are cash. Let's assume cash for safety.
         const expectedCash = shift.startCash + cashSales - totalRefunds - expensesTotal;
 
         res.json({
@@ -873,7 +901,9 @@ router.get('/shifts/summary', auth, async (req, res) => {
             totalSales,
             totalRefunds,
             expensesTotal,
-            expectedCash
+            expectedCash,
+            categorySales,
+            cancelledTotal
         });
 
     } catch (err) {
@@ -905,6 +935,22 @@ router.get('/shifts/:id', auth, async (req, res) => {
     } catch (err) {
         console.error(err.message);
         if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Shift not found' });
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   GET /api/shifts
+// @desc    Get all shifts for tenant
+// @access  Private
+router.get('/shifts', auth, async (req, res) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+            return res.status(403).json({ msg: 'Access denied' });
+        }
+        const shifts = await Shift.find({ tenantId: req.tenantId }).sort({ startTime: -1 });
+        res.json(shifts);
+    } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });
@@ -983,15 +1029,28 @@ router.post('/shifts/close', auth, async (req, res) => {
         let cashSales = 0;
         let cardSales = 0;
         let mobileSales = 0;
-        let totalSales = 0;
         let totalRefunds = 0;
+        let cancelledTotal = 0;
 
         sales.forEach(sale => {
-            if (sale.status !== 'cancelled') {
-                totalSales += sale.total;
-                if (sale.method === 'cash') cashSales += sale.total;
-                else if (sale.method === 'card') cardSales += sale.total;
-                else if (sale.method === 'mobile') mobileSales += sale.total;
+            if (sale.status === 'cancelled') {
+                cancelledTotal += sale.total;
+                return;
+            }
+            totalSales += sale.total;
+            if (sale.method === 'cash') cashSales += sale.total;
+            else if (sale.method === 'card') cardSales += sale.total;
+            else if (sale.method === 'mobile') mobileSales += sale.total;
+            else if (sale.method === 'split') {
+                if (sale.splitPayments && sale.splitPayments.length > 0) {
+                    sale.splitPayments.forEach(sp => {
+                        if (sp.method === 'cash') cashSales += sp.amount;
+                        else if (sp.method === 'card') cardSales += sp.amount;
+                        else if (sp.method === 'mobile') mobileSales += sp.amount;
+                    });
+                } else {
+                    cashSales += sale.total;
+                }
             }
             if (sale.returns && sale.returns.length > 0) {
                 sale.returns.forEach(ret => {
@@ -1009,6 +1068,28 @@ router.post('/shifts/close', auth, async (req, res) => {
 
         const expectedCash = shift.startCash + cashSales - totalRefunds - expensesTotal;
 
+        // EXTRA: Calculate Category Sales snapshot
+        const categorySales = {};
+        sales.forEach(sale => {
+            if (sale.status === 'cancelled') return;
+            sale.items.forEach(item => {
+                const category = item.category || 'Other';
+                const netQty = item.qty - (item.returnedQty || 0);
+                if (netQty <= 0) return;
+
+                let itemPrice = item.price;
+                if (item.discount) {
+                    if (item.discount.type === 'percent') {
+                        itemPrice = itemPrice - (itemPrice * item.discount.value / 100);
+                    } else if (item.discount.type === 'value') {
+                        itemPrice = itemPrice - item.discount.value;
+                    }
+                }
+                const amount = itemPrice * netQty;
+                categorySales[category] = (categorySales[category] || 0) + amount;
+            });
+        });
+
         shift.status = 'closed';
         shift.endTime = Date.now();
         shift.actualCash = actualCash;
@@ -1023,6 +1104,8 @@ router.post('/shifts/close', auth, async (req, res) => {
         shift.mobileSales = mobileSales;
         shift.returnsTotal = totalRefunds;
         shift.expensesTotal = expensesTotal;
+        shift.categorySales = categorySales;
+        shift.cancelledTotal = cancelledTotal;
 
         await shift.save();
 

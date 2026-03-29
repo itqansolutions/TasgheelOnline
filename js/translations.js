@@ -39,6 +39,12 @@ const translations = {
         enhanced_edition: "Enhanced Edition",
         logout: "Logout",
         welcome: "Welcome,",
+        shift_logs: "Shift Logs",
+        start_time: "Start",
+        end_time: "End",
+        reprint: "Reprint",
+        open: "Open",
+        closed: "Closed",
         licensed: "Licensed",
         access_denied: "Access Denied",
         license_required: "This system requires a valid license to operate.",
@@ -112,6 +118,10 @@ const translations = {
         discount_value_label: "Value:",
         discount_save: "Save",
         discount_cancel: "Cancel",
+        permissions: "Permissions",
+        perm_cancel: "Can Cancel/Return Sales",
+        edit_user: "Edit User",
+        fullname: "Full Name",
 
         // Products Page
         products: "Products",
@@ -138,6 +148,9 @@ const translations = {
         edit_product: "Edit Product",
         update_product: "Update Product",
         stock_quantity: "Stock Quantity",
+        active: "Active",
+        inactive: "Inactive",
+        status: "Status",
 
         // Receipts
         receipts_title: "Receipts",
@@ -269,7 +282,13 @@ const translations = {
         enhanced_edition: "النسخة المطورة",
         logout: "خروج",
         welcome: "مرحباً،",
-        licensed: "مرخص",
+        shift_logs: "سجلات الورديات",
+        start_time: "البداية",
+        end_time: "النهاية",
+        reprint: "إعادة طباعة",
+        open: "مفتوح",
+        closed: "مغلق",
+        id: "الرقم",
         access_denied: "ممنوع الدخول",
         license_required: "هذا النظام يتطلب رخصة.",
         go_activation: "تفعيل",
@@ -343,6 +362,10 @@ const translations = {
         discount_value_label: "القيمة:",
         discount_save: "حفظ",
         discount_cancel: "إلغاء",
+        permissions: "الصلاحيات",
+        perm_cancel: "إمكانية إلغاء/مرتجع فاتورة",
+        edit_user: "تعديل مستخدم",
+        fullname: "الاسم الكامل",
 
         // Products Page
         products: "المنتجات",
@@ -369,6 +392,9 @@ const translations = {
         edit_product: "تعديل المنتج",
         update_product: "تحديث المنتج",
         stock_quantity: "كمية المخزون",
+        active: "نشط",
+        inactive: "غير نشط",
+        status: "الحالة",
 
         // Receipts
         receipts_title: "الفواتير",

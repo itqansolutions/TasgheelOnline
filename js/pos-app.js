@@ -285,9 +285,10 @@ window.submitCloseShift = async function () {
           expectedCash: summary.expectedCash,
           diffCash: actualCash - summary.expectedCash,
 
-          // Optional: we can calc diff for card/mobile too if we want "expected card" = sysCard
           diffCard: actualCard - summary.cardSales,
-          diffMobile: actualMobile - summary.mobileSales
+          diffMobile: actualMobile - summary.mobileSales,
+          categorySales: summary.categorySales || {},
+          cancelledTotal: summary.cancelledTotal || 0
         };
 
         const html = generateShiftReportHTML(reportData);
@@ -321,12 +322,37 @@ function generateShiftReportHTML(data) {
   const t = (en, ar) => (lang === 'ar' ? ar : en);
 
   const style = `
-    body { font-family: 'Courier New', monospace; font-size: 12px; width: 72mm; margin: 0; padding: 5px; direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; }
-    .header { text-align: center; margin-bottom: 10px; }
+    @page { margin: 0; }
+    body { 
+      width: 80mm; 
+      margin: 0 auto; 
+      font-family: 'Courier New', monospace; 
+      font-size: 13px; 
+      padding: 5mm; 
+      direction: ${lang === 'ar' ? 'rtl' : 'ltr'}; 
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
     .row { display: flex; justify-content: space-between; margin-bottom: 3px; }
     .line { border-top: 1px dashed #000; margin: 5px 0; }
     .bold { font-weight: bold; }
+    .section-title { text-decoration: underline; margin-top: 10px; margin-bottom: 5px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 3px 0; }
   `;
+
+  let categoryRows = '';
+  if (data.categorySales && Object.keys(data.categorySales).length > 0) {
+    for (const [cat, amt] of Object.entries(data.categorySales)) {
+      categoryRows += `
+        <tr>
+          <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${cat}</td>
+          <td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${amt.toFixed(2)}</td>
+        </tr>
+      `;
+    }
+  }
 
   return `
     <html>
@@ -341,7 +367,7 @@ function generateShiftReportHTML(data) {
         
         <div class="line"></div>
         
-        <table style="width:100%; border-collapse: collapse;">
+        <table style="width:100%;">
           <tr>
             <td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Start Cash", "بداية الدرج")}</td>
             <td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.startCash.toFixed(2)}</td>
@@ -349,13 +375,20 @@ function generateShiftReportHTML(data) {
         </table>
         
         <div class="line"></div>
-        <div style="text-align:center;font-weight:bold;margin-bottom:5px;">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
+        <div class="section-title">${t("SALES BY CATEGORY", "المبيعات حسب التصنيف")}</div>
+        <table>
+          ${categoryRows || `<tr><td colspan="2">${t("No data", "لا توجد بيانات")}</td></tr>`}
+        </table>
+
+        <div class="line"></div>
+        <div class="section-title">${t("SYSTEM TOTALS", "إجماليات النظام")}</div>
         
         <table style="width:100%; border-collapse: collapse;">
           <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cash Sales", "مبيعات الكاش")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCash.toFixed(2)}</td></tr>
           <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Card Sales", "مبيعات البطاقة")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysCard.toFixed(2)}</td></tr>
           <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Mobile Sales", "مبيعات المحافظ")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">${data.sysMobile.toFixed(2)}</td></tr>
           <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Returns", "المرتجعات")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.returns.toFixed(2)})</td></tr>
+          <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Cancelled", "الملغي")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${(data.cancelledTotal || 0).toFixed(2)})</td></tr>
           <tr><td style="text-align:${lang === 'ar' ? 'right' : 'left'}">${t("Expenses", "المصاريف")}</td><td style="text-align:${lang === 'ar' ? 'left' : 'right'}">(${data.expenses.toFixed(2)})</td></tr>
         </table>
         
@@ -478,8 +511,8 @@ async function loadProducts() {
     if (!response.ok) throw new Error('Failed to fetch products');
 
     const products = await response.json();
-    allProducts = products;
-    filteredProducts = products;
+    allProducts = products.filter(p => p.isActive !== false);
+    filteredProducts = allProducts;
     renderProducts();
 
     if (products.length === 0) {
