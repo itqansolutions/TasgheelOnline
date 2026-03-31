@@ -1029,6 +1029,7 @@ router.post('/shifts/close', auth, async (req, res) => {
         let cashSales = 0;
         let cardSales = 0;
         let mobileSales = 0;
+        let totalSales = 0;
         let totalRefunds = 0;
         let cancelledTotal = 0;
 
