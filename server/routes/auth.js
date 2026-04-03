@@ -88,32 +88,34 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
             // Don't block registration if email fails
         }
 
-        // Return Token
+        // Return Token (Synchronous sign is cleaner here)
         const payload = {
             user: {
                 id: user._id,
                 tenantId: tenant._id,
                 role: user.role,
-                username: user.username // Added username
+                username: user.username
             }
         };
 
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
-            if (err) throw err;
-            res.json({
-                token,
-                user: {
-                    _id: user._id,
-                    username: user.username,
-                    role: user.role,
-                    fullName: user.fullName,
-                    permissions: user.permissions
-                }
-            });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+        
+        res.json({
+            token,
+            user: {
+                _id: user._id,
+                username: user.username,
+                role: user.role,
+                fullName: user.fullName,
+                permissions: user.permissions
+            }
         });
 
     } catch (err) {
-        console.error(err.message);
+        console.error('Registration Error:', err.message);
+        if (err.name === 'MongooseServerSelectionError' || err.message.includes('buffering timed out')) {
+            return res.status(500).json({ msg: 'Database connection failed. Please check IP whitelist in Atlas.' });
+        }
         res.status(500).json({ msg: 'Server error' });
     }
 });
@@ -174,17 +176,18 @@ router.post('/login', async (req, res) => {
                 id: user._id,
                 tenantId: tenant._id,
                 role: user.role,
-                username: user.username // Added username
+                username: user.username
             }
         };
 
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' }, (err, token) => {
-            if (err) throw err;
-            res.json({ token, user: { _id: user._id, username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
-        });
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.json({ token, user: { _id: user._id, username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
 
     } catch (err) {
-        console.error(err.message);
+        console.error('Login Error:', err.message);
+        if (err.name === 'MongooseServerSelectionError' || err.message.includes('buffering timed out')) {
+            return res.status(500).json({ msg: 'Database connection failed. Please check IP whitelist in Atlas.' });
+        }
         res.status(500).json({ msg: 'Server error' });
     }
 });

@@ -10,9 +10,16 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.log(err));
+mongoose.connect(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 5000 // 5 seconds timeout
+})
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => {
+        console.error('❌ MongoDB Connection Error:', err.message);
+        if (err.message.includes('whitelist')) {
+            console.error('TIP: Check if your IP is whitelisted in MongoDB Atlas.');
+        }
+    });
 
 // Serve static files from the parent directory FIRST
 const path = require('path');
