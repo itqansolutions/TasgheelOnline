@@ -42,7 +42,7 @@ router.get('/tenant/trial-status', auth, async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -57,7 +57,7 @@ router.get('/settings', auth, async (req, res) => {
         res.json(tenant.settings || {});
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -85,7 +85,7 @@ router.put('/settings', auth, async (req, res) => {
         res.json(tenant.settings);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -100,7 +100,7 @@ router.get('/products', auth, async (req, res) => {
         res.json(products);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -117,7 +117,7 @@ router.post('/products', auth, async (req, res) => {
         res.json(product);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -145,7 +145,7 @@ router.put('/products/:id', auth, async (req, res) => {
         res.json(product);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -161,7 +161,7 @@ router.delete('/products/:id', auth, async (req, res) => {
         res.json({ msg: 'Product removed' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -240,7 +240,7 @@ router.post('/sales', auth, async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -253,7 +253,7 @@ router.get('/sales', auth, async (req, res) => {
         res.json(sales);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -281,7 +281,7 @@ router.get('/sales/daily', auth, async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -305,7 +305,7 @@ router.get('/sales/:id', auth, async (req, res) => {
         res.json(sale);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -392,7 +392,7 @@ router.post('/sales/:id/return', auth, async (req, res) => {
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -407,7 +407,7 @@ router.get('/salesmen', auth, async (req, res) => {
         res.json(salesmen);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -424,7 +424,7 @@ router.post('/salesmen', auth, async (req, res) => {
         res.json(salesman);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -440,7 +440,7 @@ router.delete('/salesmen/:id', auth, async (req, res) => {
         res.json({ msg: 'Salesman removed' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -460,7 +460,7 @@ router.put('/salesmen/:id', auth, async (req, res) => {
         res.json(salesman);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -475,7 +475,7 @@ router.get('/expenses', auth, async (req, res) => {
         res.json(expenses);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -492,7 +492,7 @@ router.post('/expenses', auth, async (req, res) => {
         res.json(expense);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -508,7 +508,7 @@ router.delete('/expenses/:id', auth, async (req, res) => {
         res.json({ msg: 'Expense removed' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -523,7 +523,7 @@ router.get('/settings', auth, async (req, res) => {
         res.json(tenant.settings || {});
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -558,7 +558,7 @@ router.put('/settings', auth, async (req, res) => {
         res.json({ ...tenant.settings, _backendVersion: 'v3' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -573,7 +573,7 @@ router.get('/users', auth, async (req, res) => {
         res.json(users);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -650,7 +650,7 @@ router.delete('/users/:id', auth, async (req, res) => {
         res.json({ msg: 'User removed' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -665,7 +665,7 @@ router.get('/categories', auth, async (req, res) => {
         res.json(categories);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -682,7 +682,7 @@ router.post('/categories', auth, async (req, res) => {
         res.json(category);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -702,7 +702,7 @@ router.put('/categories/:id', auth, async (req, res) => {
         res.json(category);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -718,7 +718,7 @@ router.delete('/categories/:id', auth, async (req, res) => {
         res.json({ msg: 'Category removed' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -771,7 +771,7 @@ router.post('/inventory/adjust', auth, async (req, res) => {
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -793,7 +793,7 @@ router.get('/shifts/current', auth, async (req, res) => {
         res.json(shift);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -908,7 +908,7 @@ router.get('/shifts/summary', auth, async (req, res) => {
 
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -935,7 +935,7 @@ router.get('/shifts/:id', auth, async (req, res) => {
     } catch (err) {
         console.error(err.message);
         if (err.kind === 'ObjectId') return res.status(404).json({ msg: 'Shift not found' });
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -951,7 +951,7 @@ router.get('/shifts', auth, async (req, res) => {
         res.json(shifts);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -985,6 +985,30 @@ router.post('/shifts/open', auth, async (req, res) => {
 
         await newShift.save();
 
+        // [AUTO-ADOPT ORPHANED SALES]
+        // Find sales from today by this cashier that have no shiftId
+        try {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const result = await Sale.updateMany(
+                {
+                    tenantId: req.tenantId,
+                    cashier: user.username,
+                    shiftId: { $exists: false },
+                    date: { $gte: startOfDay }
+                },
+                { $set: { shiftId: newShift._id } }
+            );
+
+            if (result.modifiedCount > 0) {
+                console.log(`[Shift] Automatically linked ${result.modifiedCount} orphaned sales to new shift ${newShift._id} for cashier ${user.username}`);
+            }
+        } catch (adoptError) {
+            console.error('Failed to adopt orphaned sales:', adoptError.message);
+            // Non-critical error, don't fail shift opening
+        }
+
         // Log action
         const log = new AuditLog({
             tenantId: req.tenantId,
@@ -997,7 +1021,7 @@ router.post('/shifts/open', auth, async (req, res) => {
         res.json(newShift);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -1122,7 +1146,7 @@ router.post('/shifts/close', auth, async (req, res) => {
         res.json(shift);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -1165,7 +1189,7 @@ router.post('/sales/:id/cancel', auth, async (req, res) => {
         res.json({ msg: 'Sale cancelled and stock restored' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -1186,7 +1210,7 @@ router.get('/audit-logs', auth, async (req, res) => {
         res.json(logs);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 

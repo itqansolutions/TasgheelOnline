@@ -55,9 +55,15 @@ async function checkOpenShift() {
       headers: { 'x-auth-token': token }
     });
 
-    const shift = await response.json();
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || 'Failed to fetch shift status');
+    }
 
-    // Get current user safely from storage, fallback to DOM if needed, but storage is source of truth
+    const shift = await response.json();
+    window.currentShift = shift; // Track globally
+
+    // Get current user safely from storage
     let currentUser = 'User';
     try {
       const userObj = JSON.parse(localStorage.getItem('currentUser'));
@@ -84,7 +90,8 @@ async function checkOpenShift() {
         }
 
         // Offer to Resume.
-        document.getElementById('resumeShiftTime').textContent = new Date(shift.startTime).toLocaleString();
+        const resumeTimeEl = document.getElementById('resumeShiftTime');
+        if (resumeTimeEl) resumeTimeEl.textContent = new Date(shift.startTime).toLocaleString();
         document.getElementById('resumeShiftModal').style.display = 'flex';
         disablePOS();
       } else {
@@ -97,6 +104,7 @@ async function checkOpenShift() {
   } catch (error) {
     console.error('Error checking shift:', error);
     alert('Failed to check shift status: ' + error.message);
+    disablePOS(); // Block POS if check fails
   }
 }
 
@@ -172,6 +180,8 @@ async function submitOpenShift() {
     });
 
     if (response.ok) {
+      const shiftData = await response.json();
+      window.currentShift = shiftData;
       document.getElementById('openShiftModal').style.display = 'none';
       sessionStorage.setItem('shiftResumed', 'true');
       enablePOS();
@@ -600,6 +610,14 @@ async function loadSalesmen() {
 function addToCart(product) {
   console.log('Adding to cart:', product);
 
+  // CHECK SHIFT FIRST
+  if (!window.currentShift && !isReadOnly) {
+    alert("No open shift found. Please open a shift first.");
+    document.getElementById('openShiftModal').style.display = 'flex';
+    disablePOS();
+    return;
+  }
+
   // Check stock (if tracked)
   if (product.trackStock !== false && product.stock <= 0) {
     alert("Out of stock!");
@@ -806,9 +824,12 @@ function editCartItemQty(index) {
 }
 
 function disableActionButtons(disabled) {
+  // If no shift is open, always disable except if in read-only mode (which handles its own disabling)
+  const shouldDisable = disabled || (!window.currentShift && !isReadOnly);
+  
   ["cashBtn", "cardBtn", "mobileBtn", "holdBtn", "clearCartBtn"].forEach(id => {
     const btn = document.getElementById(id);
-    if (btn) btn.disabled = disabled;
+    if (btn) btn.disabled = shouldDisable;
   });
 }
 
@@ -1062,10 +1083,10 @@ async function loadSettings() {
 }
 
 // ===================== INIT =====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadSettings();
   checkTrialStatus();
-  checkOpenShift();
+  await checkOpenShift(); // WAIT for shift check before loading anything else
   loadProducts();
   loadCategories();
   loadSalesmen();

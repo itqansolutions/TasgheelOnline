@@ -41,7 +41,7 @@ router.get('/tenants', checkSuperAdmin, async (req, res) => {
         res.json(tenants);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -58,7 +58,7 @@ router.put('/tenants/:id/status', checkSuperAdmin, async (req, res) => {
         res.json(tenant);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -84,7 +84,7 @@ router.put('/tenants/:id/subscription', checkSuperAdmin, async (req, res) => {
         res.json(tenant);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -116,7 +116,7 @@ router.delete('/tenants/:id', checkSuperAdmin, async (req, res) => {
         res.json({ msg: 'Tenant terminated successfully' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
@@ -147,7 +147,7 @@ router.put('/tenants/:id/password', checkSuperAdmin, async (req, res) => {
         res.json({ msg: 'Password reset successfully' });
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ msg: 'Server Error' });
     }
 });
 
