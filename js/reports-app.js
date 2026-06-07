@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
               // Refund Amount - (Qty * Cost)
               // Since we don't have per-item refund in ret.items easily (we calc'd it in backend but typically just code/qty)
               // Let's try to find original item.
-              const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+              const originalItem = r.items.find(oi => oi.code === ri.code || (oi.id || oi._id) === ri.code);
               if (originalItem) {
                 const cost = productMap[String(ri.code)]?.cost || originalItem.cost || 0;
                 const discount = originalItem.discount?.type === 'percent' ? (originalItem.price * originalItem.discount.value / 100) : originalItem.discount?.value || 0;
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
               if (map[code]) {
                 // Find original price/discount to reverse
                 // Approximation: Use current map averages or find original item
-                const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+                const originalItem = r.items.find(oi => oi.code === ri.code || (oi.id || oi._id) === ri.code);
                 if (originalItem) {
                   const discountValue = originalItem.discount?.type === 'percent'
                     ? originalItem.price * originalItem.discount.value / 100
@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const code = String(ri.code);
               const category = productMap[code]?.category || t("Uncategorized", "بدون تصنيف");
               if (categoryMap[category]) {
-                const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+                const originalItem = r.items.find(oi => oi.code === ri.code || (oi.id || oi._id) === ri.code);
                 if (originalItem) {
                   const discount = originalItem.discount?.type === 'percent'
                     ? originalItem.price * originalItem.discount.value / 100
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let retTotal = 0;
             let retNet = 0;
             ret.items.forEach(ri => {
-              const originalItem = r.items.find(oi => oi.code === ri.code || oi._id === ri.code);
+              const originalItem = r.items.find(oi => oi.code === ri.code || (oi.id || oi._id) === ri.code);
               if (originalItem) {
                 const discountVal = originalItem.discount?.type === 'percent'
                   ? originalItem.price * originalItem.discount.value / 100

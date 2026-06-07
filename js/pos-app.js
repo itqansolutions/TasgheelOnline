@@ -624,7 +624,7 @@ function addToCart(product) {
     return;
   }
 
-  const existingItem = cart.find(item => item._id === product._id);
+  const existingItem = cart.find(item => (item.id || item._id) === (product.id || product._id));
 
   if (existingItem) {
     // Check stock for existing item (if tracked)

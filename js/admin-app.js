@@ -112,8 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${user.fullName || "-"}</td>
                 <td>${user.role}</td>
                 <td>
-                  <button onclick="editUser('${user._id}')" class="btn btn-secondary btn-sm">✏️</button>
-                  <button onclick="handleDeleteUser('${user._id}')" class="btn btn-danger btn-sm">🗑️</button>
+                  <button onclick="editUser('${(user.id || user._id)}')" class="btn btn-secondary btn-sm">✏️</button>
+                  <button onclick="handleDeleteUser('${(user.id || user._id)}')" class="btn btn-danger btn-sm">🗑️</button>
                 </td>
               `;
           userTableBody.appendChild(row);
@@ -232,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/users`, { headers: { 'x-auth-token': token } });
       const users = await response.json();
-      const user = users.find(u => u._id === id);
+      const user = users.find(u => (u.id || u._id) === id);
       if (!user) return alert("User not found");
 
-      editIdInput.value = user._id;
+      editIdInput.value = (user.id || user._id);
       editUsernameInput.value = user.username;
       editFullnameInput.value = user.fullName || "";
       editRoleSelect.value = user.role;
@@ -291,12 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Sync localStorage if updating self
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         const matchesSelf = currentUser && (
-            (currentUser._id && currentUser._id === id) || 
+            ((currentUser.id || currentUser._id) && (currentUser.id || currentUser._id) === id) || 
             (currentUser.username && data.user && currentUser.username === data.user.username)
         );
 
         if (matchesSelf && data.user) {
-            currentUser._id = data.user._id; // Update ID if missing
+            (currentUser.id || currentUser._id) = data.(user.id || user._id); // Update ID if missing
             currentUser.permissions = data.user.permissions;
             currentUser.role = data.user.role;
             currentUser.fullName = data.user.fullName;

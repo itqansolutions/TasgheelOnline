@@ -88,11 +88,11 @@ async function loadProducts() {
         <td>${costDisplay}</td>
         <td>${stockDisplay}</td>
         <td>
-          <button class="btn ${statusClass} btn-sm" onclick="toggleProductStatus('${p._id}', ${isActive})">${statusText}</button>
+          <button class="btn ${statusClass} btn-sm" onclick="toggleProductStatus('${(p.id || p._id)}', ${isActive})">${statusText}</button>
         </td>
         <td>
-          <button class="btn btn-secondary btn-action" onclick="editProduct('${p._id}')">✏️</button>
-          <button class="btn btn-danger btn-action" onclick="deleteProduct('${p._id}')">🗑️</button>
+          <button class="btn btn-secondary btn-action" onclick="editProduct('${(p.id || p._id)}')">✏️</button>
+          <button class="btn btn-danger btn-action" onclick="deleteProduct('${(p.id || p._id)}')">🗑️</button>
         </td>
       `;
       tbody.appendChild(row);
@@ -187,10 +187,10 @@ function editProduct(id) {
   // Ideally, loadProducts should store in a global variable.
   // I will update loadProducts to store in window.allProducts for simplicity here.
 
-  const product = window.allProducts?.find(p => p._id === id);
+  const product = window.allProducts?.find(p => (p.id || p._id) === id);
   if (!product) return alert("Product not found");
 
-  document.getElementById("edit-product-id").value = product._id;
+  document.getElementById("edit-product-id").value = (product.id || product._id);
   document.getElementById("edit-product-name").value = product.name;
   document.getElementById("edit-product-barcode").value = product.barcode || "";
   document.getElementById("edit-product-price").value = product.price;
@@ -343,7 +343,7 @@ async function loadCategories() {
       row.innerHTML = `
                 <td>${cat.name}</td>
                 <td style="text-align:right;">
-                    <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat._id}')">🗑️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteCategory('${(cat.id || cat._id)}')">🗑️</button>
                 </td>
             `;
       listBody.appendChild(row);
@@ -467,7 +467,7 @@ async function saveStockAudit() {
 
       if (actualStock !== recordedStock) {
         itemsToAdjust.push({
-          productId: p._id,
+          productId: (p.id || p._id),
           newStock: actualStock,
           reason: 'Stock Audit'
         });
