@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const Tenant = require('../models/Tenant');
-const User = require('../models/User');
+const { randomUUID } = require('crypto');
+const prisma = require('../db');
 
 // @route   POST /api/auth/register
 // @desc    Register a new tenant (business) and admin user
@@ -12,8 +12,9 @@ router.post('/register', async (req, res) => {
     const { businessName, email, phone, username, password } = req.body;
 
     try {
-        let tenant = await Tenant.findOne({ email });
-        if (tenant) {
+        // Check if email already registered
+        const existingTenant = await prisma.tenant.findUnique({ where: { email } });
+        if (existingTenant) {
             return res.status(400).json({ msg: 'Email already registered' });
         }
 
@@ -21,38 +22,45 @@ router.post('/register', async (req, res) => {
         const trialEndsAt = new Date();
         trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
-        tenant = new Tenant({
-            businessName,
-            email,
-            phone,
-            trialEndsAt
+        const tenant = await prisma.tenant.create({
+            data: {
+                id: randomUUID().replace(/-/g, '').substring(0, 24), // 24-char hex-like ID
+                businessName,
+                email,
+                phone,
+                trialEndsAt,
+                isSubscribed: false,
+                status: 'active',
+                subscriptionPlan: 'free_trial',
+                settings: {}
+            }
         });
-
-        await tenant.save();
 
         // Create Admin User
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        const user = new User({
-            tenantId: tenant._id,
-            username,
-            passwordHash,
-            fullName: 'System Administrator',
-            role: 'admin',
-            permissions: {
-                canCancelSales: true,
-                nav_pos: true,
-                nav_products: true,
-                nav_receipts: true,
-                nav_reports: true,
-                nav_salesmen: true,
-                nav_expenses: true,
-                nav_admin: true
+        const user = await prisma.user.create({
+            data: {
+                id: randomUUID().replace(/-/g, '').substring(0, 24),
+                tenantId: tenant.id,
+                username,
+                passwordHash,
+                fullName: 'System Administrator',
+                role: 'admin',
+                active: true,
+                permissions: {
+                    canCancelSales: true,
+                    nav_pos: true,
+                    nav_products: true,
+                    nav_receipts: true,
+                    nav_reports: true,
+                    nav_salesmen: true,
+                    nav_expenses: true,
+                    nav_admin: true
+                }
             }
         });
-
-        await user.save();
 
         // Send Email Notification
         try {
@@ -88,22 +96,22 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
             // Don't block registration if email fails
         }
 
-        // Return Token (Synchronous sign is cleaner here)
+        // Return JWT Token
         const payload = {
             user: {
-                id: user._id,
-                tenantId: tenant._id,
+                id: user.id,
+                tenantId: tenant.id,
                 role: user.role,
                 username: user.username
             }
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
-        
+
         res.json({
             token,
             user: {
-                _id: user._id,
+                _id: user.id,
                 username: user.username,
                 role: user.role,
                 fullName: user.fullName,
@@ -113,9 +121,6 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
 
     } catch (err) {
         console.error('Registration Error:', err.message);
-        if (err.name === 'MongooseServerSelectionError' || err.message.includes('buffering timed out')) {
-            return res.status(500).json({ msg: 'Database connection failed. Please check IP whitelist in Atlas.' });
-        }
         res.status(500).json({ msg: 'Server error' });
     }
 });
@@ -124,31 +129,14 @@ Trial Ends: ${trialEndsAt.toLocaleString()}
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', async (req, res) => {
-    const { username, password, businessEmail } = req.body; // Added businessEmail to distinguish tenants if needed, or just username if unique globally? 
-    // Wait, usernames are not unique globally, only per tenant. 
-    // So login needs to know WHICH tenant, OR username must be unique globally?
-    // The prompt says "everyone register to has theri own database and own users".
-    // Usually in multi-tenant, you login with Email (unique) OR Company Code + Username.
-    // Let's assume for simplicity: Login with Email (Admin) OR Username + Company ID?
-    // Or maybe just enforce unique usernames globally? No, "cashier" is common.
-    // Let's require Business Email (or ID) + Username + Password?
-    // OR: The Admin logs in with Email/Password. Sub-users log in with Username + Password + Company Code.
-
-    // Let's stick to the simplest: Login requires Business Email (to find tenant) AND Username.
-    // Actually, for the "Admin" who registers, they use Email.
-    // For "Cashier", they use Username.
-    // Let's try to find the user by Username. If multiple exist, we have a problem.
-    // Solution: Login form asks for "Company Email" (or ID) and "Username" and "Password".
+    const { username, password, businessEmail } = req.body;
 
     try {
-        // Find tenant first?
-        // Let's assume the login form sends { businessEmail, username, password }
-
         if (!businessEmail) {
             return res.status(400).json({ msg: 'Business Email is required' });
         }
 
-        const tenant = await Tenant.findOne({ email: businessEmail });
+        const tenant = await prisma.tenant.findUnique({ where: { email: businessEmail } });
         if (!tenant) {
             return res.status(400).json({ msg: 'Business not found' });
         }
@@ -161,9 +149,15 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ msg: 'Account Suspended.' });
         }
 
-        const user = await User.findOne({ tenantId: tenant._id, username });
+        const user = await prisma.user.findFirst({
+            where: { tenantId: tenant.id, username }
+        });
         if (!user) {
             return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
+
+        if (!user.active) {
+            return res.status(403).json({ msg: 'User account is disabled.' });
         }
 
         const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -173,21 +167,27 @@ router.post('/login', async (req, res) => {
 
         const payload = {
             user: {
-                id: user._id,
-                tenantId: tenant._id,
+                id: user.id,
+                tenantId: tenant.id,
                 role: user.role,
                 username: user.username
             }
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.json({ token, user: { _id: user._id, username: user.username, role: user.role, fullName: user.fullName, permissions: user.permissions } });
+        res.json({
+            token,
+            user: {
+                _id: user.id,
+                username: user.username,
+                role: user.role,
+                fullName: user.fullName,
+                permissions: user.permissions
+            }
+        });
 
     } catch (err) {
         console.error('Login Error:', err.message);
-        if (err.name === 'MongooseServerSelectionError' || err.message.includes('buffering timed out')) {
-            return res.status(500).json({ msg: 'Database connection failed. Please check IP whitelist in Atlas.' });
-        }
         res.status(500).json({ msg: 'Server error' });
     }
 });

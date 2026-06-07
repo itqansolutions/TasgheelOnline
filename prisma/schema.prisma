@@ -1,0 +1,189 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id                 String    @id // Matches 24-character hex MongoDB ObjectId
+  businessName       String
+  email              String    @unique
+  phone              String
+  trialEndsAt        DateTime
+  subscriptionEndsAt DateTime?
+  isSubscribed       Boolean   @default(false)
+  status             String    @default("active") // active, on_hold, suspended
+  subscriptionPlan   String    @default("free_trial") // free_trial, monthly, yearly
+  createdAt          DateTime  @default(now())
+  settings           Json? // shopName, shopAddress, shopLogo, footerMessage, taxRate, taxName
+
+  users            User[]
+  products         Product[]
+  categories       Category[]
+  salesmen         Salesman[]
+  expenses         Expense[]
+  customers        Customer[]
+  sales            Sale[]
+  shifts           Shift[]
+  stockAdjustments StockAdjustment[]
+  auditLogs        AuditLog[]
+}
+
+model User {
+  id           String   @id // Matches 24-character hex MongoDB ObjectId
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  username     String
+  passwordHash String
+  role         String   @default("cashier") // admin, manager, cashier
+  fullName     String
+  active       Boolean  @default(true)
+  permissions  Json? // canCancelSales, nav_pos, nav_products, nav_receipts, nav_reports, nav_salesmen, nav_expenses, nav_admin
+  createdAt    DateTime @default(now())
+
+  @@unique([tenantId, username])
+}
+
+model Product {
+  id         String   @id // Matches 24-character hex MongoDB ObjectId
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  nameEn     String?
+  barcode    String?
+  price      Float
+  cost       Float    @default(0)
+  stock      Float    @default(0)
+  minStock   Float    @default(0)
+  trackStock Boolean  @default(true)
+  category   String?
+  categoryEn String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, barcode])
+}
+
+model Category {
+  id        String   @id // Matches 24-character MongoDB ObjectId
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  nameEn    String?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, name])
+}
+
+model Salesman {
+  id       String @id // Matches 24-character MongoDB ObjectId
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name     String
+  targets  Json? // month, year, target array
+}
+
+model Expense {
+  id          String  @id // Matches 24-character MongoDB ObjectId
+  tenantId    String
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  date        String // ISO date string YYYY-MM-DD
+  seller      String?
+  description String
+  amount      Float
+  method      String  @default("cash")
+}
+
+model Customer {
+  id            String   @id // Matches 24-character MongoDB ObjectId
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  email         String?
+  address       String?
+  loyaltyPoints Float    @default(0)
+  createdAt     DateTime @default(now())
+}
+
+model Sale {
+  id            String   @id // Matches 24-character MongoDB ObjectId
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  receiptId     String
+  shiftId       String?
+  shift         Shift?   @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  date          DateTime @default(now())
+  method        String // cash, card, mobile, split
+  splitPayments Json? // Array of { method, amount }
+  cashier       String
+  salesman      String?
+  total         Float
+  taxAmount     Float    @default(0)
+  taxName       String?
+  taxRate       Float?
+  items         Json // Array of { productId, code, name, category, qty, price, discount, cost, returnedQty }
+  status        String   @default("finished") // finished, returned, partial_returned
+  returns       Json? // Array of { date, items: [], totalRefund, cashier }
+  returnReason  String?
+
+  @@index([tenantId, date(sort: Desc)])
+}
+
+model Shift {
+  id           String    @id // Matches 24-character MongoDB ObjectId
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cashier      String
+  startTime    DateTime  @default(now())
+  endTime      DateTime?
+  startCash    Float
+  endCash      Float?
+  actualCash   Float?
+  actualCard   Float?
+  actualMobile Float?
+
+  totalSales     Float @default(0)
+  cashSales      Float @default(0)
+  cardSales      Float @default(0)
+  mobileSales    Float @default(0)
+  returnsTotal   Float @default(0)
+  expensesTotal  Float @default(0)
+  categorySales  Json? // Map category to amount
+  cancelledTotal Float @default(0)
+
+  status       String @default("open") // open, closed
+  transactions Json? // Array of { type, amount, reason, time }
+
+  sales Sale[]
+
+  @@index([tenantId, status])
+}
+
+model StockAdjustment {
+  id         String   @id // Matches 24-character MongoDB ObjectId
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  date       DateTime @default(now())
+  adjustedBy String
+  items      Json // Array of { productId, productName, oldStock, newStock, difference, reason }
+
+  @@index([tenantId, date(sort: Desc)])
+}
+
+model AuditLog {
+  id        String   @id // Matches 24-character MongoDB ObjectId
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      String
+  action    String // e.g., 'DELETE_PRODUCT', 'CLOSE_SHIFT'
+  details   Json?
+  timestamp DateTime @default(now())
+
+  @@index([tenantId, timestamp(sort: Desc)])
+}
