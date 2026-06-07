@@ -5,6 +5,14 @@ require('dotenv').config();
 
 const app = express();
 
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
+
 // Middleware
 app.use(cors());
 app.use(express.json());
